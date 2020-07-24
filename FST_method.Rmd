@@ -1,0 +1,80 @@
+
+## Distance matrices
+
+### Introduction
+
+Terms definition and explanation:
+
+ -  **Fixation Index** (FST) is an index measuring genetic distance between populations. It quantifies levels of breeding across populations by comparing the frequency of genes in each population in pairwise comparisons. High values for FST indicate a high population differentiation, whereas small values show a high breeding rate between populations. 
+
+ -  [**Alfred database**](https://alfred.med.yale.edu/alfred/index.asp) [@rajeevan_alfred_2003] is an open compilation of allele frequency computed on SNP and micro-haplotypes for a set of human populations in the world. 
+    - In genetics, a *microhaplotype* is any haplotype that has very few alleles, a *haplotype* being a set of genetic determinants located on a single chromosome. 
+    - A *SNP* (single-nucleotide polymorphism) is a common type of genetic variation among people, and represents a substitution of a single nucleotide at a specific position in the genome. Variation depends on both individuals and populations, and leads to different genetic traits. For example, SNP variants leading to color-blind male individuals have been identified on [GeneCards website](https://www.genecards.org/) [@stelzer_genecards_2016].
+ 
+ -  [**Arlequin**](http://cmpg.unibe.ch/software/arlequin35/) [@excoffier_arlequin_2010] is a software for population genetics data analysis which has been used to compute FST with Alfred database. Its goal is to provide users with a large set of basic methods and statistical tests, in order to extract information on genetic and demographic features of a collection of population samples.
+
+
+
+### Method
+
+#### Step 1: gather data from Alfred.
+
+The following files have been extracted from [Alfred database](https://alfred.med.yale.edu/alfred/index.asp) and [FROG-kb](http://frog.med.yale.edu/FrogKB/) [@rajeevan_alfred_2003]:
+
+| Panel | Allele Frequency | Population sample | SNP | Microhap |
+|------------|-------------|-------------|-------------| -------------|
+| Microhaplotypes | [*Microhap_alleleF_198.txt*](https://alfred.med.yale.edu/alfred/selectDownload/Microhap_alleleF_198.txt) | 96 | 0 | 198 |
+| Seldin's list of 128 AISNPs | [*Seldin128_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Seldin128_alleleF.txt) | 70 | 128 | 0 |
+|SNPforID 34-plex  | [*SNPForId34_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/SNPForId34_alleleF.txt) | 53 | 34 | 0 |
+| KiddLab - Set of 55 AISNPs  | [*KiddLab55_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/KiddLab55_alleleF.txt) | 139 | 55 | 0 |
+| Kayser's set of 24 Ancestry Informative Markers | [*Kayser24_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Kayser24_alleleF.txt) | 73 | 24 | 0 |
+| Daniele Podini's list of 32 AISNPs | [*Podini32_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Podini32_alleleF.txt) | 111 | 29 | 0 |
+| Eurasiaplex 23 SNP Panel | [*Eurasiaplex23_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Eurasiaplex23_alleleF.txt) | 76 | 23 | 0 |
+| Nievergelt's Set of 41AIMs  | [*Nievergelt41_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Nievergelt41_alleleF.txt) | 123 | 41 | 0 |
+| Overlap set of AISNPs  | [*Overlap44_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Overlap44_alleleF.txt) | 72 | 44 | 0 |
+| Li's panel of 74 AIMS | [*Li74_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Li74_alleleF.txt) | 67 | 73 | 0 |
+
+<br/>
+
+#### Step 2: compute FST for each SNP/micro-haplotype.
+
+The different text files have been gathered under one single text-file and transformed into arlequin files (.arp) through a R script (see github [mathjoss/Alfred2FST/alfredtxt2arlequin.R](https://github.com/mathjoss/Alfred2FST/blob/master/alfredtxt2arlequin.R)). This R-script creates one .arp file for each micro-haplotype and each SNP. 
+
+
+These .arp files were then feeded to [*Arlequin*](http://cmpg.unibe.ch/software/arlequin35/) [@excoffier_arlequin_2010] (number of permutations=110). All Arlequin parameters used for the analysis can be found on github: [mathjoss/Alfred2FST/arl_run.ars](https://github.com/mathjoss/Alfred2FST/blob/master/arl_run.ars). The outputs provided by Arlequin are folders for each file.
+
+We focused on a table called *‘Population average pairwise difference’* which contains the average **number of pairwise difference between** populations above diagonal, **within** population in the diagonal elements, and the **corrected average pairwise difference** below diagonal.
+
+<br/>
+
+#### Step 3: Gather and mean all files.
+
+Those tables have been averaged under one single table with two other R-scripts (see github [mathjoss/Alfred2FST/mean_all_files.R](https://github.com/mathjoss/Alfred2FST/blob/master/mean_all_files.R) and [mathjoss/Alfred2FST/mean_all_files_part2.R](https://github.com/mathjoss/Alfred2FST/blob/master/mean_all_files_part2.R)). If some population were absent of a specific micro-haplotype or SNP, the mean was performed with missing values. 
+
+So we got a population average pairwise difference distance matrix on:
+
+ -  145 unique *populations*
+ -  96 unique *micro-haplotypes*
+ -  382 unique *SNP*
+ 
+
+Then, *additive* method and *ultrametric* methods [@de_soete_ultrametric_1984; @lapointe_estimating_1995] were used for data imputation on the final distance matrix. For more details about the exact algorithm, see *«A weighted least-squares approach for inferring phylogenies from incomplete distance matrices»* (Makarenkov, 2004). The R-code for this process is available in github: [mathjoss/Alfred2FST/extract_MDS.R](https://github.com/mathjoss/Alfred2FST/blob/master/extract_MDS.R). This R-file was also used to perform *Multi-Dimensional Scaling* (`cmdscale`). 
+
+<br/>
+
+#### Step 4: Link populations from FST table to our dataset’s population.
+
+The 145 populations in the FST table are quite different from the 142 populations present in our dataset. Furthermore, some categories in Alfred database are large and unclear (African Americans, Indian Mixed…) and did not suit to our populations. Consequently, the following procedure was applied: 
+
+  (1) Exact population were linked to each other. (*example:* Basque, Yoruba existed in both our dataset and the FST table)
+  (2) If the dataset’s population is not present in the FST table, then select its general category. (*example:* Czech are under Europeans Mixed, Gujarati are under Indian mixed).
+  (3) If the dataset’s population is not present in the FST table and does not suit to any general category, make some further research to find the closest population in the FST table (mostly based on geographic distance but also population history).
+  
+Results from (1) and (2) are gathered in the *"genetic_incomplete"* column in `Database_final4.csv`. 
+Results from (1), (2) and (3) are gathered in the *"genetic_full"* column in `Database_final4.csv`. This column has been used for further analysis.
+
+Please note that, in the previous computations, only the below diagonal element were used, corresponding to the **corrected average pairwise difference**.
+
+<br/>
+
+
