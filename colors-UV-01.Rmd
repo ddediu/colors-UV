@@ -23,9 +23,12 @@ csl: apa-6th-edition.csl
 - rename variables/keep only the variables we need/recode variables: **DONE**
 - check the `stage` variable (I guess `999` means `NA` so should not be considered as an actual value)
 - use `macroarea2` (Eurasia -> Europe + Asia) instead of `macroarea`?
-- add `climate_PC3` and `humidity`
+- add `climate_PC3` and `humidity`: **DONE**
+- add distance2water
+- add linguistic distances using ASJP and WALS
+- add other structural features from WALS
 - keep only the libraries we actually use: **DONE**
-- integrate FST_methods.Rmd in the "methods" section here
+- integrate FST_methods.Rmd: **DONE**
 - redo/expand the Bayesian regressions and model comparison
 - decide what to keep to streamline the analysis
 
@@ -189,12 +192,30 @@ a[hreflang]:before{}
 # Load the world map and change it for Pacific-centered plotting:
 mapWorld <- map_data("world", wrap=c(-20,340), ylim=c(-70,100));
 
+# If the environmental variables are not already computed, compute them now:
+if( !file.exists("./input_files/data_climate.tsv") || 
+    !file.exists("./input_files/data_humidity.tsv") )
+{
+  # Get the primary data and compute them:
+  source("./00_preprocess_environmental_data.R", echo=FALSE);
+}
+
+
 # Load the colors data:
 d_colors <- read.table("./input_files/data_colors.csv", header=TRUE, sep=",", quote='"', stringsAsFactors=FALSE); # comma-separated double-quoted CVS file
 
+# Add the climate and humidity variables:
+d_climate  <- read.table("./input_files/data_climate.tsv", header=TRUE, sep="\t", quote="");
+d_humidity <- read.table("./input_files/data_humidity.tsv", header=TRUE, sep="\t", quote="");
+d_colors <- merge(d_colors, d_climate, by="glottocode", all.x=TRUE, all.y=FALSE);
+d_colors <- merge(d_colors, d_humidity[,c("glottocode", 
+                                          "humidity_mean_annual_median", "humidity_mean_annual_IQR")], # keep only the mean annual median and IQR as all the others are very highly correlated
+                  by="glottocode", all.x=TRUE, all.y=FALSE);
+names(d_colors)[ncol(d_colors)-c(1,0)] <- c("hum_median", "hum_IQR");
+
 # Rescale variables (we use the suffix _r for them):
 # - altitude:
-d_colors$altitude_r         <- log2(d_colors$altitude + 1); # there are two altitudes set to 0 meters, so increse everything by 1m to avoid -Inf
+d_colors$altitude_r         <- log2(d_colors$altitude + 1); # there are two altitudes set to 0 meters, so increase everything by 1m to avoid -Inf
 # - distance to water bodies:
 d_colors$dist2water_r       <- log2(d_colors$dist2water); # distances to water are never 0.0, so no need to guard against -Inf here
 d_colors$dist2rivers_r      <- log2(d_colors$dist2rivers);
@@ -834,7 +855,7 @@ ggplot() + theme_bw() +
 
 Unfortunately, there is apparently a lack of information concerning cross-population variation in the opsin genes (*OPN1MW* and *OPN1LW*). 
 However, using a set of 96 micro-haplotypes and 382 SNP variants available from the [ALFRED database](https://alfred.med.yale.edu/) [@rajeevan_alfred_2003], we computed the overall genetic distance between population with [Arlequin](http://cmpg.unibe.ch/software/arlequin35/) [@excoffier_arlequin_2010]. 
-Missing values in the final distance matrix were estimated using an ultrametric [@lapointe_estimating_1995] and additive [@de_soete_ultrametric_1984] data imputation methods (see [Appendix]).
+Missing values in the final distance matrix were estimated using an ultrametric [@lapointe_estimating_1995] and additive [@de_soete_ultrametric_1984] data imputation methods (see [Appendix I. Distance matrices]).
 
 Phylogenetic data was obtained from the [Glottolog](https://glottolog.org/) [@hammarstrom_glottolog_2018], and a distance matrix between our focus populations was created using [`qlcData`](https://github.com/cran/qlcData) and `cophenetic` in `R` [@R_2020].
 For more details, please see the section about Point Pattern Analysis.
@@ -885,13 +906,13 @@ Thus, a total of 19 *variables* (excluding the genetic multi-dimensional scaling
  -  *macroarea*
  -  dimensions from *multi-dimensional scaling of genetic distances*
  
-Five *distance matrices* were also collected among the populations (see [Appendix] and [Genetic distance from Alfred (FST)] for more info): 
+Five *distance matrices* were also collected among the populations (see [Appendix I. Distance matrices] and [Genetic distance from Alfred (FST)] for more info): 
 
  - one distance matrix gathering *geographical distance* "as the crow flies" between population
  - one *phylogenetic distance* matrix computed from glottolog information
- - one *genetic distance* matrix computed from ALFRED (see [Appendix]) without data imputation
- - one *genetic distance* matrix computed with ALFRED (see [Appendix]) with an *additive* data imputation
- - one *genetic distance* matrix computed with ALFRED (see [Appendix]) with an *ultrametric* data imputation
+ - one *genetic distance* matrix computed from ALFRED (see [Appendix I. Distance matrices]) without data imputation
+ - one *genetic distance* matrix computed with ALFRED (see [Appendix I. Distance matrices]) with an *additive* data imputation
+ - one *genetic distance* matrix computed with ALFRED (see [Appendix I. Distance matrices]) with an *ultrametric* data imputation
 
 
 
@@ -1095,9 +1116,9 @@ pander(head(data.dists.km.m2[,1:6]))
 This is based on a method developed in @cysouw_comment_2012 and adapted by Marc Tang: it computes neighbouring datapoints by taking into account the natural barriers to population movement represented by seas and oceans (see figures below).
  
 ```{r compute Delaunay, echo=FALSE, message=FALSE, warning=FALSE}
-# Delaunay distance
-
-# from Dan Dediu and Marc Tang
+# Delaunay distances:
+# This is based on code from Cysouw, M., Dediu, D., & Moran, S. (2012). Comment on “Phonemic Diversity Supports a Serial Founder Effect Model of Language Expansion from Africa.” Science, 335(6069), 657. https://doi.org/10.1126/science.1208841, 
+# updated to run on R 3.6 by Marc Tang, and massively changed to accommodate more dense data by Dan Dediu:
 
 # read table
 datamat <- data.frame(glottocode=dbdalto$glottocode, long = dbdalto$longitude, lat= dbdalto$latitude)
@@ -1211,7 +1232,7 @@ pander(head(merged.data))
 
 #### Genetic distance from Alfred (FST)
 
-Genetic distances were estimated using FST on data from the ALFRED database (see method in [Appendix]).
+Genetic distances were estimated using FST on data from the ALFRED database (see method in [Appendix I. Distance matrices]).
 Because this genetic distance matrix has many missing values, two imputation methods were used (in addition to using the distance matrix as it is): additive and ultrametic.
 
 ```{r compute FST, echo=FALSE, message=FALSE, warning=FALSE}
@@ -5037,11 +5058,48 @@ In a cross-linguistic work, @malt_how_2013 provide some evidence for a great div
 
 
 
-# Appendix
+# Appendices
 
-```{r Distance matrices, child='FST_method.Rmd', eval=TRUE}
 
-```
+## Appendix I. Distance matrices
+
+We use the *fixation Index* (F~ST~) as a measure of the genetic distance between pairs of populations, with high values indicating a high differentiation betwen populations; there are multiple approaches (see, for example, [Wikipedia](https://en.wikipedia.org/wiki/Fixation_index), @holsinger_genetics_2009), but we used here the method implemented in  [`Arlequin 3.5`](http://cmpg.unibe.ch/software/arlequin35/) [@excoffier_arlequin_2010] as detailed below. 
+
+As *primary data*, we used a subset of the [ALFRED (The ALlele FREquency Database)](https://alfred.med.yale.edu/alfred/index.asp) [@rajeevan_alfred_2003], the [FROG-kb (Forensic Resource/Reference on Genetics knowledge base)](http://frog.med.yale.edu/FrogKB/), aimed at forensic applications.
+More precisely, we downloaded (as of spring 2020) the following files:
+
+| Panel                                           | File (hyperlink)                                                                 | N | #SNPs[^SNP] | #MHs[^Microhaplotype] |
+|:------------------------------------------------|:---------------------------------------------------------------------------------------------------------|----:|----:|----:|
+| Microhaplotypes                                 | [*Microhap_alleleF_198.txt*](https://alfred.med.yale.edu/alfred/selectDownload/Microhap_alleleF_198.txt) | 96  | 0   | 198 |
+| Seldin's list of 128 AISNPs                     | [*Seldin128_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Seldin128_alleleF.txt)         | 70  | 128 | 0   |
+| SNPforID 34-plex                                | [*SNPForId34_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/SNPForId34_alleleF.txt)       | 53  | 34  | 0   |
+| KiddLab - Set of 55 AISNPs                      | [*KiddLab55_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/KiddLab55_alleleF.txt)         | 139 | 55  | 0   |
+| Kayser's set of 24 Ancestry Informative Markers | [*Kayser24_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Kayser24_alleleF.txt)           | 73  | 24  | 0   |
+| Daniele Podini's list of 32 AISNPs              | [*Podini32_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Podini32_alleleF.txt)           | 111 | 29  | 0   |
+| Eurasiaplex 23 SNP Panel                        | [*Eurasiaplex23_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Eurasiaplex23_alleleF.txt) | 76  | 23  | 0   |
+| Nievergelt's Set of 41AIMs                      | [*Nievergelt41_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Nievergelt41_alleleF.txt)   | 123 | 41  | 0   |
+| Overlap set of AISNPs                           | [*Overlap44_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Overlap44_alleleF.txt)         | 72  | 44  | 0   |
+| Li's panel of 74 AIMS                           | [*Li74_alleleF.txt*](http://frog.med.yale.edu/FrogKB/download/allele/Li74_alleleF.txt)                   | 67  | 73  | 0   |
+
+These text files were combined into a single file, and we used a custom `R` script (available online at [`mathjoss/Alfred2FST/alfredtxt2arlequin.R`](https://github.com/mathjoss/Alfred2FST/blob/master/alfredtxt2arlequin.R)) to extract one `Arlequin file` (`.arp`) per microhaplotype and per SNP. 
+These `.arp` files were then processed with [`Arlequin 3.5`](http://cmpg.unibe.ch/software/arlequin35/) [@excoffier_arlequin_2010] (the parameters can be found in [mathjoss/Alfred2FST/arl_run.ars](https://github.com/mathjoss/Alfred2FST/blob/master/arl_run.ars)), using the output tables `Population average pairwise difference` (and, more precisely, the *corrected average pairwise difference* component), one per input `.arp` file. We averaged these tables using two other custom `R` scripts (available at [mathjoss/Alfred2FST/mean_all_files.R](https://github.com/mathjoss/Alfred2FST/blob/master/mean_all_files.R) and [mathjoss/Alfred2FST/mean_all_files_part2.R](https://github.com/mathjoss/Alfred2FST/blob/master/mean_all_files_part2.R)).
+This procedure resulted in average pairwise distance between 145 unique populations, using 96 unique microhaplotypes and 382 unique SNP.
+
+As there is missing data, we used the *additive* and the *ultrametric* methods of data imputation for distance matrices [@de_soete_ultrametric_1984; @lapointe_estimating_1995], followed by *Multi-Dimensional Scaling* (*MDS*); see the `R` script at [mathjoss/Alfred2FST/extract_MDS.R](https://github.com/mathjoss/Alfred2FST/blob/master/extract_MDS.R) for details. 
+
+Finally, we mapped manually the 145 unique populations with F~ST~ distances to the 142 populations in our primary dataset `data_colors.csv`, but the mapping is far from trivial and unambiguous: for example, some ALFRED populations are rather large and imprecise (e.g., "African Americans", "Indian Mixed" ...). 
+Consequently, we applied the following procedure: 
+
+  (1) Exact population were linked to each other (e.g., "Basque" and "Yoruba" are present in both);
+  (2) For populations in the primary dataset but not present in the F~ST~ distances matrix, we selected its most appropriate general category (e.g. for "Czech" we used "Europeans Mixed", and for "Gujarati", "Indian mixed");
+  (3) If there is no appropriate general category, we attempted to find the closest matching population in the F~ST~ distances matrix (generally based on geographic distance and demographic history, as inferred from various sources).
+  
+The results of the first two matching rules (1 & 2) are in the *genetic_incomplete* column of the `data_colors.csv` primary dataset, while those of all the three rules (1, 2 & 3) are in the *genetic_full* column -- we used this "fully" matched column for further analyses.
+
+
+[^SNP]: A [*Single Nucleotide Polymorphism* (*SNP*)](https://en.wikipedia.org/wiki/Single-nucleotide_polymorphism) is a common and simple type of genetic variation representing the substitution of a single nucleotide at a specific position in the genome.
+
+[^Microhaplotype]: A [*haplotype*](https://en.wikipedia.org/wiki/Haplotype) has several related meaning, in principle refering to a set of genetic variants that tend to be inherited together; a *microhaplotype* (microhap or *MH*) is a set of small set of closely linked SNPs useful in forensic applications [@oldoni_microhaplotypes_2019]. 
 
 # References
 
