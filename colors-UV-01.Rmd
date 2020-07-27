@@ -24,9 +24,7 @@ csl: apa-6th-edition.csl
 - check the `stage` variable (I guess `999` means `NA` so should not be considered as an actual value)
 - use `macroarea2` (Eurasia -> Europe + Asia) instead of `macroarea`?
 - add `climate_PC3` and `humidity`: **DONE**
-- add distance2water
-- add linguistic distances using ASJP and WALS
-- add other structural features from WALS
+- add UB incidence
 - keep only the libraries we actually use: **DONE**
 - integrate FST_methods.Rmd: **DONE**
 - redo/expand the Bayesian regressions and model comparison
@@ -34,7 +32,11 @@ csl: apa-6th-edition.csl
 
 **What I also did:**
 
-- remove `gen.dist.na` and keep only the imputed genetic distances
+- removed `gen.dist.na` and keep only the imputed genetic distances
+- removed climate and dist2... variables because I re-compute them from scratch
+- fixed some language names and one glottocode (Nepali)
+- reduced the precision of most numeric variables
+- computed co-variates for the families as well
 
 
 ```{r setup, echo=F, message=F, warning=FALSE}
@@ -120,7 +122,7 @@ brms_ncores  <- max(detectCores(all.tests=TRUE, logical=FALSE), 4, na.rm=TRUE); 
 brms_iter    <- 5000; brms_warmup <- 2000; brms_thin <- 2; # burn-in and iterations 
 brms_control <- list(adapt_delta=0.999, max_treedepth=15); # control params to pass to Stan: avoid the "divergent transitions after warmup" and "max_treedepth" warnings
 brms_ci      <- 0.89; brms_rope <- c(-0.01, 0.01); # 89% HDI and a tight ROPE around 0.0 [-0.01, 0.01]
-plan(multiprocess); # parallel kfold using futures
+#plan(multiprocess); # parallel kfold using futures
 
 ## Various folders:
 if( !dir.exists("./figures") ) dir.create("./figures", showWarnings=FALSE); # figures are saved here
@@ -174,6 +176,31 @@ rmse <- function(y, yrep)
   yrep_mean <- colMeans(yrep)
   sqrt(mean((yrep_mean - y)^2))
 }
+
+# Panel function for the pairwise plots:
+panel.cor <- function(x, y){
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(0, 1, 0, 1))
+  r <- cor.test(x, y, method="pearson");
+  rho <- cor.test(x, y, method="spearman");
+  txt <- sprintf("r=%.2f\n(p=%.4g)\nrho=%.2f\n(p=%.4g)", 
+                 r$estimate, r$p.value, rho$estimate, rho$p.value)
+  cex.cor <- 0.8/strwidth(txt)
+  text(0.5, 0.5, txt, cex=1.2)
+}
+upper.panel<-function(x, y){
+  points(x,y, pch = 21, bg="lightgray", col="gray30")
+  abline(lm(y ~ x), col="blue", lwd=2);
+}
+panel.hist <- function(x, ...)
+{
+  usr <- par("usr"); on.exit(par(usr))
+  par(usr = c(usr[1:2], 0, 1.5) )
+  h <- hist(x, plot = FALSE)
+  breaks <- h$breaks; nB <- length(breaks)
+  y <- h$counts; y <- y/max(y)
+  rect(breaks[-nB], 0, breaks[-1], y, col = "lightgray", ...)
+}
 ```
 
 <style>
@@ -193,47 +220,79 @@ a[hreflang]:before{}
 mapWorld <- map_data("world", wrap=c(-20,340), ylim=c(-70,100));
 
 # If the environmental variables are not already computed, compute them now:
-if( !file.exists("./input_files/data_climate.tsv") || 
-    !file.exists("./input_files/data_humidity.tsv") )
+if( !all(file.exists("./input_files/data_climate.tsv", "./input_files/data_humidity.tsv", "./input_files/data_dist2water.tsv", "./input_files/data_UV_incidence.tsv")) )
 {
   # Get the primary data and compute them:
-  source("./00_preprocess_environmental_data.R", echo=FALSE);
+  source("./00_preprocess_data.R", echo=FALSE);
 }
 
 
 # Load the colors data:
 d_colors <- read.table("./input_files/data_colors.csv", header=TRUE, sep=",", quote='"', stringsAsFactors=FALSE); # comma-separated double-quoted CVS file
 
-# Add the climate and humidity variables:
-d_climate  <- read.table("./input_files/data_climate.tsv", header=TRUE, sep="\t", quote="");
-d_humidity <- read.table("./input_files/data_humidity.tsv", header=TRUE, sep="\t", quote="");
-d_colors <- merge(d_colors, d_climate, by="glottocode", all.x=TRUE, all.y=FALSE);
-d_colors <- merge(d_colors, d_humidity[,c("glottocode", 
-                                          "humidity_mean_annual_median", "humidity_mean_annual_IQR")], # keep only the mean annual median and IQR as all the others are very highly correlated
-                  by="glottocode", all.x=TRUE, all.y=FALSE);
+# Add the climate, humidity and distance2water variables,
+# both for the languages and for the families.
+# For humidity, keep only the mean annual median and IQR as all the other measures are very highly correlated with these
+# For UV, do not use the individual freqyency bands, but the wide categories "A" and "B" (and overall):
+d_climate    <- read.table("./input_files/data_climate.tsv",      header=TRUE, sep="\t", quote="");
+d_humidity   <- read.table("./input_files/data_humidity.tsv",     header=TRUE, sep="\t", quote="");
+d_dist2water <- read.table("./input_files/data_dist2water.tsv",   header=TRUE, sep="\t", quote="");
+d_uv         <- read.table("./input_files/data_UV_incidence.tsv", header=TRUE, sep="\t", quote="");
+
+# for languages ...
+d_colors <- merge(d_colors, d_climate[,c("glottocode", "clim_PC1", "clim_PC2", "clim_PC3")], by="glottocode", all.x=TRUE, all.y=FALSE);
+d_colors <- merge(d_colors, d_humidity[,c("glottocode", "humidity_mean_annual_median", "humidity_mean_annual_IQR")], by="glottocode", all.x=TRUE, all.y=FALSE);
 names(d_colors)[ncol(d_colors)-c(1,0)] <- c("hum_median", "hum_IQR");
+d_colors <- merge(d_colors, d_dist2water[,c("glottocode", "dist2ocean", "dist2lakes", "dist2rivers", "dist2water")], by="glottocode", all.x=TRUE, all.y=FALSE);
+d_colors <- merge(d_colors, d_uv[,c("glottocode", "UV_A_mean", "UV_A_sd", "UV_B_mean", "UV_B_sd", "UV_mean", "UV_sd")], by="glottocode", all.x=TRUE, all.y=FALSE);
+
+# ... and for families
+d_colors <- merge(d_colors, d_climate[,c("glottocode", "clim_PC1", "clim_PC2", "clim_PC3")], by.x="glottocode_family", by.y="glottocode", suffixes=c("","_family"), all.x=TRUE, all.y=FALSE);
+d_colors <- merge(d_colors, d_humidity[,c("glottocode", "humidity_mean_annual_median", "humidity_mean_annual_IQR")], by.x="glottocode_family", by.y="glottocode", suffixes=c("","_family"), all.x=TRUE, all.y=FALSE);
+names(d_colors)[ncol(d_colors)-c(1,0)] <- c("hum_median_family", "hum_IQR_family");
+d_colors <- merge(d_colors, d_dist2water[,c("glottocode", "dist2ocean", "dist2lakes", "dist2rivers", "dist2water")], by.x="glottocode_family", by.y="glottocode", suffixes=c("","_family"), all.x=TRUE, all.y=FALSE);
+d_colors <- merge(d_colors, d_uv[,c("glottocode", "UV_A_mean", "UV_A_sd", "UV_B_mean", "UV_B_sd", "UV_mean", "UV_sd")], by.x="glottocode_family", by.y="glottocode", suffixes=c("","_family"), all.x=TRUE, all.y=FALSE);
 
 # Rescale variables (we use the suffix _r for them):
-# - altitude:
-d_colors$altitude_r         <- log2(d_colors$altitude + 1); # there are two altitudes set to 0 meters, so increase everything by 1m to avoid -Inf
-# - distance to water bodies:
-d_colors$dist2water_r       <- log2(d_colors$dist2water); # distances to water are never 0.0, so no need to guard against -Inf here
-d_colors$dist2rivers_r      <- log2(d_colors$dist2rivers);
-d_colors$dist2ocean_r       <- log2(d_colors$dist2ocean);
-d_colors$dist2lakes_r       <- log2(d_colors$dist2lakes);
-# - longitude and latitude:
-d_colors$latitude_r         <- cos(d_colors$latitude*(pi/180)); # cosine (degrees -> radians)
-d_colors$longitude_r        <- cos(d_colors$longitude*(pi/180));
-# - longitude and latitude of the language family origins:
-d_colors$latitude_family_r  <- cos(d_colors$latitude_family*(pi/180)); # cosine (degrees -> radians)
-d_colors$longitude_family_r <- cos(d_colors$longitude_family*(pi/180));
-# - UVB:
-d_colors$UVB_r              <- scale(d_colors$UVB); # z-score
+# - altitude: log(+1) because there are two altitudes set to 0 meters, so increase everything by 1m to avoid -Inf:
+d_colors$altitude_r           <- log2(d_colors$altitude + 1);
+# - distance to water bodies: log() as distances to water are never 0.0, so no need to guard against -Inf here:
+d_colors$dist2water_r         <- log2(d_colors$dist2water);
+d_colors$dist2rivers_r        <- log2(d_colors$dist2rivers);
+d_colors$dist2ocean_r         <- log2(d_colors$dist2ocean);
+d_colors$dist2lakes_r         <- log2(d_colors$dist2lakes);
+d_colors$dist2water_family_r  <- log2(d_colors$dist2water_family);
+d_colors$dist2rivers_family_r <- log2(d_colors$dist2rivers_family);
+d_colors$dist2ocean_family_r  <- log2(d_colors$dist2ocean_family);
+d_colors$dist2lakes_family_r  <- log2(d_colors$dist2lakes_family);
+# - longitude and latitude: cosine (degrees -> radians):
+d_colors$latitude_r           <- cos(d_colors$latitude*(pi/180));
+d_colors$longitude_r          <- cos(d_colors$longitude*(pi/180));
+d_colors$latitude_family_r    <- cos(d_colors$latitude_family*(pi/180));
+d_colors$longitude_family_r   <- cos(d_colors$longitude_family*(pi/180));
+# - UV incidence: z-score:
+d_colors$UV_A_mean_r          <- scale(d_colors$UV_A_mean);
+d_colors$UV_A_sd_r            <- scale(d_colors$UV_A_sd);
+d_colors$UV_B_mean_r          <- scale(d_colors$UV_B_mean);
+d_colors$UV_B_sd_r            <- scale(d_colors$UV_B_sd);
+d_colors$UV_mean_r            <- scale(d_colors$UV_mean);
+d_colors$UV_sd_r              <- scale(d_colors$UV_sd);
+d_colors$UV_A_mean_family_r   <- scale(d_colors$UV_A_mean_family);
+d_colors$UV_A_sd_family_r     <- scale(d_colors$UV_A_sd_family);
+d_colors$UV_B_mean_family_r   <- scale(d_colors$UV_B_mean_family);
+d_colors$UV_B_sd_family_r     <- scale(d_colors$UV_B_sd_family);
+d_colors$UV_mean_family_r     <- scale(d_colors$UV_mean_family);
+d_colors$UV_sd_family_r       <- scale(d_colors$UV_sd_family);
+# - climate: z-score:
+d_colors$clim_PC1_r           <- scale(d_colors$clim_PC1);
+d_colors$clim_PC2_r           <- scale(d_colors$clim_PC2);
+d_colors$clim_PC3_r           <- scale(d_colors$clim_PC3);
 # - daltonism:
-d_colors$daltonism_r        <- max(d_colors$daltonism/100, 0.0001); # prepare for Beta regression: transform it from % into proportions, and replace 0 by a very small proportion (0.01%)
+d_colors$daltonism_r          <- max(d_colors$daltonism/100, 0.0001); # prepare for Beta regression: transform it from % into proportions, and replace 0 by a very small proportion (0.01%)
 
 # Alternative view of the globe: all longitudes > 180 are "flipped" to negative values:
 d_colors$longitude_180 <- ifelse(d_colors$longitude <= 180, d_colors$longitude, d_colors$longitude - 360);
+d_colors$longitude_family_180 <- ifelse(d_colors$longitude <= 180, d_colors$longitude, d_colors$longitude - 360);
 
 # Ensure factors have the right levels and contrasts:
 d_colors$exists_blue <- factor(d_colors$exists_blue, levels=c("no", "yes"));
@@ -250,16 +309,682 @@ d_colors$glottocode_family_other <- ifelse(d_colors$glottocode_family %in% c("ab
 ```
 
 
-# Introduction
-
-Here we test and extend in various ways the two hypotheses due to Angela Brown and Delwin Lindsey [@lindsey_color_2002; @brown_color_2004] linking, across populations and languages, the color lexicon to the UVR (Ultraviolet Radiation type A and B, 400--280nm; https://en.wikipedia.org/wiki/Ultraviolet) incidence and the frequency of abnormal color perception.
-
-These hypotheses can be represented graphically as shown in the figure below:
-
-<img src="./input_files/hypothesis.jpg" alt="Hypothesis" style="height:in;"/>
-
-
 # Data
+
+This dataset is built starting from the data accompanying @brown_color_2004, to which Emma Meeussen added several new populations (and checked the pre-existing coding) using a variety of primary and secondary sources (see @meeussen_colour_2015 for details), supplemented with several environmental variables by Mathilde Josserand (see @josserand_speaking_2020).
+
+
+## Populations and languages
+
+In our dataset, there are `r length(unique(d_colors$glottocode))` populations, each uniquely identified by the [Glottolog](https://glottolog.org/) code (the *glottocode*) of the primary language they speak (the matching was done manually).
+
+
+## Geographic location
+
+The geographic coordinates of the populations were retrieved from the [Glottolog](https://glottolog.org/) based on their *glottocode*s.
+As per @brown_color_2004, we computed the cosine of these *latitude*s and the *longitude*s to be used in the statistical models; `cos(latitude)` captures the closeness to the equator, ranging between 0.0 (one of the poles) and 1.0 (the equator), and `cos(longitude)`range between -1.0 and 1.0 (corresponding to -180 and 180 degrees, respectively); 
+please note that longitude can be coded (and plotted) either as ranging between 0° and 360°, or between -180° and +180°, or, when we need to avoid the International Date Line (IDL) producing an artefactual boundary, we center the work on the Pacific.
+
+```{r populations map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of the populations in our sample (with language names).")}
+ggplot() + theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data=d_colors, aes(x=longitude, y=latitude), color="black") +
+  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=L1), color="blue", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  NULL;
+```
+
+
+## Altitude
+
+We obtained altitude (in meters) data from @bentz_evolution_2018; please note that for the analyses, we use `log(altitude + 1)` (we added 1m to avoid errors for the locations recorded at sea level [0m]).
+
+```{r summary altitiude, echo=FALSE, message=FALSE, warning=FALSE}
+# Altitude (log)
+pander(summary(d_colors$altitude));
+```
+
+```{r distribution of altitude, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of altitude.")}
+ggplot(d_colors, aes(x=altitude)) +
+  theme_bw() +
+  geom_histogram(color="tomato", fill="tomato", alpha=0.5)+
+  ggtitle("Distribution of altitude") +
+  theme(plot.title = element_text(size = 10, face = "bold")); 
+```
+
+```{r map altitude, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of altitude (color scale).")}
+ggplot() + theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=altitude), color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=altitude), color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "Altitude (m)") +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  NULL;
+```
+
+
+## Climate and weather 
+
+We reused the code from @bentz_evolution_2018 to extract historical data on global weather and climate from [WorldClim](https://www.worldclim.org/) for the period 1960-1990, encoded in 19 variables covering various measures (such as temperature, seasonality or precipitation). 
+As in @bentz_evolution_2018, we conduced a A Principal Component Analysis (PCA) for our data only, and we found similar results, namely that the first two principal components (PCs) explain most of the data and have meaningful interpretations: the PC1 explains 49.7% of the variance and reflects low seasonality, wet and hot climate, whereas PC2 explains 24.7% of the variance and reflects high seasonality, hot and dry climate; PC3 explains only 8.6% and its interpretation is less straightforward; see @bentz_evolution_2018 for details (please note that the sign of the PCs is arbitrary). 
+For the analyses, these variables were z-scored.
+
+
+### Climate PC1
+
+```{r summary PC1, echo=FALSE, message=FALSE, warning=FALSE}
+# Climate PC1
+pander(summary(d_colors$clim_PC1))
+```
+
+```{r distribution of PC1, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of climate PC1.")}
+ggplot(d_colors, aes(x=clim_PC1)) + 
+  theme_bw() +
+  geom_density(color="tomato", fill="tomato", alpha=0.5)+
+  ggtitle("Distribution of climate PC1") +
+  theme(plot.title = element_text(size = 10, face = "bold")); 
+```
+
+```{r map PC1, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of climate PC1 (color scale).")}
+ggplot() + theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=clim_PC1), color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "Climate PC1") +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  NULL;
+```
+
+### Climate PC2
+
+```{r summary PC2, echo=FALSE, message=FALSE, warning=FALSE}
+# Climate PC2
+pander(summary(d_colors$clim_PC2))
+```
+
+```{r distribution of PC2, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of climate PC2.")}
+ggplot(d_colors, aes(x=clim_PC2)) + 
+  theme_bw() +
+  geom_density(color="tomato", fill="tomato", alpha=0.5)+
+  ggtitle("Distribution of climate PC2") +
+  theme(plot.title = element_text(size = 10, face = "bold")); 
+```
+
+```{r map PC2, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of climate PC2 (color scale).")}
+ggplot() + theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=clim_PC2), color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "Climate PC2") +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  NULL;
+```
+
+### Climate PC3
+
+```{r summary PC3, echo=FALSE, message=FALSE, warning=FALSE}
+# Climate PC3
+pander(summary(d_colors$clim_PC3))
+```
+
+```{r distribution of PC3, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of climate PC3.")}
+ggplot(d_colors, aes(x=clim_PC3)) + 
+  theme_bw() +
+  geom_density(color="tomato", fill="tomato", alpha=0.5)+
+  ggtitle("Distribution of climate PC3") +
+  theme(plot.title = element_text(size = 10, face = "bold")); 
+```
+
+```{r map PC3, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of climate PC3 (color scale).")}
+ggplot() + theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=clim_PC3), color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "Climate PC3") +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  NULL;
+```
+
+
+## Humidity 
+
+We obtained specific humidity ("the mass of water vapour in a unit mass of moist air, usually expressed as grams of vapour per kilogram of air"; [Encyclopaedia Britannica](https://www.britannica.com/science/specific-humidity)) data from the [NOAA](http://iridl.ldeo.columbia.edu/SOURCES/.NOAA/.NCEP-NCAR/.CDAS-1/.MONTHLY/.Diagnostic/.above_ground/.qa/datafiles.html), given as monthly extractions between 1 January 1949 and the download date, and we computed the overall mean, median, standard deviation and IQR across all measurements, as well as the mean across the yearly means, medians, standard deviations and IQRs.
+However, all these measures are highly correlated by type (see plots below), such that we only retain here the mean of the yearly medians and IQRs.
+We did not transform these variables for the analyses.
+
+```{r echo=FALSE, message=FALSE, fig.cap=capFig("Pairwise correlations between measures of central tendency for humidity."), fig.width=8, fig.height=8}
+pairs(d_humidity[,c("humidity_overall_mean", "humidity_overall_median", "humidity_mean_annual_mean", "humidity_mean_annual_median")], 
+      lower.panel=panel.cor, diag.panel=panel.hist, upper.panel=upper.panel); 
+```
+
+```{r echo=FALSE, message=FALSE, fig.cap=capFig("Pairwise correlations between measures of dispersion for humidity."), fig.width=8, fig.height=8}
+pairs(d_humidity[,c("humidity_overall_sd", "humidity_overall_IQR", "humidity_mean_annual_sd", "humidity_mean_annual_IQR")], 
+      lower.panel=panel.cor, diag.panel=panel.hist, upper.panel=upper.panel); 
+```
+
+### Median (mean of yearly medians)
+
+```{r summary median humidity, echo=FALSE, message=FALSE, warning=FALSE}
+pander(summary(d_colors$hum_median))
+```
+
+```{r distribution of median humidity, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of median humidity.")}
+ggplot(d_colors, aes(x=hum_median)) + 
+  theme_bw() +
+  geom_density(color="tomato", fill="tomato", alpha=0.5)+
+  ggtitle("Distribution of median humidity") +
+  theme(plot.title = element_text(size = 10, face = "bold")); 
+```
+
+```{r map median humidity, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of median humidity (color scale).")}
+ggplot() + theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=hum_median), color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "Median humidity") +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  NULL;
+```
+
+### Variation (mean of yearly IQRs)
+
+```{r summary IQR humidity, echo=FALSE, message=FALSE, warning=FALSE}
+pander(summary(d_colors$hum_IQR))
+```
+
+```{r distribution of IQR humidity, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of variation in humidity (IQR).")}
+ggplot(d_colors, aes(x=hum_IQR)) + 
+  theme_bw() +
+  geom_density(color="tomato", fill="tomato", alpha=0.5)+
+  ggtitle("Distribution of variation in humidity (IQR)") +
+  theme(plot.title = element_text(size = 10, face = "bold")); 
+```
+
+```{r map IQR humidity, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of variation in humidity (IQR) (color scale).")}
+ggplot() + theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=hum_IQR), color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "IQR humidity") +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  NULL;
+```
+
+
+## Distance to bodies of water
+
+We reused the code from @bentz_evolution_2018 to compute the distances from each of our populations to the nearest lake, ocean, river, and water in general, using [OpenStreetMap](http://openstreetmapdata.com/) raster files[^openstreetmaps]. 
+For the analyses, we use the `log` of these distances.
+
+
+### Distance to lakes
+
+```{r summary dist lakes, echo=FALSE, message=FALSE, warning=FALSE}
+# Distance to lakes
+pander(summary(d_colors$dist2lakes));
+```
+
+```{r distribution dist lakes, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of distances to lakes.")}
+ggplot(d_colors, aes(x=dist2lakes)) +
+  theme_bw() +
+  geom_density(color="tomato", fill="tomato", alpha=0.5)+
+  #ggtitle("Distribution of distances to lakes") +
+  xlab("Dist. to lakes (km)") + 
+  theme(plot.title = element_text(size = 10, face = "bold")); 
+```
+
+```{r map dist lakes, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of distances to lakes (color scale).")}
+ggplot() + 
+  theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=round(dist2lakes,0)), color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=dist2lakes), color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "Dist. to lakes (km)") +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  NULL;
+```
+
+### Distance to rivers
+
+```{r summary dist rivers, echo=FALSE, message=FALSE, warning=FALSE}
+# Distance to lakes
+pander(summary(d_colors$dist2rivers));
+```
+
+```{r distribution dist rivers, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of distances to rivers.")}
+ggplot(d_colors, aes(x=dist2rivers)) + 
+  theme_bw() +
+  geom_density(color="tomato", fill="tomato", alpha=0.5)+
+  #ggtitle("Distribution of log distance to rivers") +
+  xlab("Dist. to rivers (km)") + 
+  theme(plot.title = element_text(size = 10, face = "bold")); 
+```
+
+```{r map dist rivers, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of distances to rivers (color scale).")}
+ggplot() + 
+  theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=round(dist2rivers,0)), color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=dist2rivers), color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "Dist. to rivers (km)") +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  NULL;
+```
+
+
+### Distance to oceans
+
+```{r summary dist oceans, echo=FALSE, message=FALSE, warning=FALSE}
+# Distance to oceans
+pander(summary(d_colors$dist2ocean));
+```
+
+```{r distribution dist oceans, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of distances to oceans.")}
+ggplot(d_colors, aes(x=dist2ocean)) + 
+  theme_bw() +
+  geom_density(color="tomato", fill="tomato", alpha=0.5)+
+  #ggtitle("Distribution of log distance to oceans") +
+  xlab("Dist. to oceans (km)") + 
+  theme(plot.title = element_text(size = 10, face = "bold")); 
+```
+
+```{r map dist oceans, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of distances to oceans (color scale).")}
+ggplot() + 
+  theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=round(dist2ocean,0)), color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=dist2ocean), color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "Dist. to oceans (km)") +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  NULL;
+```
+
+### Distance to water
+
+```{r summary dist water, echo=FALSE, message=FALSE, warning=FALSE}
+# Distance to water
+pander(summary(d_colors$dist2water));
+```
+
+```{r distribution dist water, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of distances to water.")}
+ggplot(d_colors, aes(x=dist2water)) + 
+  theme_bw() +
+  geom_density(color="tomato", fill="tomato", alpha=0.5)+
+  #ggtitle("Distribution of log distance to v") +
+  xlab("log dist water (km)") + 
+  theme(plot.title = element_text(size = 10, face = "bold")); 
+```
+
+```{r map dist water, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of distances to water (color scale).")}
+ggplot() + 
+  theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=round(dist2water,0)), color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=dist2water), color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "Dist. to water (km)") +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  NULL;
+```
+
+
+## UV incidence
+
+The incidence of ultra-violet light (UV) was calculated from the data available from the [NASA Total Ozone Mapping Spectrometer (TOMS)](http://toms.gsfc.nasa.gov/ery_uv/new_uv/)[^uv] for the year 1998, in order to replicate the procedure in @brown_color_2004. 
+These data contain daily measures of UV radiation received by the human body at four wavelengths (305 nm, 310 nm, 320 nm, and 380 nm) in Joules per square meter (J/m^2^), taking into account the thickness of the ozone layer in the stratosphere, the amount of cloud cover, the elevation, and how high the sun is in the sky. 
+Here, we computed the mean and standard deviation for the whole year for UV-A (315 nm to 400 nm), for UV-B (280 nm to 315 nm) and for the full spectrum; these were further z-scored for the statistical analyses.
+
+### UV-A
+
+Summaries for mean and standard deviation:
+```{r summary UV-A, echo=FALSE, message=FALSE, warning=FALSE}
+pander(summary(d_colors$UV_A_mean))
+pander(summary(d_colors$UV_A_sd))
+```
+
+```{r distribution UV-A, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("UV-A (mean and standard deviation).")}
+grid.arrange(ggplot(d_colors, aes(x=UV_A_mean)) + 
+               theme_bw() +
+               geom_density(color="tomato", fill="tomato", alpha=0.5)+
+               ggtitle("Distribution of mean UV-A") +
+               theme(plot.title = element_text(size = 10, face = "bold")),
+             ggplot(d_colors, aes(x=UV_A_sd)) + 
+               theme_bw() +
+               geom_density(color="tomato", fill="tomato", alpha=0.5)+
+               ggtitle("Distribution of sd UV-A") +
+               theme(plot.title = element_text(size = 10, face = "bold")),
+             ncol=2);
+```
+
+```{r map UV-A, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of UV-A (mean and standard deviation)."), fig.height=12}
+grid.arrange(ggplot() + theme_bw() +
+               geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+               geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=UV_A_mean), color="black") +
+               theme(legend.position = c(0.75, 0.5), 
+                     legend.justification = c(1, 1), 
+                     legend.title = element_text(size = 9), 
+                     legend.text = element_text(size = 10)) +
+               labs(fill = "Mean UV-A") +
+               scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+               NULL,
+             ggplot() + theme_bw() +
+               geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+               geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=UV_A_sd), color="black") +
+               theme(legend.position = c(0.75, 0.5), 
+                     legend.justification = c(1, 1), 
+                     legend.title = element_text(size = 9), 
+                     legend.text = element_text(size = 10)) +
+               labs(fill = "SD UV-A") +
+               scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+               NULL,
+             ncol=1);
+```
+
+### UV-B
+
+Summaries for mean and standard deviation:
+```{r summary UV-B, echo=FALSE, message=FALSE, warning=FALSE}
+pander(summary(d_colors$UV_B_mean))
+pander(summary(d_colors$UV_B_sd))
+```
+
+```{r distribution UV-B, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("UV-B (mean and standard deviation).")}
+grid.arrange(ggplot(d_colors, aes(x=UV_B_mean)) + 
+               theme_bw() +
+               geom_density(color="tomato", fill="tomato", alpha=0.5)+
+               ggtitle("Distribution of mean UV-B") +
+               theme(plot.title = element_text(size = 10, face = "bold")),
+             ggplot(d_colors, aes(x=UV_B_sd)) + 
+               theme_bw() +
+               geom_density(color="tomato", fill="tomato", alpha=0.5)+
+               ggtitle("Distribution of sd UV-B") +
+               theme(plot.title = element_text(size = 10, face = "bold")),
+             ncol=2);
+```
+
+```{r map UV-B, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of UV-B (mean and standard deviation)."), fig.height=12}
+grid.arrange(ggplot() + theme_bw() +
+               geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+               geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=UV_B_mean), color="black") +
+               theme(legend.position = c(0.75, 0.5), 
+                     legend.justification = c(1, 1), 
+                     legend.title = element_text(size = 9), 
+                     legend.text = element_text(size = 10)) +
+               labs(fill = "Mean UV-B") +
+               scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+               NULL,
+             ggplot() + theme_bw() +
+               geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+               geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=UV_B_sd), color="black") +
+               theme(legend.position = c(0.75, 0.5), 
+                     legend.justification = c(1, 1), 
+                     legend.title = element_text(size = 9), 
+                     legend.text = element_text(size = 10)) +
+               labs(fill = "SD UV-B") +
+               scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+               NULL,
+             ncol=1);
+```
+
+### UV
+
+Summaries for mean and standard deviation:
+```{r summary UV, echo=FALSE, message=FALSE, warning=FALSE}
+pander(summary(d_colors$UV_mean))
+pander(summary(d_colors$UV_sd))
+```
+
+```{r distribution UV, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("UV (mean and standard deviation).")}
+grid.arrange(ggplot(d_colors, aes(x=UV_mean)) + 
+               theme_bw() +
+               geom_density(color="tomato", fill="tomato", alpha=0.5)+
+               ggtitle("Distribution of mean UV-B") +
+               theme(plot.title = element_text(size = 10, face = "bold")),
+             ggplot(d_colors, aes(x=UV_sd)) + 
+               theme_bw() +
+               geom_density(color="tomato", fill="tomato", alpha=0.5)+
+               ggtitle("Distribution of sd UV-B") +
+               theme(plot.title = element_text(size = 10, face = "bold")),
+             ncol=2);
+```
+
+```{r map UV, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of UV (mean and standard deviation)."), fig.height=12}
+grid.arrange(ggplot() + theme_bw() +
+               geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+               geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=UV_mean), color="black") +
+               theme(legend.position = c(0.75, 0.5), 
+                     legend.justification = c(1, 1), 
+                     legend.title = element_text(size = 9), 
+                     legend.text = element_text(size = 10)) +
+               labs(fill = "Mean UV") +
+               scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+               NULL,
+             ggplot() + theme_bw() +
+               geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+               geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=UV_sd), color="black") +
+               theme(legend.position = c(0.75, 0.5), 
+                     legend.justification = c(1, 1), 
+                     legend.title = element_text(size = 9), 
+                     legend.text = element_text(size = 10)) +
+               labs(fill = "SD UV") +
+               scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+               NULL,
+             ncol=1);
+```
+
+
+
+## Population size
+
+The log of population size was obtained from @bentz_evolution_2018.
+
+```{r summary popsize, echo=FALSE, message=FALSE, warning=FALSE}
+# population size
+pander(summary(d_colors$log_popSize))
+```
+
+```{r distribution popsize, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Log population size.")}
+ggplot(d_colors, aes(x=log_popSize)) + 
+  theme_bw() +
+  geom_density(color="tomato", fill="tomato", alpha=0.5)+
+  #ggtitle("Distribution of population size (log)") +
+  theme(plot.title = element_text(size = 10, face = "bold")); 
+```
+
+```{r map popsize, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of log population size.")}
+ggplot() + theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=round(log_popSize,1)), color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=log_popSize), color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "Log(pop. size)") +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  NULL;
+```
+
+
+## Subsistence strategy
+
+Subsistence strategy was obtained mainly from [AUTOTYP](http://www.autotyp.uzh.ch/) [@bickel_autotyp_2017] as coded in [@blasi_human_2019], supplemented with information from other databases such as [D-Place](https://d-place.org/) [@kirby_dplace_2016] and [Seshat](http://seshatdatabank.info/) [@turchin_seshat_2015]. 
+This is represented by the binary variable *subsistence* with values "HG" for populations whose subsistence mode is based on hunting, fishing, gathering and/or foraging, and "AGR" for populations with subsistence modes centered around food production. 
+
+```{r summary subsistence, echo=FALSE, message=FALSE, warning=FALSE}
+pander(summary(d_colors$subsistence))
+```
+
+```{r distribution subsistence, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Subsistence strategy.")}
+ggplot(data =d_colors)+
+  theme_bw() +
+  geom_bar(aes(x=as.factor(subsistence), fill=as.factor(subsistence)), alpha=0.75) + 
+  labs(x="Hunting-gathering subsistence strategy?", fill="")+
+  guides(fill=FALSE) +
+  scale_fill_viridis_d()
+```
+
+```{r map subsistence, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of subsistence strategy.")}
+ggplot() + theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=subsistence), color="red") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "subsistence?") +
+  scale_fill_viridis_d()
+```
+
+
+## Color vocabulary
+
+@brown_color_2004 and @meeussen_colour_2015 have collected information about the color vocabularies according to the Basic Color Categories of @berlin_basic_1991. 
+Here, we used only two variables: the *size of the color lexicon* (the variable *n_colors*, varying in our data between `r min(d_colors$n_colors, na.rm=TRUE)` and `r max(d_colors$n_colors, na.rm=TRUE)`), and the *presence of a specific term for blue* (variable *exists_blue* with values "yes" or "no").
+
+### Number of color categories
+
+```{r summary no color categories, echo=FALSE, message=FALSE, warning=FALSE}
+# Visualize data
+pander(summary(d_colors$n_colors))
+```
+
+```{r distribution no color categories, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Number of color categories.")}
+# DISTRIBUTION color vocab
+ggplot(data =d_colors)+
+  theme_bw() +
+  geom_bar(aes(x=as.factor(n_colors), fill=as.factor(n_colors)), alpha=0.75) + 
+  labs(x="# color categories", fill="")+
+  guides(fill=FALSE)
+```
+
+```{r map no color categories, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of color categories (color scale).")}
+# plot Colar vocab on map
+ggplot() + theme_bw() + 
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=n_colors), color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
+  geom_point(data= d_colors, aes(x = longitude, y = latitude, fill=n_colors), shape = 21, color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  labs(fill = "# color categories") 
+```
+
+### Specific term for "blue"
+
+```{r summary word for blue, echo=FALSE, message=FALSE, warning=FALSE}
+# Visualize data
+pander(summary(d_colors$exists_blue))
+```
+
+```{r distribution word for blue, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig('Is there a specific term for "blue"?')}
+# DISTRIBUTION color vocab
+ggplot(data =d_colors)+
+  theme_bw() +
+  geom_bar(aes(x=as.factor(exists_blue), fill=as.factor(exists_blue)), alpha=0.75) + 
+  labs(x='Is there a specific term for "blue"?', fill="")+
+  guides(fill=FALSE) +
+  scale_fill_viridis_d()
+```
+
+```{r map word for blue, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of specific terms for blue.")}
+# plot exists_blue on map
+ggplot() + theme_bw() + 
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=exists_blue), color="red") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = 'Term for "blue"?') +
+  scale_fill_viridis_d() + 
+  NULL
+
+```
+
+
+## Abnormal red/green color perception
+
+Data on the incidence of abnormal red/green color perception for males was collected from 85 references, using the Ishihara test [@ishihara_tests_1917], the anomaloscope [@knoll_anomaloscope_1968], the [Holmgren-Thomson wool test](https://www.psych.utoronto.ca/sites/www.psych.utoronto.ca/files/Professor%20Holmgren%E2%80%99s%20Test%20For%20Colour%20Blindness.pdf) [@thomson_instrument_1880], or the [Hardy-Rand-Rittler pseudoisochromatic plate test](https://www.good-lite.com/Details.cfm?ProdID=107) [@hardy_hrr_1954]; see @meeussen_colour_2015 and @josserand_speaking_2020 for details. 
+These data represent the percent of red/green "color blind" males in the population, and, for our data, varies between 0% and 11%. 
+Overall "color blindness" rates were used, unless specific information was available; we include only *deuteranopia*, *deuteranomaly*, *protanopia* and *protanomaly*, and we specifically did not include data on *tritanopia* (as this concerns abnormal color perception in the yellow/blue range). 
+We excluded from the analyses samples which did not distinguish between male and female, or which had data for less than 50 individuals.
+We named here this variable *daltonism*, but, while this is a very short and evocative variable name, as discussed above, we emphatically also considere milder forms of red/green abnormal color perception.
+
+```{r summary daltonism, echo=FALSE, message=FALSE, warning=FALSE}
+pander(summary(d_colors$daltonism))
+```
+
+```{r distribution of daltonism, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Incidence of red/green abnormal color perception.")}
+# Plot
+ggplot(d_colors, aes(x=daltonism)) + 
+  theme_bw() +
+  geom_histogram(color="tomato", fill="tomato", alpha=0.5)+
+  xlab("Incidence of red/green abnormal color perception (%)") +
+  #ggtitle("Distribution of daltonism") +
+  theme(plot.title = element_text(size = 10, face = "bold")); 
+```
+
+```{r map word for daltonism, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of incidence of red/green abnormal color perception (color scale).")}
+ggplot() + theme_bw() + 
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=paste0(round(daltonism,1),"%")), 
+                   color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
+  geom_point(data= d_colors, aes(x = longitude, y = latitude, fill=daltonism), shape = 21, color="black") +
+  theme(legend.position = c(0.75, 0.5), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 9), 
+      legend.text = element_text(size = 10)) +
+  labs(fill = "% red/green abn. perc.") +
+  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
+  NULL;
+
+```
+
+
+
+
+
+The data is 
 
 ## Input files 
 
@@ -287,66 +1012,6 @@ This dataset was assembled from three sources:
 
 Each population is identified by the [*glottocode*](https://glottolog.org/) [@hammarstrom_glottolog_2018] of the (primary) language it speaks, as well as by its *latitude*, *longitude* and *macroarea* (also from [Glottolog](https://glottolog.org/)).
 
-#### Longitude
-
-For the statistical analyses, longitude was transformed as described in [Data transformation].
-
-```{r longitude summary, echo=FALSE, message=FALSE, warning=FALSE}
-pander(summary(d_colors$longitude));
-```
-
-```{r longitude hist, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Histogram of longitude.")}
-ggplot(d_colors, aes(x=longitude)) + 
-  theme_bw() +
-  geom_histogram(color="tomato", fill="tomato", alpha=0.5) +
-  #ggtitle("Distribution of longitude") +
-  #theme(plot.title = element_text(size = 10, face = "bold")) + 
-  NULL;
-```
-
-```{r longitude map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of populations in our sample highlighting their longitude (color).")}
-ggplot() + theme_bw() +
-  theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, aes(x = longitude, y = latitude, color=longitude)) +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(color = "Longitude") +
-  NULL;
-```
-
-
-#### Latitude
-
-For the statistical analyses, latitude was transformed as described in *Data transformation*.
-
-```{r latitude summary, echo=FALSE, message=FALSE, warning=FALSE}
-pander(summary(d_colors$latitude));
-```
-
-```{r latitude hist, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Histogram of latitude.")}
-ggplot(d_colors, aes(x=latitude)) + 
-  theme_bw() +
-  geom_histogram(color="tomato", fill="tomato", alpha=0.5)+
-  #ggtitle("Distribution of latitude (rescaled)") +
-  #theme(plot.title = element_text(size = 10, face = "bold")) + 
-  NULL;
-```
-
-```{r latitude map, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of populations in our sample highlighting their latitude (color).")}
-ggplot() + theme_bw() + 
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, aes(x = longitude, y = latitude, color=latitude)) +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(color = "Latitude") +
-  NULL;
-```
-
 
 #### Macroarea
 
@@ -368,431 +1033,8 @@ ggplot() + theme_bw() +
 ```
 
 
-#### Number of color categories
-
-In their previous investigations, @brown_color_2004  and @meeussen_colour_2015 gathered information about color vocabularies according to the definition of Basic Color Categories from @berlin_basic_1991. 
-For this research, we selected only two variables from these linguistic data: the *size of the color lexicon*, and the *presence of a specific term for blue color*. 
-The number of color categories (variable `n_colors`) varies between `r min(d_colors$n_colors, na.rm=TRUE)` and `r max(d_colors$n_colors, na.rm=TRUE)`, whereas variable `exists_blue` can only have the values `yes` or `no`.
-
-
-```{r summary no color categories, echo=FALSE, message=FALSE, warning=FALSE}
-# Visualize data
-pander(summary(d_colors$n_colors))
-```
-
-```{r distribution no color categories, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Number of color categories.")}
-# DISTRIBUTION color vocab
-ggplot(data =d_colors)+
-  theme_bw() +
-  geom_bar(aes(x=as.factor(n_colors), fill=as.factor(n_colors)), alpha=0.5) + 
-  labs(x="Number of color categories", fill="")+
-  guides(fill=FALSE)
-```
-
-```{r map no color categories, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of color categories (color scale).")}
-# plot Colar vocab on map
-ggplot() + theme_bw() + 
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) , fill = "grey") +
-  geom_point(data= d_colors, aes(x = longitude, y = latitude, fill=n_colors), shape = 21, color="black") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
-  labs(fill = "Nb color words") 
-```
-
-
-#### Specific term for exists_blue
-
-```{r summary word for blue, echo=FALSE, message=FALSE, warning=FALSE}
-# Visualize data
-pander(summary(d_colors$exists_blue))
-```
-
-```{r distribution word for blue, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Words for blue.")}
-# DISTRIBUTION color vocab
-ggplot(data =d_colors)+
-  theme_bw() +
-  geom_bar(aes(x=as.factor(exists_blue), fill=as.factor(exists_blue)), alpha=0.5) + 
-  labs(x="Number of color categories", fill="")+
-  guides(fill=FALSE)
-```
-
-```{r map word for blue, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of words for blue (color scale).")}
-# plot exists_blue on map
-ggplot() + theme_bw() + 
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=exists_blue), color="red") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "exists_blue") +
-  scale_fill_viridis_d() + 
-  NULL
-
-```
-
-
-#### daltonism
-
-Data on *abnormal red-green* color perception *for males* was collected from 85 references, using the *Ishihara test* [@ishihara_tests_1917], the *anomaloscope* [@knoll_anomaloscope_1968], the *Holmgren-Thomson wool test* [[@thomson_instrument_1880]](https://www.psych.utoronto.ca/sites/www.psych.utoronto.ca/files/Professor%20Holmgren%E2%80%99s%20Test%20For%20Colour%20Blindness.pdf) or the *Hardy-Rand-Rittler pseudoisochromatic plate test* [[@hardy_hrr_1954]](https://www.good-lite.com/Details.cfm?ProdID=107). 
-
-These data represents the percentage of red-green "color blind" males in the population, and varies between 0% and 11%. 
-Overall "color blindness" rates were used, but when specific information was available, "color blindness" rate exclusively measures *deuteranopia*, *deuteranomaly*, *protanopia* and *protanomaly*. 
-Thus, data on *tritanopia* was not included in this variable, since this implies abnormal color perception in the yellow-blue range. 
-Samples where no subdivision between male and female was made, and containing data for less than 50 people, were excluded from this analysis. 
-
-```{r summary daltonism, echo=FALSE, message=FALSE, warning=FALSE}
-# Visualize data
-pander(summary(d_colors$daltonism))
-```
-
-```{r distribution of daltonism, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Incidence of daltonism.")}
-# Plot
-ggplot(d_colors, aes(x=daltonism)) + 
-  theme_bw() +
-  geom_histogram(color="tomato", fill="tomato", alpha=0.5)+
-  xlab("Incidence of daltonism (%)") +
-  ggtitle("Distribution of daltonism") +
-  theme(plot.title = element_text(size = 10, face = "bold")); 
-```
-
-```{r map word for daltonism, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of incidence of daltonism (color scale).")}
-ggplot() + theme_bw() + 
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=daltonism), color="black") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "Freq daltonism (%)") +
-  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
-  NULL;
-
-```
-
-
-#### UVR
-
-The *UVR incidence* was calculated from the data available from the NASA Total Ozone Mapping Spectrometer (TOMS) at http://toms.gsfc.nasa.gov/ery_uv/new_uv/ for the whole year 1998. 
-This variable is a measure of UVR radiation received by the human body and measured in joules per square meter (J/m^2^), and takes into account the thickness of the ozone layer in the stratosphere, the amount of cloud cover, the elevation, and how high the sun is in the sky. 
-Please note that, for statistical analyses, this variable was z-scored.
-
-```{r summary UVB, echo=FALSE, message=FALSE, warning=FALSE}
-# Visualize data
-pander(summary(d_colors$UVB))
-```
-
-```{r distribution of UVB, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of UVR.")}
-# Plot UVB
-ggplot(d_colors, aes(x=UVB)) + 
-  theme_bw() +
-  geom_density(color="tomato", fill="tomato", alpha=0.5)+
-  ggtitle("Distribution of UVR") +
-  xlab("UVR incidence (J/m2)") + 
-  theme(plot.title = element_text(size = 10, face = "bold")); 
-```
-
-```{r map UVB, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of incidence of UVR (color scale).")}
-# plot UVB on map
-ggplot() + theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=UVB), color="black") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "UVR incidence (J/m2)") +
-  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
-  NULL;
-
-```
-
-
 ### Additional variables
 
-#### Climate and weather 
-
-We also included here several additional variables that may impact on the amount of UVR received by the eye and on its effects, on the color lexicon, or on the color blindness rate.  
-Building on @bentz_evolution_2018, historical data on global weather and climate were obtained from [WorldClim](https://www.worldclim.org/), and 19 variables were extracted for the period 1960-1990, including various measures, such as temperature, seasonality or precipitation [see @bentz_evolution_2018]. 
-A Principal Component Analysis (PCA) found that the first two principal components (PCs) explain most of the data and have meaningful interpretations: the PC1 explains 48.6% of the variance and reflects low seasonality, wet and hot climate, whereas PC2 explains 24.1% of the variance and reflects high seasonality, hot and dry climate [see @bentz_evolution_2018 for details]. 
-
-
-##### Climate PC1
-
-```{r summary PC1, echo=FALSE, message=FALSE, warning=FALSE}
-# Climate PC1
-pander(summary(d_colors$climate_PC1))
-```
-
-```{r distribution of PC1, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of climate PC1.")}
-ggplot(d_colors, aes(x=climate_PC1)) + 
-  theme_bw() +
-  geom_density(color="tomato", fill="tomato", alpha=0.5)+
-  ggtitle("Distribution of climate PC1") +
-  theme(plot.title = element_text(size = 10, face = "bold")); 
-```
-
-```{r map PC1, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of climate PC1 (color scale).")}
-ggplot() + theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=climate_PC1), color="black") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "Climate PC1") +
-  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
-  NULL;
-```
-
-##### Climate PC2
-
-```{r summary PC2, echo=FALSE, message=FALSE, warning=FALSE}
-# Climate PC2
-pander(summary(d_colors$climate_PC2))
-```
-
-```{r distribution of PC2, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of climate PC2.")}
-ggplot(d_colors, aes(x=climate_PC2)) + 
-  theme_bw() +
-  geom_density(color="tomato", fill="tomato", alpha=0.5)+
-  ggtitle("Distribution of climate PC2") +
-  theme(plot.title = element_text(size = 10, face = "bold")); 
-```
-
-```{r map PC2, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of climate PC2 (color scale).")}
-ggplot() + theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=climate_PC2), color="black") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "Climate PC2") +
-  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
-  NULL;
-```
-
-
-#### Altitude
-
-Altitude data was obtained from @bentz_evolution_2018; please note that for the analyses, we use `log`(altitude).
-
-```{r summary altitiude, echo=FALSE, message=FALSE, warning=FALSE}
-# Altitude (log)
-pander(summary(log(d_colors$altitude)))
-```
-
-```{r distribution of altitude, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of log(altitude).")}
-ggplot(d_colors, aes(x=log(altitude))) +
-  theme_bw() +
-  geom_density(color="tomato", fill="tomato", alpha=0.5)+
-  ggtitle("Distribution of log(altitude)") +
-  theme(plot.title = element_text(size = 10, face = "bold")); 
-```
-
-```{r map altitude, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of log(altitude) (color scale).")}
-ggplot() + theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=log(altitude)), color="black") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "log altitude (m)") +
-  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
-  NULL;
-```
-
-
-#### Distance to bodies of water
-
-Distances to lakes, oceans, rivers, and water in general, were also obtained from @bentz_evolution_2018; they were computed using OpenStreetMap raster file, while distance to water is the minimum distance to any sort of body of water. 
-
-Please note that for the analyses, these distances are `log`'ed.
-
-
-##### Distance to lakes
-
-```{r summary dist lakes, echo=FALSE, message=FALSE, warning=FALSE}
-# Distance to lakes
-pander(summary(log(d_colors$dist2lakes)));
-```
-
-```{r distribution dist lakes, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of log distance to lakes.")}
-ggplot(d_colors, aes(x=log(dist2lakes))) +
-  theme_bw() +
-  geom_density(color="tomato", fill="tomato", alpha=0.5)+
-  #ggtitle("Distribution of log distance to lakes") +
-  xlab("log dist lakes (km)") + 
-  theme(plot.title = element_text(size = 10, face = "bold")); 
-```
-
-```{r map dist lakes, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of log distance to lakes (color scale).")}
-ggplot() + 
-  theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=log(dist2lakes)), color="black") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "log dist lakes (km)") +
-  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
-  NULL;
-```
-
-##### Distance to rivers
-
-```{r summary dist rivers, echo=FALSE, message=FALSE, warning=FALSE}
-# Distance to lakes
-pander(summary(log(d_colors$dist2rivers)));
-```
-
-```{r distribution dist rivers, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of log distance to rivers.")}
-ggplot(d_colors, aes(x=log(dist2rivers))) + 
-  theme_bw() +
-  geom_density(color="tomato", fill="tomato", alpha=0.5)+
-  #ggtitle("Distribution of log distance to rivers") +
-  xlab("log dist rivers (km)") + 
-  theme(plot.title = element_text(size = 10, face = "bold")); 
-```
-
-```{r map dist rivers, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of log distance to rivers (color scale).")}
-ggplot() + theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=log(dist2rivers)), color="black") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "log dist rivers (km)") +
-  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
-  NULL;
-```
-
-
-##### Distance to oceans
-
-```{r summary dist oceans, echo=FALSE, message=FALSE, warning=FALSE}
-# Distance to oceans
-pander(summary(log(d_colors$dist2ocean)));
-```
-
-```{r distribution dist oceans, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of log distance to oceans.")}
-ggplot(d_colors, aes(x=log(dist2ocean))) + 
-  theme_bw() +
-  geom_density(color="tomato", fill="tomato", alpha=0.5)+
-  #ggtitle("Distribution of log distance to oceans") +
-  xlab("log dist oceans (km)") + 
-  theme(plot.title = element_text(size = 10, face = "bold")); 
-```
-
-```{r map dist oceans, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of log distance to oceans (color scale).")}
-ggplot() + theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=log(dist2ocean)), color="black") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "log dist oceans (km)") +
-  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
-  NULL;
-```
-
-##### Distance to water
-
-```{r summary dist water, echo=FALSE, message=FALSE, warning=FALSE}
-# Distance to water
-pander(summary(log(d_colors$dist2water)));
-```
-
-```{r distribution dist water, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of log distance to water.")}
-ggplot(d_colors, aes(x=log(dist2water))) + 
-  theme_bw() +
-  geom_density(color="tomato", fill="tomato", alpha=0.5)+
-  #ggtitle("Distribution of log distance to v") +
-  xlab("log dist water (km)") + 
-  theme(plot.title = element_text(size = 10, face = "bold")); 
-```
-
-```{r map dist water, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of log distance to water (color scale).")}
-ggplot() + theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=log(dist2water)), color="black") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "log dist water (km)") +
-  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
-  NULL;
-```
-
-
-#### Subsistence strategy
-
-Subsistence strategy was obtained from [AUTOTYP](http://www.autotyp.uzh.ch/) [@bickel_autotyp_2017] as coded in [@blasi_human_2019], and represented by the binary variable `subsistence`: "yes" represents a population whose subsistence mode is based on hunting, fishing, gathering and/or foraging, whereas a "no" means that the subsistence mode of the population is centered around food production. 
-As these data did not cover all the populations in our dataset, we expanded it by looking at other databases, such as [D-Place](https://d-place.org/) [@kirby_dplace_2016] and [Seshat](http://seshatdatabank.info/) [@turchin_seshat_2015]. 
-
-```{r summary subsistence, echo=FALSE, message=FALSE, warning=FALSE}
-# Hunter gatherer (yes/no)
-pander(summary(d_colors$subsistence))
-```
-
-```{r distribution subsistence, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Subsistence strategy.")}
-ggplot(data =d_colors)+
-  theme_bw() +
-  geom_bar(aes(x=as.factor(subsistence), fill=as.factor(subsistence)), alpha=0.5) + 
-  labs(x="Hunting-gathering subsistence strategy?", fill="")+
-  guides(fill=FALSE)
-```
-
-```{r map subsistence, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of subsistence strategy (hunting-gathering).")}
-ggplot() + theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=subsistence), color="red") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "subsistence?") +
-  scale_fill_viridis_d()
-```
-
-#### Population size
-
-Population size was obtained from [@bentz_evolution_2018], and we `log`'ed it.
-
-```{r summary popsize, echo=FALSE, message=FALSE, warning=FALSE}
-# population size
-pander(summary(d_colors$log_popSize))
-```
-
-```{r distribution popsize, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Log population size.")}
-ggplot(d_colors, aes(x=log_popSize)) + 
-  theme_bw() +
-  geom_density(color="tomato", fill="tomato", alpha=0.5)+
-  #ggtitle("Distribution of population size (log)") +
-  theme(plot.title = element_text(size = 10, face = "bold")); 
-```
-
-```{r map popsize, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of log population size.")}
-ggplot() + theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=log_popSize), color="black") +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "Log pop size") +
-  scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
-  NULL;
-```
 
 #### Language family
 
@@ -913,6 +1155,15 @@ Five *distance matrices* were also collected among the populations (see [Appendi
  - one *genetic distance* matrix computed from ALFRED (see [Appendix I. Distance matrices]) without data imputation
  - one *genetic distance* matrix computed with ALFRED (see [Appendix I. Distance matrices]) with an *additive* data imputation
  - one *genetic distance* matrix computed with ALFRED (see [Appendix I. Distance matrices]) with an *ultrametric* data imputation
+
+
+
+
+```{r cache=FALSE}
+knitr::knit_exit();
+```
+
+
 
 
 
@@ -2552,8 +2803,8 @@ if( !file.exists("./cached_results/blue_uvb_best.RData") )
   
   # slightly better with popSize: 1.90 (Bayes factor)
   # slightly better with daltonism: 1.46 (Bayes factor)
-  # slightly worst with climate_PC2: 0.71 (Bayes factor)
-  # slightly worst with climate_PC1: 0.66 (Bayes factor)
+  # slightly worst with clim_PC2: 0.71 (Bayes factor)
+  # slightly worst with clim_PC1: 0.66 (Bayes factor)
   # really worst with altitude_rescaled: 0.36 (Bayes factor)
   # really worst with dist2rivers: 0.004 (Bayes factor)
   # really worst with dist2oceans: 0.01 (Bayes factor)
@@ -3090,7 +3341,7 @@ if( !file.exists("./cached_results/blue_var_importance.RData") )
 {
   
   # choose variable to analyze
-  list_variables <- c("UVB_r" , "daltonism" , "subsistence" , "latitude_r", "longitude_r" , "log_popSize" , "climate_PC1", "climate_PC2" , "altitude_r"  , "dist2water_r", "dist2ocean_r" , "dist2lakes_r", "dist2rivers_r" , "n_colors" , "latitude_family_r", "longitude_family_r")
+  list_variables <- c("UVB_r" , "daltonism" , "subsistence" , "latitude_r", "longitude_r" , "log_popSize" , "clim_PC1", "clim_PC2" , "altitude_r"  , "dist2water_r", "dist2ocean_r" , "dist2lakes_r", "dist2rivers_r" , "n_colors" , "latitude_family_r", "longitude_family_r")
   
   # initialize empty dataframe and list for gini index (randomForest algorithm)
   vimp_gini <- data.frame(matrix(NA, nrow = 1, ncol = length(list_variables)))
@@ -3112,7 +3363,7 @@ if( !file.exists("./cached_results/blue_var_importance.RData") )
   for (it in 1:n_iter_gini)
   {
     # compute random forest algorithm on all variable except multicollinear
-    rf.db = randomForest(exists_blue ~  UVB_r + daltonism  + subsistence + latitude_r + longitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, data = d_colors, importance=TRUE)
+    rf.db = randomForest(exists_blue ~  UVB_r + daltonism  + subsistence + latitude_r + longitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, data = d_colors, importance=TRUE)
     
     # compute classification accuracy, precision and recall for randomForest algorithm
     ConfusionMatrix = rf.db$confusion[,1:2]
@@ -3127,7 +3378,7 @@ if( !file.exists("./cached_results/blue_var_importance.RData") )
     var_imp_permut <- data.frame(importance(rf.db, type=1))
     
     # use an other algorithm to compute the accuracy-based variable importance
-    obj <- cforest(exists_blue ~  UVB_r + daltonism  + subsistence +  latitude_r +longitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, data = d_colors)
+    obj <- cforest(exists_blue ~  UVB_r + daltonism  + subsistence +  latitude_r +longitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, data = d_colors)
     
     # compute classification accuracy, precision and recall for cforest algorithm
     oobPredicted <- predict(obj,OOB=T)
@@ -3189,7 +3440,7 @@ ggplot(mapping = aes(x = reorder(namevar, mean_all), y = mean_all),
              axis.text.y = element_text(hjust = 1, size =13, face = "bold"),
              axis.title=element_text(size=16),
              legend.position="none") +
-       scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "climate_PC1" = "Climate PC1", "climate_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","daltonism" = "daltonism", "n_colors" = "Nb of colour categ")) +
+       scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "clim_PC1" = "Climate PC1", "clim_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","daltonism" = "daltonism", "n_colors" = "Nb of colour categ")) +
        guides(fill=FALSE)
 ```
 
@@ -3204,7 +3455,7 @@ ggplot(mapping = aes(x = reorder(namevar, mean_all), y = mean_all),
              axis.text.y = element_text(hjust = 1, size =13, face = "bold"),
              axis.title=element_text(size=16),
              legend.position="none") +
-  scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "climate_PC1" = "Climate PC1", "climate_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","daltonism" = "daltonism", "n_colors" = "Nb of colour categ")) +
+  scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "clim_PC1" = "Climate PC1", "clim_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","daltonism" = "daltonism", "n_colors" = "Nb of colour categ")) +
         guides(fill=FALSE)
 ```
 
@@ -3222,7 +3473,7 @@ ggplot(mapping = aes(x = reorder(namevar, mean_all), y = mean_all),
              axis.text.y = element_text(hjust = 1, size =13, face = "bold"),
              axis.title=element_text(size=16),
              legend.position="none") +
-  scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "climate_PC1" = "Climate PC1", "climate_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","daltonism" = "daltonism", "n_colors" = "Nb of colour categ")) +
+  scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "clim_PC1" = "Climate PC1", "clim_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","daltonism" = "daltonism", "n_colors" = "Nb of colour categ")) +
       guides(fill=FALSE)
 ```
 
@@ -3237,7 +3488,7 @@ if( !file.exists("./cached_results/blue_nonbcolors_var_importance.RData") )
 {
   
   # choose variable to analyze
-  list_variables <- c("UVB_r" , "daltonism"  , "subsistence" , "latitude_r", "longitude_r" , "log_popSize" , "climate_PC1", "climate_PC2" , "altitude_r"  , "dist2water_r", "dist2ocean_r" , "dist2lakes_r", "dist2rivers_r"  , "latitude_family_r", "longitude_family_r")
+  list_variables <- c("UVB_r" , "daltonism"  , "subsistence" , "latitude_r", "longitude_r" , "log_popSize" , "clim_PC1", "clim_PC2" , "altitude_r"  , "dist2water_r", "dist2ocean_r" , "dist2lakes_r", "dist2rivers_r"  , "latitude_family_r", "longitude_family_r")
   
   # initialize empty dataframe and list for gini index (randomForest algorithm)
   vimp_gini <- data.frame(matrix(NA, nrow = 1, ncol = length(list_variables)))
@@ -3258,7 +3509,7 @@ if( !file.exists("./cached_results/blue_nonbcolors_var_importance.RData") )
   
   for (it in 1:n_iter_gini){
     # compute random forest algorithm on all variable except multicollinear
-    rf.db = randomForest(exists_blue ~  UVB_r + daltonism  + subsistence + latitude_r + longitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r + dist2water_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r  + latitude_family_r + longitude_family_r, data = d_colors, importance=TRUE)
+    rf.db = randomForest(exists_blue ~  UVB_r + daltonism  + subsistence + latitude_r + longitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r + dist2water_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r  + latitude_family_r + longitude_family_r, data = d_colors, importance=TRUE)
       
     # compute classification accuracy, precision and recall for randomForest algorithm
     ConfusionMatrix = rf.db$confusion[,1:2]
@@ -3273,7 +3524,7 @@ if( !file.exists("./cached_results/blue_nonbcolors_var_importance.RData") )
     var_imp_permut <- data.frame(importance(rf.db, type=1))
 
     # use an other algorithm to compute the accuracy-based variable importance
-    obj <- cforest(exists_blue ~  UVB_r + daltonism  + subsistence + latitude_r + longitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r  + latitude_family_r + longitude_family_r, data = d_colors)
+    obj <- cforest(exists_blue ~  UVB_r + daltonism  + subsistence + latitude_r + longitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r  + latitude_family_r + longitude_family_r, data = d_colors)
     
     # compute classification accuracy, precision and recall for cforest algorithm
     oobPredicted <- predict(obj,OOB=T)
@@ -3335,7 +3586,7 @@ ggplot(mapping = aes(x = reorder(namevar, mean_all), y = mean_all),
              axis.text.y = element_text(hjust = 1, size =13, face = "bold"),
              axis.title=element_text(size=16),
              legend.position="none") +
-  scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "climate_PC1" = "Climate PC1", "climate_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","daltonism" = "daltonism")) +
+  scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "clim_PC1" = "Climate PC1", "clim_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","daltonism" = "daltonism")) +
        guides(fill=FALSE)
 ```
 
@@ -3350,7 +3601,7 @@ ggplot(mapping = aes(x = reorder(namevar, mean_all), y = mean_all),
              axis.text.y = element_text(hjust = 1, size =13, face = "bold"),
              axis.title=element_text(size=16),
              legend.position="none") +
-    scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "climate_PC1" = "Climate PC1", "climate_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","daltonism" = "daltonism")) +
+    scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "clim_PC1" = "Climate PC1", "clim_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","daltonism" = "daltonism")) +
        guides(fill=FALSE)
 ```
 
@@ -3367,7 +3618,7 @@ ggplot(mapping = aes(x = reorder(namevar, mean_all), y = mean_all),
              axis.text.y = element_text(hjust = 1, size =13, face = "bold"),
              axis.title=element_text(size=16),
              legend.position="none") +
-    scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "climate_PC1" = "Climate PC1", "climate_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","daltonism" = "daltonism")) +
+    scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "clim_PC1" = "Climate PC1", "clim_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","daltonism" = "daltonism")) +
        guides(fill=FALSE)
 ```
 
@@ -3378,7 +3629,7 @@ When the number of color categories is excluded, we find that *population size* 
 
 While the results from random forests and regression are congruent, especially concerning the importance of UVR and number of color categories/population size, we also found some differences:
 
--  daltonism and climate_PC1 are variables that have an impact on exists_blue in the random forest models, but not in the regression models,
+-  daltonism and clim_PC1 are variables that have an impact on exists_blue in the random forest models, but not in the regression models,
 -  latitude and longitude of language family origins have an impact on exists_blue in regression models, but not in the random forest models.
 
 
@@ -3389,9 +3640,9 @@ We used simple decision trees as implemented by `ctree` [@ctree_2006].
 ```{r decision tree blue, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Simple decision tree.")}
 # pruned tree
 # control <- rpart.control(minsplit = 6, minbucket = 6, maxdepth = 30)
-# fit <- rpart(exists_blue ~ UVB + daltonism  + subsistence + longitude + latitude + log_popSize + climate_PC1 + climate_PC2 + altitude + dist2water + dist2ocean + dist2lakes + dist2rivers + n_colors, data = d_colors, method = 'class', model=TRUE, control=control)
+# fit <- rpart(exists_blue ~ UVB + daltonism  + subsistence + longitude + latitude + log_popSize + clim_PC1 + clim_PC2 + altitude + dist2water + dist2ocean + dist2lakes + dist2rivers + n_colors, data = d_colors, method = 'class', model=TRUE, control=control)
 #rpart.plot(fit, extra = 106)
-tree <- ctree (exists_blue ~  UVB_r + daltonism  + subsistence + longitude_r + latitude_r + log_popSize + climate_PC1 + climate_PC2 + altitude_r + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, 
+tree <- ctree (exists_blue ~  UVB_r + daltonism  + subsistence + longitude_r + latitude_r + log_popSize + clim_PC1 + clim_PC2 + altitude_r + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, 
        data = d_colors, 
        control = ctree_control(testtype = "MonteCarlo", minsplit = 6, minbucket = 6, maxdepth=30))
 
@@ -3409,7 +3660,7 @@ nb_distlake = 4.7
 
 d_colors_map <- d_colors
 # create range
-d_colors_map$PC2_range <- cut(d_colors_map$climate_PC2, c(-Inf, nb_PC2, Inf), 
+d_colors_map$PC2_range <- cut(d_colors_map$clim_PC2, c(-Inf, nb_PC2, Inf), 
                                 labels=c(paste("less than", nb_PC2), paste("more than", nb_PC2)))
 
 d_colors_map$UVB_range <- cut(d_colors_map$UVB_r, c(-Inf, nb_UVB, Inf), 
@@ -3488,7 +3739,7 @@ if( !file.exists("./cached_results/blue_mach_learning.RData") )
     # -------  Random Forest  --------- #
     
     # fit randomforest on training dat
-    rf.db = randomForest(exists_blue ~ UVB + daltonism  + subsistence + longitude_r + latitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, data = data_train)
+    rf.db = randomForest(exists_blue ~ UVB + daltonism  + subsistence + longitude_r + latitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, data = data_train)
     
     # create confusion matrix
     pred <- predict(rf.db, data_test, type='class')
@@ -3503,7 +3754,7 @@ if( !file.exists("./cached_results/blue_mach_learning.RData") )
     # -------  BRMS  --------- #
   
     # fit model
-    fit_train <- brm(exists_blue ~ UVB + daltonism  + subsistence + longitude_r + latitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r + (1 | macroarea) + (1 | glottocode_family), 
+    fit_train <- brm(exists_blue ~ UVB + daltonism  + subsistence + longitude_r + latitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r + (1 | macroarea) + (1 | glottocode_family), 
                         data=data_train, # very similar notation to lmer
                         family=bernoulli(link = "logit"),
                         cores=brms_ncores, iter=brms_iter, warmup=brms_warmup, thin=brms_thin, save_all_pars=TRUE,
@@ -3523,13 +3774,13 @@ if( !file.exists("./cached_results/blue_mach_learning.RData") )
     # -------  SVM  --------- #
     
     # find best parameters for SVM
-    tuned_parameters <- tune.svm(exists_blue ~ UVB + daltonism  + subsistence + longitude_r + latitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, 
+    tuned_parameters <- tune.svm(exists_blue ~ UVB + daltonism  + subsistence + longitude_r + latitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, 
                                  data = data_train, 
                                  gamma = 10^(-5:-1), 
                                  cost =10^(-3:1))
   
     # fit SVM with tuned parameters on training data
-    svm_model_after_tune <- svm(exists_blue ~ UVB + daltonism  + subsistence + longitude_r + latitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, 
+    svm_model_after_tune <- svm(exists_blue ~ UVB + daltonism  + subsistence + longitude_r + latitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, 
                                 data_train, 
                                 kernel="radial", 
                                 cost = tuned_parameters$best.parameters[1,2], 
@@ -4376,7 +4627,7 @@ For more information, please see [Random forests].
 if( !file.exists("./cached_results/daltonism_var_importance.RData") )
 {
   # choose variables to analyze
-  list_variables <- c("UVB_r" , "exists_blue"  , "subsistence" , "latitude_r", "longitude_r" , "log_popSize" , "climate_PC1", "climate_PC2" , "altitude_r"  , "dist2water_r", "dist2ocean_r" , "dist2lakes_r", "dist2rivers_r"  , "latitude_family_r", "longitude_family_r")
+  list_variables <- c("UVB_r" , "exists_blue"  , "subsistence" , "latitude_r", "longitude_r" , "log_popSize" , "clim_PC1", "clim_PC2" , "altitude_r"  , "dist2water_r", "dist2ocean_r" , "dist2lakes_r", "dist2rivers_r"  , "latitude_family_r", "longitude_family_r")
   
   # initialize empty dataframe and list for gini index (randomForest algorithm)
   vimp_gini <- data.frame(matrix(NA, nrow = 1, ncol = length(list_variables)))
@@ -4399,7 +4650,7 @@ if( !file.exists("./cached_results/daltonism_var_importance.RData") )
     {
     
     # compute random forest algorithm on all variable except multicollinear
-    rf.db = randomForest(daltonism ~  UVB_r + exists_blue  + subsistence + latitude_r + longitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r  + latitude_family_r + longitude_family_r, data = d_colors, importance=TRUE)
+    rf.db = randomForest(daltonism ~  UVB_r + exists_blue  + subsistence + latitude_r + longitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r  + latitude_family_r + longitude_family_r, data = d_colors, importance=TRUE)
     
     # check the difference between actual and predicted value
     vec_original_predicted <- abs(d_colors$daltonism - rf.db$predicted )
@@ -4417,7 +4668,7 @@ if( !file.exists("./cached_results/daltonism_var_importance.RData") )
     var_imp_permut <- data.frame(importance(rf.db, type=1))
     
     # use an other algorithm to compute the accuracy-based variable importance
-     obj <- cforest(daltonism ~  UVB_r + exists_blue  + subsistence + latitude_r + longitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2water_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r  + latitude_family_r + longitude_family_r, data = d_colors)
+     obj <- cforest(daltonism ~  UVB_r + exists_blue  + subsistence + latitude_r + longitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2water_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r  + latitude_family_r + longitude_family_r, data = d_colors)
     
     # check the difference between actual and predicted value
     oobPredicted <- predict(obj,OOB=T)
@@ -4483,7 +4734,7 @@ ggplot(mapping = aes(x = reorder(namevar, mean_all), y = mean_all, fill=reorder(
              axis.title=element_text(size=15),
              legend.position="none") +
       labs(x ="", y = paste0("Mean of ",dn_iter_gini," iterations")) +
-    scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "climate_PC1" = "Climate PC1", "climate_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","exists_blue" = "exists_blue", "n_colors"="Nb of colour categ")) +
+    scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "clim_PC1" = "Climate PC1", "clim_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","exists_blue" = "exists_blue", "n_colors"="Nb of colour categ")) +
       guides(fill=FALSE)
 ```
 
@@ -4499,7 +4750,7 @@ ggplot(mapping = aes(x = reorder(namevar, mean_all), y = mean_all, fill=reorder(
              axis.text.y = element_text(hjust = 1, size =13, face = "bold"),
              axis.title=element_text(size=16),
              legend.position="none") +
-  scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "climate_PC1" = "Climate PC1", "climate_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","exists_blue" = "exists_blue", "n_colors"="Nb of colour categ")) +
+  scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "clim_PC1" = "Climate PC1", "clim_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","exists_blue" = "exists_blue", "n_colors"="Nb of colour categ")) +
       guides(fill=FALSE)
 ```
 
@@ -4517,7 +4768,7 @@ ggplot(mapping = aes(x = reorder(namevar, mean_all), y = mean_all, fill=reorder(
              axis.text.y = element_text(hjust = 1, size =13, face = "bold"),
              axis.title=element_text(size=16),
              legend.position="none") +
-  scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "climate_PC1" = "Climate PC1", "climate_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","exists_blue" = "exists_blue", "n_colors"="Nb of colour categ")) +
+  scale_x_discrete(labels=c("subsistence" = "Subsistence mode", "longitude_family_r" = "Long of family origin", "latitude_family_r" = "Lat of family origin", "dist2ocean_r" = "Dist to ocean","dist2rivers_r" = "Dist to rivers", "longitude_r" = "Longitude", "altitude_r" = "Altitude", "dist2water_r" = "Dist to water", "clim_PC1" = "Climate PC1", "clim_PC2" = "Climate PC2", "dist2lakes_r" = "Dist to lakes", "latitude_r" = "Latitude", "log_popSize" = "Population size", "UVB_r" = "UVR","exists_blue" = "exists_blue", "n_colors"="Nb of colour categ")) +
       guides(fill=FALSE)
 
 
@@ -4534,7 +4785,7 @@ These results are consistent with the results from the regression analysis, exce
 We used simple decision trees as implemented by `ctree` [@ctree_2006].
 
 ````{r decision tree dalto, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Simple decision tree.")}
-tree2 <- ctree (daltonism ~  UVB_r + exists_blue  + subsistence + latitude_r + longitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, 
+tree2 <- ctree (daltonism ~  UVB_r + exists_blue  + subsistence + latitude_r + longitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, 
                 data = d_colors, 
                 control = ctree_control(testtype = "MonteCarlo", minsplit = 6, minbucket = 6, maxdepth=30))
 
@@ -4665,7 +4916,7 @@ if( !file.exists("./cached_results/daltonism_mach_learning.RData") )
     # ----- RANDOM FOREST ----- #
     
     # fit randomforest on training dat
-    rf.db = randomForest(daltonism_r ~ UVB + exists_blue  + subsistence + longitude_r + latitude_r + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, data = data_train)
+    rf.db = randomForest(daltonism_r ~ UVB + exists_blue  + subsistence + longitude_r + latitude_r + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, data = data_train)
     
     # predict on testing set
     pred <- predict(object = rf.db, newdata = data_test)
@@ -4682,7 +4933,7 @@ if( !file.exists("./cached_results/daltonism_mach_learning.RData") )
     # ----- BRMS ---- #
     
     # fit brms model on training data
-    brms_model <- brm(daltonism_r ~ UVB + exists_blue  + subsistence + longitude_r + latitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r + (1 | macroarea) + (1 | glottocode_family), 
+    brms_model <- brm(daltonism_r ~ UVB + exists_blue  + subsistence + longitude_r + latitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r + (1 | macroarea) + (1 | glottocode_family), 
                       family="beta",
                      data=data_train,
                      cores=brms_ncores, iter=brms_iter, warmup=brms_warmup, thin=brms_thin, save_all_pars=TRUE,
@@ -4703,10 +4954,10 @@ if( !file.exists("./cached_results/daltonism_mach_learning.RData") )
     # ------- SVM -------- #
     
     # find best parameters for SVM
-    tuned_parameters <- tune.svm(daltonism_r ~ UVB + exists_blue  + subsistence + longitude_r + latitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, data = data_train, gamma = 10^(-5:-1), cost = 10^(-3:1))
+    tuned_parameters <- tune.svm(daltonism_r ~ UVB + exists_blue  + subsistence + longitude_r + latitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, data = data_train, gamma = 10^(-5:-1), cost = 10^(-3:1))
   
     # fit SVM with tuned parameters on training data
-    svm_model_after_tune <- svm(daltonism_r ~ UVB + exists_blue  + subsistence + longitude_r + latitude_r  + log_popSize + climate_PC1 + climate_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, data_train, kernel="radial", cost=tuned_parameters$best.parameters[1,2], gamma=tuned_parameters$best.parameters[1,1])
+    svm_model_after_tune <- svm(daltonism_r ~ UVB + exists_blue  + subsistence + longitude_r + latitude_r  + log_popSize + clim_PC1 + clim_PC2 + altitude_r  + dist2ocean_r + dist2lakes_r + dist2rivers_r + n_colors + latitude_family_r + longitude_family_r, data_train, kernel="radial", cost=tuned_parameters$best.parameters[1,2], gamma=tuned_parameters$best.parameters[1,1])
   
     # predict on testing set
     pred <- predict(object = rf.db, newdata = data_test)
@@ -5100,6 +5351,10 @@ The results of the first two matching rules (1 & 2) are in the *genetic_incomple
 [^SNP]: A [*Single Nucleotide Polymorphism* (*SNP*)](https://en.wikipedia.org/wiki/Single-nucleotide_polymorphism) is a common and simple type of genetic variation representing the substitution of a single nucleotide at a specific position in the genome.
 
 [^Microhaplotype]: A [*haplotype*](https://en.wikipedia.org/wiki/Haplotype) has several related meaning, in principle refering to a set of genetic variants that tend to be inherited together; a *microhaplotype* (microhap or *MH*) is a set of small set of closely linked SNPs useful in forensic applications [@oldoni_microhaplotypes_2019]. 
+
+[^openstreetmaps]: Unfortunately, the primary data from [OpenStreetMap](http://openstreetmapdata.com/), the ["Reduced waterbodies as raster masks"](http://openstreetmapdata.com/data/water-reduced-raster) seems to no longer be available for download as of July 2020, so we used here the original data downloaded in March 2018 by Dan Dediu and used in the @bentz_evolution_2018 paper.
+
+[^uv]: Unfortunately, the primary data from [TOMS](http://toms.gsfc.nasa.gov/ery_uv/new_uv/) seems to no longer be available for download as of July 2020, so we used here the original data downloaded in 2012 by Dan Dediu and used in the @meeussen_colour_2015 MSc thesis.
 
 # References
 
