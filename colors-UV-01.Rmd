@@ -22,7 +22,6 @@ csl: apa-6th-edition.csl
 
 - rename variables/keep only the variables we need/recode variables: **DONE**
 - check the `stage` variable (I guess `999` means `NA` so should not be considered as an actual value)
-- use `macroarea2` (Eurasia -> Europe + Asia) instead of `macroarea`?
 - add `climate_PC3` and `humidity`: **DONE**
 - add UB incidence: **DONE**
 - add elevation (altitude): **DONE**
@@ -30,6 +29,7 @@ csl: apa-6th-edition.csl
 - integrate FST_methods.Rmd: **DONE**
 - redo/expand the Bayesian regressions and model comparison
 - decide what to keep to streamline the analysis
+- keep only the needed input files
 
 **What I also did:**
 
@@ -236,8 +236,7 @@ if( !all(file.exists("./input_files/data_climate.tsv",
 # Load the colors data:
 d_colors <- read.table("./input_files/data_colors.csv", header=TRUE, sep=",", quote='"', stringsAsFactors=FALSE); # comma-separated double-quoted CVS file
 
-# Add the climate, humidity and distance2water variables,
-# both for the languages and for the families.
+# Add the various info, both for the languages and for the families.
 # For humidity, keep only the mean annual median and IQR as all the other measures are very highly correlated with these
 # For UV, do not use the individual freqyency bands, but the wide categories "A" and "B" (and overall):
 d_climate    <- read.table("./input_files/data_climate.tsv",      header=TRUE, sep="\t", quote="");
@@ -245,6 +244,7 @@ d_humidity   <- read.table("./input_files/data_humidity.tsv",     header=TRUE, s
 d_dist2water <- read.table("./input_files/data_dist2water.tsv",   header=TRUE, sep="\t", quote="");
 d_uv         <- read.table("./input_files/data_UV_incidence.tsv", header=TRUE, sep="\t", quote="");
 d_elevation  <- read.table("./input_files/data_elevation.tsv",    header=TRUE, sep="\t", quote="");
+d_genetics   <- read.table("./input_files/data_genetics.tsv",     header=TRUE, sep="\t", quote="");
 
 # for languages ...
 d_colors <- merge(d_colors, d_climate[,c("glottocode", "clim_PC1", "clim_PC2", "clim_PC3")], by="glottocode", all.x=TRUE, all.y=FALSE);
@@ -253,6 +253,7 @@ names(d_colors)[ncol(d_colors)-c(1,0)] <- c("hum_median", "hum_IQR");
 d_colors <- merge(d_colors, d_dist2water[,c("glottocode", "dist2ocean", "dist2lakes", "dist2rivers", "dist2water")], by="glottocode", all.x=TRUE, all.y=FALSE);
 d_colors <- merge(d_colors, d_uv[,c("glottocode", "UV_A_mean", "UV_A_sd", "UV_B_mean", "UV_B_sd", "UV_mean", "UV_sd")], by="glottocode", all.x=TRUE, all.y=FALSE);
 d_colors <- merge(d_colors, d_elevation[,c("glottocode", "elevation")], by="glottocode", all.x=TRUE, all.y=FALSE);
+d_colors <- merge(d_colors, d_genetics, by="glottocode", all.x=TRUE, all.y=FALSE);
 
 # ... and for families
 d_colors <- merge(d_colors, d_climate[,c("glottocode", "clim_PC1", "clim_PC2", "clim_PC3")], by.x="glottocode_family", by.y="glottocode", suffixes=c("","_family"), all.x=TRUE, all.y=FALSE);
@@ -297,12 +298,19 @@ d_colors$UV_sd_family_r       <- scale(d_colors$UV_sd_family);
 d_colors$clim_PC1_r           <- scale(d_colors$clim_PC1);
 d_colors$clim_PC2_r           <- scale(d_colors$clim_PC2);
 d_colors$clim_PC3_r           <- scale(d_colors$clim_PC3);
+d_colors$clim_PC1_family_r    <- scale(d_colors$clim_PC1_family);
+d_colors$clim_PC2_family_r    <- scale(d_colors$clim_PC2_family);
+d_colors$clim_PC3_family_r    <- scale(d_colors$clim_PC3_family);
 # - daltonism:
 d_colors$daltonism_r          <- max(d_colors$daltonism/100, 0.0001); # prepare for Beta regression: transform it from % into proportions, and replace 0 by a very small proportion (0.01%)
+# - number of color categories: standardize to 0..1:
+d_colors$n_colors_r           <- (d_colors$n_colors - min(d_colors$n_colors,na.rm=TRUE)) / (max(d_colors$n_colors,na.rm=TRUE) - min(d_colors$n_colors,na.rm=TRUE));
+# - genetics: z-score:
+s <- grep("gen_D",names(d_colors),fixed=TRUE); for( i in s ){ d_colors <- cbind(d_colors, scale(d_colors[,i])); names(d_colors)[ncol(d_colors)] <- paste0(names(d_colors)[i],"_r"); }
 
 # Alternative view of the globe: all longitudes > 180 are "flipped" to negative values:
-d_colors$longitude_180 <- ifelse(d_colors$longitude <= 180, d_colors$longitude, d_colors$longitude - 360);
-d_colors$longitude_family_180 <- ifelse(d_colors$longitude <= 180, d_colors$longitude, d_colors$longitude - 360);
+d_colors$longitude_180        <- ifelse(d_colors$longitude <= 180,        d_colors$longitude,        d_colors$longitude - 360);
+d_colors$longitude_family_180 <- ifelse(d_colors$longitude_family <= 180, d_colors$longitude_family, d_colors$longitude_family - 360);
 
 # Ensure factors have the right levels and contrasts:
 d_colors$exists_blue <- factor(d_colors$exists_blue, levels=c("no", "yes"));
@@ -316,6 +324,10 @@ d_colors$glottocode_family_other <- ifelse(d_colors$glottocode_family %in% c("ab
                                                                              "utoa1244", "yano1268"),
                                            "Other", 
                                            as.character(d_colors$glottocode_family));
+
+# Just the language families data:
+d_colors_families <- unique(d_colors[, grep("_family", names(d_colors), fixed=TRUE) ]);
+
 ```
 
 
@@ -379,7 +391,7 @@ ggplot() + theme_bw() +
 ```
 
 
-## Climate and weather 
+## Climate and ecology 
 
 We reused the code from @bentz_evolution_2018 to extract historical data on global weather and climate from [WorldClim](https://www.worldclim.org/) for the period 1960-1990, encoded in 19 variables covering various measures (such as temperature, seasonality or precipitation). 
 As in @bentz_evolution_2018, we conduced a A Principal Component Analysis (PCA) for our data only, and we found similar results, namely that the first two principal components (PCs) explain most of the data and have meaningful interpretations: the PC1 explains 49.7% of the variance and reflects low seasonality, wet and hot climate, whereas PC2 explains 24.7% of the variance and reflects high seasonality, hot and dry climate; PC3 explains only 8.6% and its interpretation is less straightforward; see @bentz_evolution_2018 for details (please note that the sign of the PCs is arbitrary). 
@@ -772,7 +784,7 @@ grid.arrange(ggplot() + theme_bw() +
              ncol=1);
 ```
 
-### UV
+### UV (overall)
 
 Summaries for mean and standard deviation:
 ```{r summary UV, echo=FALSE, message=FALSE, warning=FALSE}
@@ -820,7 +832,7 @@ grid.arrange(ggplot() + theme_bw() +
 
 
 
-## Population size
+## Log of population size
 
 The log of population size was obtained from @bentz_evolution_2018.
 
@@ -990,179 +1002,118 @@ ggplot() + theme_bw() +
 ```
 
 
+## Language family
 
-
-
-
-## Input files 
-
-We use the following input files:
-
-| Input file | Format      | Description |
-|------------|-------------|-------------|
-| `Database_final4.csv` | CSV file (commas + quotes) | database with all variables' information except distance matrices |
-| `distmat_gen_add.csv` | CSV file (commas + quotes) |  distance matrix obtained with Alfred distance, and where missing values have been replaced with an additive method |
-| `distmat_gen_ult.csv` | CSV file (commas + quotes) |  distance matrix obtained with Alfred distance, and where missing values have been replaced with an ultrametric method |
-| `distmat_gen_na.csv` | CSV file (commas + quotes) |  distance matrix obtained with Alfred distance with missing values |
-| `qlc_data_dist.csv` | CSV file (commas + quotes) | distance matrix obtained with phylogenetic distance on glottolog |
-| `qlc2glottocode.csv` | CSV file (commas + quotes) | table converting the output names from glottolog to glottocodes (used with `qlc_data_dist.csv`) |
-
-## Variables
-
-In order to investigate our hypotheses, we analyzed a set of `r length(unique(d_colors$glottocode))` *populations* dispersed across all continents. 
-This dataset was assembled from three sources: 
-
-- first, the **data acompanying @brown_color_2004**, concerning 118 populations and including information on the frequency of color blindness, color vocabulary, and UVR incidence;
-- second, **Emma Meeussen's [-@meeussen_colour_2015] expanded dataset**, who added many populations to the [@brown_color_2004] dataset, and changed some parameters;
-- third, we **complemented these datasets** with several ecological, cultural or genetic variables in order to control for possible confounding.
-
-### Variables previously defined and collected
-
-Each population is identified by the [*glottocode*](https://glottolog.org/) [@hammarstrom_glottolog_2018] of the (primary) language it speaks, as well as by its *latitude*, *longitude* and *macroarea* (also from [Glottolog](https://glottolog.org/)).
-
-
-#### Macroarea
-
-```{r map macroareas, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of populations in our sample highlighting their macroarea (color).")}
-# macroarea
-pander(table(d_colors$macroarea));
-
-ggplot() + theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data=d_colors, aes(x = longitude, y = latitude, color=macroarea)) +
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(color = "Macroarea") +
-  scale_colour_viridis_d() + 
-  NULL
-
-```
-
-
-### Additional variables
-
-
-#### Language family
-
-language family was obtained from [@bentz_evolution_2018]; there are `r length(unique(d_colors$glottocode_family))` uniques language families, most language sbelonging to the Indo-European, Afro-Asiatic and Uralic families. 
-The putative geographic origins of language families (latitude and longitude) were obtained from [@wichmann_homelands_2010] supplemented with information from [Glottolog](https://glottolog.org/) [@hammarstrom_glottolog_2018].
-
-In the map, only 15 most important language families are represented. Other families are gathered under "Other".
+For each language, we obtained its family affiliation from the [Glottolog](https://glottolog.org/) [@hammarstrom_glottolog_2018]; there are `r length(unique(d_colors$glottocode_family))` unique language families, most languages belonging to the Indo-European (indo1319), Atlantic-Congo (atla1278) and Afro-Asiatic (afro1255). 
 
 ```{r summary families, echo=FALSE, message=FALSE, warning=FALSE}
 # language family
-pander(summary(d_colors$glottocode_family))
+pander(table(d_colors$glottocode_family))
 ```
 
-```{r distribution families, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Language families. Only the 15 most represented language families are explicitely shown, the other being gathered in the umbrella category 'Other'.")}
+```{r distribution families, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("The distribution of languages across families. Only the 15 most represented families are explicitely shown, the others being gathered in the umbrella category 'Other'.")}
+# Make sure "Other" is the last one:
+d_colors$glottocode_family_other <- factor(d_colors$glottocode_family_other, levels=c(sort(setdiff(unique(d_colors$glottocode_family_other), "Other")), "Other"));
 ggplot(data =d_colors)+
   theme_bw() +
   geom_bar(aes(x=as.factor(glottocode_family_other), fill=as.factor(glottocode_family_other)), alpha=0.5) + 
   labs(x="Language families", fill="") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  scale_fill_viridis_d() + 
   guides(fill=FALSE)
 ```
 
-```{r map family, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of main language families. Only the 15 most represented language families are explicitely shown, the other being gathered in the umbrella category 'Other'.")}
+```{r map family, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of the main language families. Only the 15 most represented language families have individual colors.")}
 # Use an other variable to plot: only 15 main language families, other families are gathered under "Other"
 ggplot() + theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=glottocode_family_other), color="black") +
-  theme(legend.position = c(0.7, 0.80), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  labs(fill = "Family") +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=glottocode_family, fill=glottocode_family_other), 
+                   color="black", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=glottocode_family_other), color="black") +
+  theme(legend.position = "none") +
   scale_fill_viridis_d() + 
   NULL
 ```
 
-##### Putative origins of language families
+### Putative origins of (macro-)families
 
-```{r map family origins, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Origins of the putative origins of language families.")}
+The putative geographic origins of the language (macro-)families (latitude and longitude) were obtained from [@wichmann_homelands_2010], supplemented with information from the [Glottolog](https://glottolog.org/) [@hammarstrom_glottolog_2018].
 
-# create sub dataframe without duplicates for supr_fam_name
-subdf <- d_colors[!duplicated(d_colors$macro_family), ]
+```{r map family origins, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Origins of the putative origins of language (macro-)families.")}
+ggplot() + theme_bw() +
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_label_repel(data=d_colors_families, aes(x=longitude_family, y=latitude_family, label=macro_family), 
+                   color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
+  geom_point(data=d_colors_families, shape=21, aes(x=longitude_family, y=latitude_family, fill=macro_family), color="black", alpha=0.75) +
+  theme(legend.position = "none") +
+  scale_fill_viridis_d() + 
+  NULL
+```
 
+We also collected data corresponding to these locations for elevation, climate and ecology, humidity, distance to bodies of water and UV incidence; please note that (a) these locations are highly speculative, and (b) the information associated does not necessarily reflect the state of the world at the time when the proto-languages were spoken.
+
+
+## Macroarea
+
+We collected the macroareas as given by the [Glottolog](https://glottolog.org/) [@hammarstrom_glottolog_2018].
+
+```{r map macroareas, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of populations in our sample highlighting their macroarea.")}
+# macroarea
+pander(table(d_colors$macroarea));
 
 ggplot() + theme_bw() +
-  geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group), fill = "grey") +
-  geom_point(data= d_colors, shape=21, aes(x = longitude_family, y = latitude_family), fill="red") +
-  geom_text_repel(data= subdf, aes(x = longitude_family, y = latitude_family, label=macro_family),hjust=0, vjust=0, size=4) +
-
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data=d_colors, aes(x=longitude, y=latitude, color=macroarea, shape=macroarea)) +
   theme(legend.position = c(0.75, 0.5), 
       legend.justification = c(1, 1), 
       legend.title = element_text(size = 9), 
       legend.text = element_text(size = 10)) +
-  labs(x = "Longitude of language family", y= "Latitude of language family")
-
+  labs(color="Macroarea", shape="Macroarea") +
+  scale_color_viridis_d() + 
+  NULL
 ```
 
 
-#### Genetic distances
 
-Unfortunately, there is apparently a lack of information concerning cross-population variation in the opsin genes (*OPN1MW* and *OPN1LW*). 
-However, using a set of 96 micro-haplotypes and 382 SNP variants available from the [ALFRED database](https://alfred.med.yale.edu/) [@rajeevan_alfred_2003], we computed the overall genetic distance between population with [Arlequin](http://cmpg.unibe.ch/software/arlequin35/) [@excoffier_arlequin_2010]. 
-Missing values in the final distance matrix were estimated using an ultrametric [@lapointe_estimating_1995] and additive [@de_soete_ultrametric_1984] data imputation methods (see [Appendix I. Distance matrices]).
+## Genetic distances between populations
 
-Phylogenetic data was obtained from the [Glottolog](https://glottolog.org/) [@hammarstrom_glottolog_2018], and a distance matrix between our focus populations was created using [`qlcData`](https://github.com/cran/qlcData) and `cophenetic` in `R` [@R_2020].
-For more details, please see the section about Point Pattern Analysis.
+Unfortunately, we could not obtain information about the *opsin* genes ([*OPN1MW*](https://www.omim.org/entry/300821) and [*OPN1LW*](https://www.omim.org/entry/300822)) for the populations in our sample. 
+However, using a set of microhaplotypes and SNPs from the [ALFRED database](https://alfred.med.yale.edu/) [@rajeevan_alfred_2003], and the [Arlequin](http://cmpg.unibe.ch/software/arlequin35/) [@excoffier_arlequin_2010] software package, we computed the overall genetic distances between the populations.
+We imputed the missing values in the obtained distances matrix with the ultrametric methd [@lapointe_estimating_1995,@de_soete_ultrametric_1984].
+Please see [Appendix I. Distance matrices] for more details.
 
-Finally, we applied classic multi-dimensional scaling (`cmdscale`) to the previously computed distance matrix, and selected the minimum numbers of principal coordinates resulting in a goodness-of-fit of at least 50%.
-
-```{r summary genetic distance, include=FALSE, eval=FALSE}
-# In this example, "add" means that this variable has been extracted from the "additive" distance matrix.
-# V1 and V2 means that it is the first and second component from MultiDimensional Scaling. 
-# For each distance matrix, MDS have been done with 2,3,5 component... The MDS extracted with 3 components are called "V1_add_3", "V2_add_3", "V3_add_3", etc.
-summary(d_colors$V1_add_2)
-summary(d_colors$V2_add_2)
-```
+Finally, we applied classic multi-dimensional scaling (`cmdscale`) to this imputed distance matrix, and we decided to retain the first 10 dimensions (resulting in a goodness-of-fit of 10.5%).
+These dimensions should represent an overall genetic similarity between our populations.
 
 
-#### Data transformation
 
-For some statistical analyses (incuding regression models), we performed the following data transofrmations:
+## Input files and variables
 
-- logarithm base 2 (`log`) was applied to *distance* to water, oceans, rivers, lakes, *altitude*, and *population size*, as their range on the original measurement scales were very wide with a few extreme outliers;
-- the *latitude* of the populations and language family origins were converted to a number ranging from 0.0 to 1.0 using `cos(X*(pi/180))`: these new values capture the closeness to the equator, with 1.0 representing a location on the equator, and 0.0 representing a location at one of the poles (the actual variation of our data ws between 0.4 and 1.0);
-- the *longitude* of the populations and language family origins, which originatelly varied between 0 and 360 (centered on the Pacific), were converted using the same function as above, and ranged between -1.0 and 1.0;
-- *UVR incidence* was *z*-scored.
+These data can be found in the following input files (collected in the `./input_files` folder); "pre-processed" means produced by the associated `R` script `00_preprocess_data.R` (automatically, if needed); when transformed, the variable names usually takes the suffix "_r"; when applied to families, the variable takes the suffix "_family":
+
+| Data                        | Input file              | Pre-processed?       | Variable name(s) | Transformed? | Also for families? |
+|-----------------------------|-------------------------|----------------------|------------------|--------------|--------------------|
+| Populations and languages   | `data_colors.csv`       | No | *glottocode*, *L1* | No | No |
+| Language family             | `data_colors.csv`       | No | *glottocode_family*, *macro_family* | No | Yes |
+| Geographic locations        | `data_colors.csv`       | No | *latitude*, *longitude* | `cos()` | Yes |
+| Elevation                   | `data_elevation.tsv`    | From [Mapzen](https://en.wikipedia.org/wiki/Mapzen) | *elevation* | `log(1+)` | Yes |
+| Climate and ecology         | `data_climate.tsv`      | From [WorldClim](https://www.worldclim.org/)        | *clim_PC1*, *clim_PC2*, *clim_PC3* | z-scored | Yes |
+| Humidity                    | `data_chumidity.tsv`    | From [NOAA](http://iridl.ldeo.columbia.edu/SOURCES/.NOAA/.NCEP-NCAR/.CDAS-1/.MONTHLY/.Diagnostic/.above_ground/.qa/datafiles.html) | *hum_median*, *hum_IQR* | No | Yes |
+| Distance to bodies of water | `data_dist2water.tsv`   | From [OpenStreetMap](http://openstreetmapdata.com/) | *dist2ocean*, *dist2lakes*, *dist2rivers*, *dist2water* | `log()` | Yes |
+| UV incidence                | `data_UV_incidence.tsv` | From [NASA TOMS](http://toms.gsfc.nasa.gov/ery_uv/new_uv/) | *UV_A_mean*, *UV_A_sd*, *UV_B_mean*, *UV_B_sd*, *UV_mean*, *UV_sd* | z-scored | Yes |
+| Log of population size      | `data_colors.csv`       | No | *log_popSize* | No (already `log`'d) | No |
+| Subsistence strategy        | `data_colors.csv`       | No | *subsistence* | No | No |
+| Number of color categories  | `data_colors.csv`       | No | *n_colors* | standardized [0..1] | No |
+| Specific term for “blue”    | `data_colors.csv`       | No | *exists_blue* | No | No |
+| Abnormal red/green color perception  | `data_colors.csv` | No | *exists_blue* | % &rarr; proportion (division by 100); 0% &rarr; 0.01% | No |
+| Putative origins of (macro-)families | `data_colors.csv` | No | *latitude_family*, *longitude_family* | `cos()` | Yes |
+| Macroarea                   | `data_colors.csv`       | No | *macroarea* | No | Yes |
+| Genetic distances           | `data_cgenetics.tsv`    | From [ALFRED](https://alfred.med.yale.edu/) | *gen_D1* .. *gen_D10* | z-scored | No |
 
 
-### Summary of the variables
 
-Thus, a total of 19 *variables* (excluding the genetic multi-dimensional scaling dimensions) have been used for the analysis:
 
- -  *exists_blue*: is there of a specific term for describing the color blue in the language? (yes/no)
- -  *erythemal UVR*: z-score of the incidence
- -  *number of color categories*
- -  *daltonism*: proportion of males with abnormal red-green color perception
- -  *subsistence strategy*: hunting-and-gathering? (yes/no)
- -  *population size*: log base 2
- -  *altitude*: log base 2
- -  *climate Principal Component 1*
- -  *climate Principal Component 2*
- -  *distance to water*: log base 2
- -  *distance to lakes* log base 2
- -  *distance to rivers *: log base 2
- -  *distance to oceans*: log base 2
- -  *latitude*: rescaled
- -  *longitude*: rescaled
- -  *latitude of the language family origin*: rescaled
- -  *longitude of the language family origin*: rescaled
- -  *language family*
- -  *macroarea*
- -  dimensions from *multi-dimensional scaling of genetic distances*
- 
-Five *distance matrices* were also collected among the populations (see [Appendix I. Distance matrices] and [Genetic distance from Alfred (FST)] for more info): 
 
- - one distance matrix gathering *geographical distance* "as the crow flies" between population
- - one *phylogenetic distance* matrix computed from glottolog information
- - one *genetic distance* matrix computed from ALFRED (see [Appendix I. Distance matrices]) without data imputation
- - one *genetic distance* matrix computed with ALFRED (see [Appendix I. Distance matrices]) with an *additive* data imputation
- - one *genetic distance* matrix computed with ALFRED (see [Appendix I. Distance matrices]) with an *ultrametric* data imputation
 
 
 

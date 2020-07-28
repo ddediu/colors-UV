@@ -664,5 +664,25 @@ if( !file.exists("./input_files/data_elevation.tsv") )
 }
 
 
+##
+## Genetic distances ####
+##
+
+if( !file.exists("./input_files/data_genetics.tsv") )
+{
+  # Load the genetic distances with ultrametric imputation:
+  d_gen_ult <- read.table("./input_files/distmat_gen_ult.csv", header=TRUE, sep=","); rownames(d_gen_ult) <- d_gen_ult[,1]; d_gen_ult <- d_gen_ult[,-1]; d_gen_ult <- as.matrix(d_gen_ult);
+
+  # Let's pick the first 10 MDS dimensions:
+  k <- 10; x_ult <- cmdscale(d_gen_ult, k=k, eig=TRUE, add=TRUE);
+  
+  d_genetics <- merge(d_colors[,c("glottocode"), drop=FALSE], data.frame("glottocode"=rownames(x_ult$points), x_ult$points), by="glottocode", all.x=TRUE, all.y=FALSE);
+  names(d_genetics)[ (ncol(d_genetics)-k+1):ncol(d_genetics) ] <- paste0("gen_D",1:k);
+
+  # Save the data:
+  write.table(d_genetics, file="./input_files/data_genetics.tsv", quote=FALSE, sep="\t", row.names=FALSE);
+}
+
+
 
 
