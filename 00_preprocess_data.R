@@ -589,6 +589,80 @@ if( !file.exists("./input_files/data_UV_incidence.tsv") )
 }
 
 
+##
+## Altitude ####
+##
+
+if( !file.exists("./input_files/data_elevation.tsv") )
+{
+  # Use the elevatr package to get the Mapzen elevation data, currently (July 2020) still available on https://registry.opendata.aws/terrain-tiles/
+  # see https://cran.r-project.org/web/packages/elevatr/vignettes/introduction_to_elevatr.html#get_raster_elevation_data
+  library(raster);
+  library(elevatr);
+
+  # Get the elevation data:
+  elevation_tiles <- list();
+  elevation <- rep(NA, nrow(d_coords));
+  for( i in 1:nrow(d_coords) )
+  {
+    cat(paste0("Obtaining elevation for ",d_coords$glottocode[i]," (",i," of ",nrow(d_coords),"):\n"));
+    # Try several levels of zoom, until one succeeds:
+    for( z in 1:14) 
+    {
+      cat(paste0("... trying zoom level ",z,"...\n"));
+      e <- NULL;
+      try(e <- get_elev_raster(d_coords[i,c("longitude_180", "latitude"), drop=FALSE], 
+                               prj="+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs", z=z, expand=ifelse(z < 5, 10, ifelse(z < 10, 2, 1))), # adapt expansion to the zoom level
+          silent=TRUE);
+      if( !is.null(e) && inherits(e, "RasterLayer") )
+      {
+        # Succeeded:
+        elevation_tiles[[i]] <- list("z"=z, "raster"=e);
+        elevation[i] <- extract(e, d_coords[i,c("longitude_180", "latitude"), drop=FALSE], method="simple");
+        #plot(e, main=d_coords$glottocode[i]); points(d_coords$longitude_180[i], d_coords$latitude[i]);
+        break;
+      }
+    }
+    if( is.null(e) ){ warning("Error obtaining elevation info..."); elevation_tiles[[i]] <- list(); elevation[i] <- NA; }
+  }
+  names(elevation_tiles) <- names(elevation) <- d_coords$glottocode;
+  d_elevation <- cbind(d_coords[,c("glottocode", "longitude", "latitude")], "elevation"=round(elevation,1));
+  
+  # Plots for checking:
+  if( FALSE )
+  {
+    library(ggplot2);
+    library(ggrepel);
+    mapWorld <- map_data("world", wrap=c(-20,340), ylim=c(-70,100));
+    
+    ggplot() + theme_bw() +
+      theme_bw() +
+      geom_polygon(data = mapWorld, aes(x=long, y = lat, group = group) ,fill = "grey") +
+      geom_point(data=d_elevation, aes(x = longitude, y = latitude, color=elevation)) +
+      geom_label_repel(data=d_elevation, aes(x = longitude, y = latitude, label=round(elevation,0)), alpha=0.5, fill="lightyellow") + 
+      theme(legend.position = c(0.75, 0.5), 
+            legend.justification = c(1, 1), 
+            legend.title = element_text(size = 9), 
+            legend.text = element_text(size = 10)) +
+      NULL;
+  }  
+  
+  # Save the tiles for later use as an xz-compressed tar archive:
+  dir.create("./input_files/elevation_Mapzen_tiles", showWarnings=FALSE);
+  for(i in seq_along(elevation_tiles) )
+  {
+    cat(paste0("Saving tile for ",names(elevation_tiles)[i]," (",i," of ",length(elevation_tiles),"):\n"));
+    writeRaster(floor(elevation_tiles[[i]]$raster), # the floating-point precision is not useful and wastes disk space
+                paste0("./input_files/elevation_Mapzen_tiles/raster_for_",names(elevation_tiles)[i],"_z_",elevation_tiles[[i]]$z,".tif"), 
+                format="GTiff", options=c("COMPRESS=LZW", "PREDICTOR=2"), overwrite=TRUE); # compress it as per https://kokoalberti.com/articles/geotiff-compression-optimization-guide/
+  }
+  tar("./input_files/elevation_Mapzen_tiles.txz", "./input_files/elevation_Mapzen_tiles/", compression="xz", compression_level=9);
+  unlink("./input_files/elevation_Mapzen_tiles/", recursive=TRUE);
+
+  # Save the data:
+  write.table(d_elevation, file="./input_files/data_elevation.tsv", quote=FALSE, sep="\t", row.names=FALSE);
+}
+
 
 
 

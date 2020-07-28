@@ -24,7 +24,8 @@ csl: apa-6th-edition.csl
 - check the `stage` variable (I guess `999` means `NA` so should not be considered as an actual value)
 - use `macroarea2` (Eurasia -> Europe + Asia) instead of `macroarea`?
 - add `climate_PC3` and `humidity`: **DONE**
-- add UB incidence
+- add UB incidence: **DONE**
+- add elevation (altitude): **DONE**
 - keep only the libraries we actually use: **DONE**
 - integrate FST_methods.Rmd: **DONE**
 - redo/expand the Bayesian regressions and model comparison
@@ -37,6 +38,7 @@ csl: apa-6th-edition.csl
 - fixed some language names and one glottocode (Nepali)
 - reduced the precision of most numeric variables
 - computed co-variates for the families as well
+- I removed the old "altitude" variable because now I recompute everything (including for families) from the Mapzen data
 
 
 ```{r setup, echo=F, message=F, warning=FALSE}
@@ -220,7 +222,11 @@ a[hreflang]:before{}
 mapWorld <- map_data("world", wrap=c(-20,340), ylim=c(-70,100));
 
 # If the environmental variables are not already computed, compute them now:
-if( !all(file.exists("./input_files/data_climate.tsv", "./input_files/data_humidity.tsv", "./input_files/data_dist2water.tsv", "./input_files/data_UV_incidence.tsv")) )
+if( !all(file.exists("./input_files/data_climate.tsv", 
+                     "./input_files/data_humidity.tsv", 
+                     "./input_files/data_dist2water.tsv", 
+                     "./input_files/data_UV_incidence.tsv",
+                     "./input_files/data_elevation.tsv")) )
 {
   # Get the primary data and compute them:
   source("./00_preprocess_data.R", echo=FALSE);
@@ -238,6 +244,7 @@ d_climate    <- read.table("./input_files/data_climate.tsv",      header=TRUE, s
 d_humidity   <- read.table("./input_files/data_humidity.tsv",     header=TRUE, sep="\t", quote="");
 d_dist2water <- read.table("./input_files/data_dist2water.tsv",   header=TRUE, sep="\t", quote="");
 d_uv         <- read.table("./input_files/data_UV_incidence.tsv", header=TRUE, sep="\t", quote="");
+d_elevation  <- read.table("./input_files/data_elevation.tsv",    header=TRUE, sep="\t", quote="");
 
 # for languages ...
 d_colors <- merge(d_colors, d_climate[,c("glottocode", "clim_PC1", "clim_PC2", "clim_PC3")], by="glottocode", all.x=TRUE, all.y=FALSE);
@@ -245,6 +252,7 @@ d_colors <- merge(d_colors, d_humidity[,c("glottocode", "humidity_mean_annual_me
 names(d_colors)[ncol(d_colors)-c(1,0)] <- c("hum_median", "hum_IQR");
 d_colors <- merge(d_colors, d_dist2water[,c("glottocode", "dist2ocean", "dist2lakes", "dist2rivers", "dist2water")], by="glottocode", all.x=TRUE, all.y=FALSE);
 d_colors <- merge(d_colors, d_uv[,c("glottocode", "UV_A_mean", "UV_A_sd", "UV_B_mean", "UV_B_sd", "UV_mean", "UV_sd")], by="glottocode", all.x=TRUE, all.y=FALSE);
+d_colors <- merge(d_colors, d_elevation[,c("glottocode", "elevation")], by="glottocode", all.x=TRUE, all.y=FALSE);
 
 # ... and for families
 d_colors <- merge(d_colors, d_climate[,c("glottocode", "clim_PC1", "clim_PC2", "clim_PC3")], by.x="glottocode_family", by.y="glottocode", suffixes=c("","_family"), all.x=TRUE, all.y=FALSE);
@@ -252,10 +260,12 @@ d_colors <- merge(d_colors, d_humidity[,c("glottocode", "humidity_mean_annual_me
 names(d_colors)[ncol(d_colors)-c(1,0)] <- c("hum_median_family", "hum_IQR_family");
 d_colors <- merge(d_colors, d_dist2water[,c("glottocode", "dist2ocean", "dist2lakes", "dist2rivers", "dist2water")], by.x="glottocode_family", by.y="glottocode", suffixes=c("","_family"), all.x=TRUE, all.y=FALSE);
 d_colors <- merge(d_colors, d_uv[,c("glottocode", "UV_A_mean", "UV_A_sd", "UV_B_mean", "UV_B_sd", "UV_mean", "UV_sd")], by.x="glottocode_family", by.y="glottocode", suffixes=c("","_family"), all.x=TRUE, all.y=FALSE);
+d_colors <- merge(d_colors, d_elevation[,c("glottocode", "elevation")], by.x="glottocode_family", by.y="glottocode", suffixes=c("","_family"), all.x=TRUE, all.y=FALSE);
 
 # Rescale variables (we use the suffix _r for them):
-# - altitude: log(+1) because there are two altitudes set to 0 meters, so increase everything by 1m to avoid -Inf:
-d_colors$altitude_r           <- log2(d_colors$altitude + 1);
+# - elevation: log(+1) because there are some elevations set to 0 meters, so increase everything by 1m to avoid -Inf:
+d_colors$elevation_r          <- log2(d_colors$elevation + 1);
+d_colors$elevation_family_r   <- log2(d_colors$elevation_family + 1);
 # - distance to water bodies: log() as distances to water are never 0.0, so no need to guard against -Inf here:
 d_colors$dist2water_r         <- log2(d_colors$dist2water);
 d_colors$dist2rivers_r        <- log2(d_colors$dist2rivers);
@@ -338,33 +348,32 @@ ggplot() + theme_bw() +
 ```
 
 
-## Altitude
+## Elevation
 
-We obtained altitude (in meters) data from @bentz_evolution_2018; please note that for the analyses, we use `log(altitude + 1)` (we added 1m to avoid errors for the locations recorded at sea level [0m]).
+We obtained elevation (altitude, in meters) using [Mapzen](https://en.wikipedia.org/wiki/Mapzen) data, which is still available (July 2020) on the [Terrain Tiles on Amazon Web Services](https://aws.amazon.com/public-datasets/terrain/) and accessible through the [`elevatr` package](https://cran.r-project.org/web/packages/elevatr/vignettes/introduction_to_elevatr.html#get_raster_elevation_data); please note that for the analyses, we use `log(elevation + 1)` (we added 1m to avoid errors for the locations recorded at sea level, 0m).
 
-```{r summary altitiude, echo=FALSE, message=FALSE, warning=FALSE}
-# Altitude (log)
-pander(summary(d_colors$altitude));
+```{r summary elevation, echo=FALSE, message=FALSE, warning=FALSE}
+pander(summary(d_colors$elevation));
 ```
 
-```{r distribution of altitude, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of altitude.")}
-ggplot(d_colors, aes(x=altitude)) +
+```{r distribution of elevation, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Distribution of elevation.")}
+ggplot(d_colors, aes(x=elevation)) +
   theme_bw() +
   geom_histogram(color="tomato", fill="tomato", alpha=0.5)+
-  ggtitle("Distribution of altitude") +
+  ggtitle("Distribution of elevation") +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map altitude, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of altitude (color scale).")}
+```{r map elevation, echo=FALSE, message=FALSE, warning=FALSE, fig.cap=capFig("Map of elevation (color scale).")}
 ggplot() + theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
-  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=altitude), color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
-  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=altitude), color="black") +
+  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=elevation), color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
+  geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=elevation), color="black") +
   theme(legend.position = c(0.75, 0.5), 
       legend.justification = c(1, 1), 
       legend.title = element_text(size = 9), 
       legend.text = element_text(size = 10)) +
-  labs(fill = "Altitude (m)") +
+  labs(fill = "Elevation (m)") +
   scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
   NULL;
 ```
@@ -984,7 +993,6 @@ ggplot() + theme_bw() +
 
 
 
-The data is 
 
 ## Input files 
 
