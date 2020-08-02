@@ -1612,7 +1612,7 @@ DiagrammeR::grViz(paste0('
 
 First, we need to investigate the variation between families and macroareas, as we want to model them as random effects in our models.
 
-```{r include=FALSE}
+```{r blue null model, include=FALSE}
 # Null model (intercept) -> word for blue:
 if( !all(file.exists("./cached_results/b_0__blue.RData")) )
 {
@@ -1730,7 +1730,7 @@ ggplot(d_colors, aes(y=n_colors, x=exists_blue, fill=exists_blue)) +
 
 Here we check if there is a relationship between measures of UV incidence and the existence of a word for "blue"; as per @lindsey_color_2002 and @brown_color_2004, this relationship should be *negative* (i.e., higher UV-B incidence should reduce the probability of a word for "blue").
 
-```{r fig.cap=capFig('Probability of having a specific word for "blue" function of UV incidence, showing the jittered data points, the densities (colored violins) and boxplots (black). Left: mean incidence across 1998, right: standard deviation of incidence over the days of 1998; top: UV-A, bottom: UV-B.'), fig.height=2*5, fig.width=2*4}
+```{r fig.cap=capFig('Probability of having a specific word for "blue" function of UV incidence at the locations of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). Left: mean incidence across 1998, right: standard deviation of incidence over the days of 1998; top: UV-A, bottom: UV-B.'), fig.height=2*5, fig.width=2*4}
 grid.arrange(ggplot(d_colors, aes(y=UV_A_mean, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -1782,11 +1782,63 @@ grid.arrange(ggplot(d_colors, aes(y=UV_A_mean, x=exists_blue, fill=exists_blue))
              ncol=2);
 ```
 
+```{r fig.cap=capFig('Probability of having a specific word for "blue" function of UV incidence at the *origins of language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). Left: mean incidence across 1998, right: standard deviation of incidence over the days of 1998; top: UV-A, bottom: UV-B.'), fig.height=2*5, fig.width=2*4, eval=FALSE, include=FALSE}
+grid.arrange(ggplot(d_colors, aes(y=UV_A_mean_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y=expression("Mean UV-A (J/m"^"2"~")")) +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ggplot(d_colors, aes(y=UV_A_sd_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y=expression("Std.dev. UV-A (J/m"^"2"~")")) +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,   
+             ggplot(d_colors, aes(y=UV_B_mean_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y=expression("Mean UV-B (J/m"^"2"~")")) +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ggplot(d_colors, aes(y=UV_B_sd_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y=expression("Std.dev. UV-B (J/m"^"2"~")")) +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,   
+             ncol=2);
+```
+
 ```{r include=FALSE}
 # UV incidence -> word for blue:
 if( !all(file.exists("./cached_results/b_uv__blue.RData")) )
 {
-  # Individually:
+  # For languages:
   # UV_A_mean:
   b_uvam__blue <- brm(exists_blue ~ 1 + UV_A_mean_r + I(UV_A_mean_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_A_mean -> exists_blue
                       family=bernoulli(link="logit"), data=d_colors, 
@@ -1870,6 +1922,98 @@ if( !all(file.exists("./cached_results/b_uv__blue.RData")) )
   summary(m_uv__blue);
   (m_uv__blue_VIF <- performance::check_collinearity(m_uv__blue)); # very high VIF -> we must keep only UV_B_mean
   
+  
+  # For families:
+  # UV_A_mean:
+  bf_uvam__blue <- brm(exists_blue ~ 1 + UV_A_mean_family_r + I(UV_A_mean_family_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_A_mean -> exists_blue
+                       family=bernoulli(link="logit"), data=d_colors, 
+                       prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
+                               prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
+                       save_all_pars=TRUE, # needed for Bayes factors
+                       sample_prior=TRUE,  # needed for hypotheses tests
+                       cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_uvam__blue <- brms_fit_indices(bf_uvam__blue);
+  summary(bf_uvam__blue); mcmc_plot(bf_uvam__blue, type="trace"); mcmc_plot(bf_uvam__blue);
+  (hf_uvam__blue <- brms::hypothesis(bf_uvam__blue, c("UV_A_mean_family_r = 0", "UV_A_mean_family_r < 0", "IUV_A_mean_family_rE2 = 0")));
+  (hdif_uvam__blue <- hdi(bf_uvam__blue, ci=0.95));
+  comparef_0_uvam__blue <- brms_compare_models(b_0__blue, bf_uvam__blue, "null", "+ UV_A_mean"); # null is better...
+  # Iterative manual simplification:
+  bf_uvam__blue_2 <- update(bf_uvam__blue, . ~ . - I(UV_A_mean_family_r^2), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_uvam__blue_2 <- brms_fit_indices(bf_uvam__blue_2);
+  summary(bf_uvam__blue_2); mcmc_plot(bf_uvam__blue_2, type="trace"); mcmc_plot(bf_uvam__blue_2);
+  (h_uvam__blue_2 <- brms::hypothesis(bf_uvam__blue_2, c("UV_A_mean_family_r = 0", "UV_A_mean_family_r < 0")));
+  (hdi_uvam__blue_2 <- hdi(bf_uvam__blue_2, ci=0.95));
+  brms_compare_models(bf_uvam__blue_2, bf_uvam__blue, "simplified", "full"); # simplified is better...
+  compare_0_uvam__blue <- brms_compare_models(b_0__blue, bf_uvam__blue_2, "null", "+ UV_A_mean"); # no real evidence for UV-A...
+
+  # UV_A_sd:
+  bf_uvas__blue <- brm(exists_blue ~ 1 + UV_A_sd_family_r + I(UV_A_sd_family_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_A_sd -> exists_blue
+                       family=bernoulli(link="logit"), data=d_colors, 
+                       prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
+                               prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
+                       save_all_pars=TRUE, # needed for Bayes factors
+                       sample_prior=TRUE,  # needed for hypotheses tests
+                       cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_uvas__blue <- brms_fit_indices(bf_uvas__blue);
+  summary(bf_uvas__blue); mcmc_plot(bf_uvas__blue, type="trace"); mcmc_plot(bf_uvas__blue);
+  (hf_uvas__blue <- brms::hypothesis(bf_uvas__blue, c("UV_A_sd_family_r = 0", "IUV_A_sd_family_rE2 = 0")));
+  (hdif_uvas__blue <- hdi(bf_uvas__blue, ci=0.95));
+  comparef_0_uvas__blue <- brms_compare_models(b_0__blue, bf_uvas__blue, "null", "+ UV_A_sd"); # null is better...
+  # Iterative manual simplification:
+  bf_uvas__blue_2 <- update(bf_uvas__blue, . ~ . - I(UV_A_sd_family_r^2), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_uvas__blue_2 <- brms_fit_indices(bf_uvas__blue_2);
+  summary(bf_uvas__blue_2); mcmc_plot(bf_uvas__blue_2, type="trace"); mcmc_plot(bf_uvas__blue_2);
+  (h_uvas__blue_2 <- brms::hypothesis(bf_uvas__blue_2, c("UV_A_sd_family_r = 0")));
+  (hdi_uvas__blue_2 <- hdi(bf_uvas__blue_2, ci=0.95));
+  brms_compare_models(bf_uvas__blue_2, bf_uvas__blue, "simplified", "full"); # simplified is better...
+  compare_0_uvas__blue <- brms_compare_models(b_0__blue, bf_uvas__blue_2, "null", "+ UV_A_sd"); # very weak evidence for UV-A...
+  
+  # UV_B_mean:
+  bf_uvbm__blue <- brm(exists_blue ~ 1 + UV_B_mean_family_r + I(UV_B_mean_family_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_B_mean -> exists_blue
+                       family=bernoulli(link="logit"), data=d_colors, 
+                       prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
+                               prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
+                       save_all_pars=TRUE, # needed for Bayes factors
+                       sample_prior=TRUE,  # needed for hypotheses tests
+                       cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_uvbm__blue <- brms_fit_indices(bf_uvbm__blue);
+  summary(bf_uvbm__blue); mcmc_plot(bf_uvbm__blue, type="trace"); mcmc_plot(bf_uvbm__blue);
+  (hf_uvbm__blue <- brms::hypothesis(bf_uvbm__blue, c("UV_B_mean_family_r = 0", "UV_B_mean_family_r < 0", "IUV_B_mean_family_rE2 = 0")));
+  (hdif_uvbm__blue <- hdi(bf_uvbm__blue, ci=0.95));
+  comparef_0_uvbm__blue <- brms_compare_models(b_0__blue, bf_uvbm__blue, "null", "+ UV_B_mean"); # null is better...
+  # Iterative manual simplification:
+  bf_uvbm__blue_2 <- update(bf_uvbm__blue, . ~ . - I(UV_B_mean_family_r^2), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_uvbm__blue_2 <- brms_fit_indices(bf_uvbm__blue_2);
+  summary(bf_uvbm__blue_2); mcmc_plot(bf_uvbm__blue_2, type="trace"); mcmc_plot(bf_uvbm__blue_2);
+  (h_uvbm__blue_2 <- brms::hypothesis(bf_uvbm__blue_2, c("UV_B_mean_family_r = 0", "UV_B_mean_family_r < 0")));
+  (hdi_uvbm__blue_2 <- hdi(bf_uvbm__blue_2, ci=0.95));
+  brms_compare_models(bf_uvbm__blue_2, bf_uvbm__blue, "simplified", "full"); # simplified is better...
+  compare_0_uvbm__blue <- brms_compare_models(b_0__blue, bf_uvbm__blue_2, "null", "+ UV_B_mean"); # no real evidence for UV-B...
+  
+  # UV_B_sd:
+  bf_uvbs__blue <- brm(exists_blue ~ 1 + UV_B_sd_family_r + I(UV_B_sd_family_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_B_sd -> exists_blue
+                       family=bernoulli(link="logit"), data=d_colors, 
+                       prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
+                               prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
+                       save_all_pars=TRUE, # needed for Bayes factors
+                       sample_prior=TRUE,  # needed for hypotheses tests
+                       cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_uvbs__blue <- brms_fit_indices(bf_uvbs__blue);
+  summary(bf_uvbs__blue); mcmc_plot(bf_uvbs__blue, type="trace"); mcmc_plot(bf_uvbs__blue);
+  (hf_uvbs__blue <- brms::hypothesis(bf_uvbs__blue, c("UV_B_sd_family_r = 0", "IUV_B_sd_family_rE2 = 0")));
+  (hdif_uvbs__blue <- hdi(bf_uvbs__blue, ci=0.95));
+  comparef_0_uvbs__blue <- brms_compare_models(b_0__blue, bf_uvbs__blue, "null", "+ UV_B_sd"); # null is better...
+  # Iterative manual simplification:
+  bf_uvbs__blue_2 <- update(bf_uvbs__blue, . ~ . - I(UV_B_sd_family_r^2), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_uvbs__blue_2 <- brms_fit_indices(bf_uvbs__blue_2);
+  summary(bf_uvbs__blue_2); mcmc_plot(bf_uvbs__blue_2, type="trace"); mcmc_plot(bf_uvbs__blue_2);
+  (h_uvbs__blue_2 <- brms::hypothesis(bf_uvbs__blue_2, c("UV_B_sd_family_r = 0")));
+  (hdi_uvbs__blue_2 <- hdi(bf_uvbs__blue_2, ci=0.95));
+  brms_compare_models(bf_uvbs__blue_2, bf_uvbs__blue, "simplified", "full"); # simplified is not much better...
+  compare_0_uvbs__blue <- brms_compare_models(b_0__blue, bf_uvbs__blue_2, "null", "+ UV_B_sd"); # very weak evidence for UV-B...
+
+
+  
   # Save results:
   save(compare_0_uvam__blue, h_uvam__blue, hdi_uvam__blue, #b_uvam__blue, # no need to save the actual model
        compare_0_uvas__blue, h_uvas__blue, hdi_uvas__blue, #b_uvas__blue, # no need to save the actual model
@@ -1891,6 +2035,8 @@ Fitting individual Bayesian mixed-effects logistic regressions (with family and 
 - the two means are highly multicollinear (VIF~UV_A_mean~ = `r round(m_uv__blue_VIF$VIF[ m_uv__blue_VIF$Parameter == "UV_A_mean" ],1)`, VIF~UV_B_mean~ = `r round(m_uv__blue_VIF$VIF[ m_uv__blue_VIF$Parameter == "UV_B_mean" ],1)`),
 - but *UV_A_mean* fits the data worse than *UV_B_mean* (Bayes factor = `r round(compare_uvam_uvbm__blue$BF,2)`, LOO = `r sprintf("%.2f [SE=%.2f]", compare_uvam_uvbm__blue$LOO["UV_A_mean", "elpd_diff"], compare_uvam_uvbm__blue$LOO["UV_A_mean", "se_diff"])`, WAIC = `r sprintf("%.2f [SE=%.2f]", compare_uvam_uvbm__blue$WAIC["UV_A_mean", "elpd_diff"], compare_uvam_uvbm__blue$WAIC["UV_A_mean", "se_diff"])`, K-fold = `r sprintf("%.2f [SE=%.2f]", compare_uvam_uvbm__blue$KFOLD["UV_A_mean", "elpd_diff"], compare_uvam_uvbm__blue$KFOLD["UV_A_mean", "se_diff"])`).
 
+There is no (or very marginal) evidence that UV (A or B, mean or sd) incidence at the *origins of the language families* has any effect on the presence of a dedicated word for "blue".
+
 Therefore, we will only consider *UV_B_mean* (renamed to *UVB* for shortness) in the following analyses.
 
 ```{r}
@@ -1900,15 +2046,13 @@ d_colors$UVB_family <- d_colors$UV_B_mean_family; d_colors$UVB_family_r <- d_col
 ```
 
 
-#### How about family origins?
-
 
 ### Latitude &rarr; "blue"
 
 The effect of UV-B on the existence of a specific word for "blue" [@lindsey_color_2002;@brown_color_2004] should be due to the physical negative relationship between the latitude of a location on the Earth's surface and the mean annual UB-V radiation it receives; thus, it is justified to investigate the relationship between latitude and "blue". 
 This relationship should specifically be *positive* (i.e., higher latitudes receive less UV-B incidence), but, given the cosine transformation of latitude in our statistical models, with large values closer to the equator, the expected statistical relationship should be *negative*.
 
-```{r fig.cap=capFig('Probability of having a specific word for "blue" function of latitude, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of latitude, the effect of the absolute value of latitude (i.e., `abs(latitude)`), and the quadratic effect of latitude (i.e., `latitude`^2^).'), fig.height=1*5, fig.width=3*4}
+```{r fig.cap=capFig('Probability of having a specific word for "blue" function of latitude of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of latitude, the effect of the absolute value of latitude (i.e., `abs(latitude)`), and the quadratic effect of latitude (i.e., `latitude`^2^).'), fig.height=1*5, fig.width=3*4}
 grid.arrange(ggplot(d_colors, aes(y=latitude, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -1948,10 +2092,52 @@ grid.arrange(ggplot(d_colors, aes(y=latitude, x=exists_blue, fill=exists_blue)) 
              ncol=3);
 ```
 
+
+```{r fig.cap=capFig('Probability of having a specific word for "blue" function of latitude of the *origins of the language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of latitude, the effect of the absolute value of latitude (i.e., `abs(latitude)`), and the quadratic effect of latitude (i.e., `latitude`^2^).'), fig.height=1*5, fig.width=3*4, eval=FALSE, include=FALSE}
+grid.arrange(ggplot(d_colors, aes(y=latitude_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y="Latitude (°)") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL, 
+             ggplot(d_colors, aes(y=abs(latitude_family), x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y="abs(latitude) (°)") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ggplot(d_colors, aes(y=latitude_family^2, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y=expression("latitude"^"2"~" (°"^"2"~")")) +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ncol=3);
+```
+
 ```{r include=FALSE}
 # Latitude -> word for blue:
 if( !all(file.exists("./cached_results/b_lat__blue.RData")) )
 {
+  # For languages:
   b_lat__blue_all <- brm(exists_blue ~ 1 + latitude_r + I(latitude_r^2) + abs(latitude_r) + (1 | glottocode_family) + (1 | macroarea), # latitude -> exists_blue
                          family=bernoulli(link="logit"), data=d_colors, 
                          prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
@@ -1982,6 +2168,31 @@ if( !all(file.exists("./cached_results/b_lat__blue.RData")) )
   # -> quadratic-only model:
   b_lat__blue <- b_lat__blue_1a; h_lat__blue <- h_lat__blue_1a; hdi_lat__blue <- hdi_lat__blue_1a;
 
+  
+  # For families:
+  bf_lat__blue_all <- brm(exists_blue ~ 1 + latitude_family_r + I(latitude_family_r^2) + abs(latitude_family_r) + (1 | glottocode_family) + (1 | macroarea), # latitude -> exists_blue
+                          family=bernoulli(link="logit"), data=d_colors, 
+                          prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
+                                  prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
+                          save_all_pars=TRUE, # needed for Bayes factors
+                          sample_prior=TRUE,  # needed for hypotheses tests
+                          cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_lat__blue_all <- brms_fit_indices(bf_lat__blue_all);
+  summary(bf_lat__blue_all); mcmc_plot(bf_lat__blue_all, type="trace"); mcmc_plot(bf_lat__blue_all);
+  (hf_lat__blue <- brms::hypothesis(bf_lat__blue_all, c("latitude_family_r = 0", "latitude_family_r < 0", "Ilatitude_family_rE2 = 0", "Ilatitude_family_rE2 < 0", "abslatitude_family_r = 0", "abslatitude_family_r < 0")));
+  (hdif_lat__blue <- hdi(bf_lat__blue_all, ci=0.95));
+  compare_0_lat__blue <- brms_compare_models(b_0__blue, bf_lat__blue_all, "null", "+ latitude"); # latitude does not seem to matter!
+  # Iterative manual simplification:
+  bf_lat__blue_1 <- update(bf_lat__blue_all, . ~ . - abs(latitude_family_r) - I(latitude_family_r^2), 
+                           cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_lat__blue_1 <- brms_fit_indices(bf_lat__blue_1);
+  summary(bf_lat__blue_1); mcmc_plot(bf_lat__blue_1, type="trace"); mcmc_plot(bf_lat__blue_1);
+  (hf_lat__blue_1 <- brms::hypothesis(bf_lat__blue_1, c("latitude_family_r = 0", "latitude_family_r < 0")));
+  (hdif_lat__blue_1 <- hdi(bf_lat__blue_1, ci=0.95));
+  brms_compare_models(bf_lat__blue_1, bf_lat__blue_all, "simplified", "full"); # simplified is marginally better
+  compare_0_lat__blue <- brms_compare_models(b_0__blue, bf_lat__blue_1, "null", "+ latitude"); # no effect of latitude...
+
+
   # Save results:
   save(compare_0_lat__blue, h_lat__blue, hdi_lat__blue, #b_lat__blue, # no need to save the actual model
        file="./cached_results/b_lat__blue.RData", compress="xz", compression_level=9);
@@ -1996,6 +2207,7 @@ Interestingly, when testing simultaneously the influence of *latitude* (linear e
 Please note that @lindsey_color_2002 and @brown_color_2004 would predict that the effect of latitude (mediated by the incidence of UV-B radiation) should be symmetric across the equator, so it should be modeled either as its absolute value (i.e., `abs(`*latitude*`)`) or as an even power of *latitude* (i.e., *latitude*^2*k*^, *k*≥2).
 Thus, the fact that *latitude* is not retained supports this conjecture, while the non-retention of `abs(`*latitude*`)` but of *latitude*^2^ seems to suggest a genuinely non-linear symmetric effect.
 
+There is no evidence that the latitude of the *origins of language families* has any effect on the existence of a dedicated word for "blue".
 
 
 ### Subsistence &rarr; "blue"
@@ -2052,7 +2264,7 @@ Interestingly, the specific directional hypothesis of a positive effect of AGR i
 
 Arguably there may be a *positive* relationship between a location's altitude above sea level and the average amount of UV-B it receives in a year.
 
-```{r fig.cap=capFig('Probability of having a specific word for "blue" function of elevation (altitude), showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of elevation and the quadratic effect of elevation (i.e., `elevation`^2^).'), fig.height=1*5, fig.width=2*4}
+```{r fig.cap=capFig('Probability of having a specific word for "blue" function of elevation (altitude) of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of elevation and the quadratic effect of elevation (i.e., `elevation`^2^).'), fig.height=1*5, fig.width=2*4}
 grid.arrange(ggplot(d_colors, aes(y=elevation, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2080,10 +2292,39 @@ grid.arrange(ggplot(d_colors, aes(y=elevation, x=exists_blue, fill=exists_blue))
              ncol=2);
 ```
 
+```{r fig.cap=capFig('Probability of having a specific word for "blue" function of elevation (altitude) of the *origins of language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of elevation and the quadratic effect of elevation (i.e., `elevation`^2^).'), fig.height=1*5, fig.width=2*4, eval=FALSE, include=FALSE}
+grid.arrange(ggplot(d_colors, aes(y=elevation_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y="elevation (m)") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ggplot(d_colors, aes(y=elevation_family^2, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y=expression("elevation"^"2"~" (m"^"2"~")")) +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ncol=2);
+```
+
 ```{r include=FALSE}
 # Elevation -> word for blue:
 if( FALSE )
 {
+  # For languages:
   b_alt__blue_all <- brm(exists_blue ~ 1 + elevation_r + I(elevation_r^2) + (1 | glottocode_family) + (1 | macroarea), # elevation -> exists_blue
                          family=bernoulli(link="logit"), data=d_colors, 
                          prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
@@ -2104,10 +2345,33 @@ if( FALSE )
   (hdi_alt__blue_2 <- hdi(b_alt__blue_2, ci=0.95));
   brms_compare_models(b_alt__blue_2, b_alt__blue_all, "- quadratic", "all"); # quadratic does not seem needed
   compare_0_alt__blue <- brms_compare_models(b_0__blue, b_alt__blue_2, "null", "+ elevation"); # no effect of elevation!
+
+
+  # For families:
+  bf_alt__blue_all <- brm(exists_blue ~ 1 + elevation_family_r + I(elevation_family_r^2) + (1 | glottocode_family) + (1 | macroarea), # elevation -> exists_blue
+                         family=bernoulli(link="logit"), data=d_colors, 
+                         prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
+                                 prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
+                         save_all_pars=TRUE, # needed for Bayes factors
+                         sample_prior=TRUE,  # needed for hypotheses tests
+                         cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_alt__blue_all <- brms_fit_indices(bf_alt__blue_all);
+  summary(bf_alt__blue_all); mcmc_plot(bf_alt__blue_all, type="trace"); mcmc_plot(bf_alt__blue_all);
+  (hf_alt__blue <- brms::hypothesis(bf_alt__blue_all, c("elevation_family_r = 0", "elevation_family_r > 0", "Ielevation_family_rE2 = 0", "Ielevation_family_rE2 > 0")));
+  (hdif_alt__blue <- hdi(bf_alt__blue_all, ci=0.95));
+  compare_0_alt__blue <- brms_compare_models(b_0__blue, bf_alt__blue_all, "null", "+ elevation"); # elevation seems to have no effect...
+  # Iterative manual simplification:
+  bf_alt__blue_2 <- update(bf_alt__blue_all, . ~ . - I(elevation_family_r^2), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_alt__blue_2 <- brms_fit_indices(bf_alt__blue_2);
+  summary(bf_alt__blue_2); mcmc_plot(bf_alt__blue_2, type="trace"); mcmc_plot(bf_alt__blue_2);
+  (hf_alt__blue_2 <- brms::hypothesis(bf_alt__blue_2, c("elevation_family_r = 0", "elevation_family_r > 0")));
+  (hdif_alt__blue_2 <- hdi(bf_alt__blue_2, ci=0.95));
+  brms_compare_models(bf_alt__blue_2, bf_alt__blue_all, "simplified", "full"); # simplified is better
+  compare_0_alt__blue <- brms_compare_models(b_0__blue, bf_alt__blue_2, "null", "+ elevation"); # no real effect of elevation!
 }
 ```
 
-However, there is no effect of *elevation* (linear effect) nor of *elevation*^2^ (quadratic effect) on the presence of a dedicated word for "blue" in our data, even when testing the specific directional hypothesis.
+However, there is no effect of *elevation* (linear effect) nor of *elevation*^2^ (quadratic effect), of the languages or of the origins of language families, on the presence of a dedicated word for "blue" in our data, even when testing the specific directional hypothesis.
 
 
 
@@ -2115,7 +2379,7 @@ However, there is no effect of *elevation* (linear effect) nor of *elevation*^2^
 
 As opposed to the above, there do not seem to be good *a priori* reasons why climate, ecology and air humidity should influence the presence of a dedicated word for "blue".
 
-```{r fig.cap=capFig('Probability of having a specific word for "blue" function of climate, ecology and humidity, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom: climate PC1, PC2 and PC3, median and IQR of humidity.'), fig.height=2*5, fig.width=3*4}
+```{r fig.cap=capFig('Probability of having a specific word for "blue" function of climate, ecology and humidity at the location of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom: climate PC1, PC2 and PC3, median and IQR of humidity.'), fig.height=2*5, fig.width=3*4}
 grid.arrange(ggplot(d_colors, aes(y=clim_PC1, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2179,10 +2443,76 @@ grid.arrange(ggplot(d_colors, aes(y=clim_PC1, x=exists_blue, fill=exists_blue)) 
              ncol=3);
 ```
 
+
+```{r fig.cap=capFig('Probability of having a specific word for "blue" function of climate, ecology and humidity at the location of the *origins of the language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom: climate PC1, PC2 and PC3, median and IQR of humidity.'), fig.height=2*5, fig.width=3*4, eval=FALSE, include=FALSE}
+grid.arrange(ggplot(d_colors, aes(y=clim_PC1_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y="Climate PC1") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ggplot(d_colors, aes(y=clim_PC2_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y="Climate PC2") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ggplot(d_colors, aes(y=clim_PC3_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y="Climate PC3") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ggplot(d_colors, aes(y=hum_median_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y="Median humidity") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ggplot(d_colors, aes(y=hum_IQR_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y="IQR humidity") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ncol=3);
+```
+
 ```{r include=FALSE}
 # Climate, ecology & humidity -> word for blue:
 if( !all(file.exists("./cached_results/b_clim__blue.RData")) )
 {
+  # For languages:
   # VIF:
   m_clim__blue_all <- glm(exists_blue ~ 1 + clim_PC1_r + clim_PC2_r + clim_PC3_r + hum_median + hum_IQR, family=binomial(), data=d_colors);
   summary(m_clim__blue_all);
@@ -2214,6 +2544,44 @@ if( !all(file.exists("./cached_results/b_clim__blue.RData")) )
   # -> clim_PC1-only model:
   b_clim__blue <- b_clim__blue_1; h_clim__blue <- h_clim__blue_1; hdi_clim__blue <- hdi_clim__blue_1;
 
+  
+  # For language families:
+  # VIF:
+  mf_clim__blue_all <- glm(exists_blue ~ 1 + clim_PC1_family_r + clim_PC2_family_r + clim_PC3_family_r + hum_median_family + hum_IQR_family, family=binomial(), data=d_colors);
+  summary(mf_clim__blue_all);
+  performance::check_collinearity(mf_clim__blue_all); # high multicollinearity for clim_PC1_family_r and hum_median_family -> keep the first to be like for languages above:
+  mf_clim__blue_all <- update(mf_clim__blue_all, . ~ . - hum_median_family);
+  summary(mf_clim__blue_all);
+  performance::check_collinearity(mf_clim__blue_all); # moderate multicollinearity for clim_PC3_family_r -> remove it:
+  mf_clim__blue_all <- update(mf_clim__blue_all, . ~ . - clim_PC3_family_r);
+  summary(mf_clim__blue_all);
+  performance::check_collinearity(mf_clim__blue_all); # no multicollinearity now...
+  
+  # brms modeling:
+  bf_clim__blue_all <- brm(exists_blue ~ 1 + clim_PC1_family_r + clim_PC2_family_r + hum_IQR_family + 
+                            (1 | glottocode_family) + (1 | macroarea), # climate, ecology, humidity -> exists_blue
+                          family=bernoulli(link="logit"), data=d_colors, 
+                          prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
+                                  prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
+                          save_all_pars=TRUE, # needed for Bayes factors
+                          sample_prior=TRUE,  # needed for hypotheses tests
+                          cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_clim__blue_all <- brms_fit_indices(bf_clim__blue_all);
+  summary(bf_clim__blue_all); mcmc_plot(bf_clim__blue_all, type="trace"); mcmc_plot(bf_clim__blue_all);
+  (hf_clim__blue <- brms::hypothesis(bf_clim__blue_all, c("clim_PC1_family_r = 0", "clim_PC2_family_r = 0", "hum_IQR_family = 0")));
+  (hdif_clim__blue <- hdi(bf_clim__blue_all, ci=0.95));
+  compare_0_clim__blue <- brms_compare_models(b_0__blue, bf_clim__blue_all, "null", "+ climate"); # marginally better...
+  # Iterative manual simplification:
+  bf_clim__blue_1 <- update(bf_clim__blue_all, . ~ . - clim_PC2_family_r - hum_IQR_family, 
+                           cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_clim__blue_1 <- brms_fit_indices(bf_clim__blue_1);
+  summary(bf_clim__blue_1); mcmc_plot(bf_clim__blue_1, type="trace"); mcmc_plot(bf_clim__blue_1);
+  (hf_clim__blue_1 <- brms::hypothesis(bf_clim__blue_1, c("clim_PC1_family_r = 0")));
+  (hdif_clim__blue_1 <- hdi(bf_clim__blue_1, ci=0.95));
+  brms_compare_models(bf_clim__blue_1, bf_clim__blue_all, "simplified", "full"); # simplified is marginally better than full
+  compare_0_clim__blue <- brms_compare_models(b_0__blue, bf_clim__blue_1, "null", "+ clim_PC1"); # no evidence for climate or humidity...
+
+  
   # Save results:
   save(compare_0_clim__blue, h_clim__blue, hdi_clim__blue, #b_clim__blue, # no need to save the actual model
        file="./cached_results/b_clim__blue.RData", compress="xz", compression_level=9);
@@ -2225,13 +2593,15 @@ if( !all(file.exists("./cached_results/b_clim__blue.RData")) )
 
 However, when testing simultaneously the influence of the three climate PCs and of the median and IQR of air humidity on the presence of a dedicated word for "blue", only the first climate PC (*clim_PC1*) has a positive effect: *&beta;~clim_PC1~* = `r round(h_clim__blue$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_clim__blue$CI_low[ hdi_clim__blue$Parameter == "b_clim_PC1_r" ], hdi_clim__blue$CI_high[ hdi_clim__blue$Parameter == "b_clim_PC1_r" ])`), posterior probability *p*(*&beta;*=0) = `r sprintf("%.4g",h_clim__blue$hypothesis$Post.Prob[1])`.
 
+There is no evidence that climate, ecology or humidity at the *origins of the language families* have any effect on the presence of a dedicated word for "blue".
+
 
 
 ### Distance to water &rarr; "blue"
 
 While we might imagine that closeness to large bodies of (clean and permanent) water might promote the use of a word for blue to describe their color (thus, a *negative* effect), this is, as far as we know, not been seriously suggested in the literature.
 
-```{r fig.cap=capFig('Probability of having a specific word for "blue" function of distance to large bodies of water, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom, distances to: lakes, rivers, seas/oceans, and any type of body of water.'), fig.height=2*5, fig.width=2*4}
+```{r fig.cap=capFig('Probability of having a specific word for "blue" function of distance to large bodies of water from the locations of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom, distances to: lakes, rivers, seas/oceans, and any type of body of water.'), fig.height=2*5, fig.width=2*4}
 grid.arrange(ggplot(d_colors, aes(y=dist2lakes, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2283,10 +2653,64 @@ grid.arrange(ggplot(d_colors, aes(y=dist2lakes, x=exists_blue, fill=exists_blue)
              ncol=2);
 ```
 
+
+```{r fig.cap=capFig('Probability of having a specific word for "blue" function of distance to large bodies of water from the locations of the *origins of language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom, distances to: lakes, rivers, seas/oceans, and any type of body of water.'), fig.height=2*5, fig.width=2*4, eval=FALSE, include=FALSE}
+grid.arrange(ggplot(d_colors, aes(y=dist2lakes_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y="Distance to nearest lake (km)") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ggplot(d_colors, aes(y=dist2rivers_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y="Distance to nearest river (km)") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ggplot(d_colors, aes(y=dist2ocean_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y="Distance to nearest sea/ocean (km)") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ggplot(d_colors, aes(y=dist2water_family, x=exists_blue, fill=exists_blue)) + 
+               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+               theme_bw() +
+               labs(x='Word for blue?', y="Distance to nearest large body of water (km)") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+               NULL,
+             ncol=2);
+```
+
 ```{r include=FALSE}
 # Distance to large bodies of water -> word for blue:
 if( !all(file.exists("./cached_results/b_water__blue.RData")) )
 {
+  # For languages:
   # VIF:
   m_water__blue_all <- glm(exists_blue ~ 1 + dist2lakes_r + dist2rivers_r + dist2ocean_r + dist2water_r, family=binomial(), data=d_colors);
   summary(m_water__blue_all);
@@ -2320,6 +2744,44 @@ if( !all(file.exists("./cached_results/b_water__blue.RData")) )
   # -> dist2lakes-only model:
   b_water__blue <- b_water__blue_1; h_water__blue <- h_water__blue_1; hdi_water__blue <- hdi_water__blue_1;
 
+  
+  # For language families:
+  # VIF:
+  mf_water__blue_all <- glm(exists_blue ~ 1 + dist2lakes_family_r + dist2rivers_family_r + dist2ocean_family_r + dist2water_family_r, family=binomial(), data=d_colors);
+  summary(mf_water__blue_all);
+  performance::check_collinearity(mf_water__blue_all); 
+  # moderate VIF for dist2rivers_family and dist2water_family: the first has a lower VIF and is significant, while the second is a composite -> remove dist2water_family
+  mf_water__blue_all <- update(mf_water__blue_all, . ~ . - dist2water_family_r);
+  summary(mf_water__blue_all);
+  performance::check_collinearity(mf_water__blue_all); # nu multicollenarity...
+  
+  # brms modeling:
+  bf_water__blue_all <- brm(exists_blue ~ 1 + dist2lakes_family_r + dist2rivers_family_r + dist2ocean_family_r + 
+                              I(dist2lakes_family_r^2) + I(dist2rivers_family_r^2) + I(dist2ocean_family_r^2) + 
+                              (1 | glottocode_family) + (1 | macroarea), # distance to water -> exists_blue
+                            family=bernoulli(link="logit"), data=d_colors, 
+                            prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
+                                    prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
+                            save_all_pars=TRUE, # needed for Bayes factors
+                            sample_prior=TRUE,  # needed for hypotheses tests
+                            cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_water__blue_all <- brms_fit_indices(bf_water__blue_all);
+  summary(bf_water__blue_all); mcmc_plot(bf_water__blue_all, type="trace"); mcmc_plot(bf_water__blue_all);
+  (hf_water__blue <- brms::hypothesis(bf_water__blue_all, c("dist2lakes_family_r = 0", "Idist2lakes_family_rE2 = 0", "dist2rivers_family_r = 0", "Idist2rivers_family_rE2 = 0", "dist2ocean_family_r = 0", "Idist2ocean_family_rE2 = 0")));
+  (hdif_water__blue <- hdi(bf_water__blue_all, ci=0.95));
+  compare_0_water__blue <- brms_compare_models(b_0__blue, bf_water__blue_all, "null", "+ water"); # not really better...
+  # Iterative manual simplification:
+  bf_water__blue_1 <- update(bf_water__blue_all, . ~ . - I(dist2ocean_family_r^2) - I(dist2rivers_family_r^2) - 
+                               dist2ocean_family_r - dist2rivers_family_r - I(dist2lakes_family_r^2), 
+                           cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  bf_water__blue_1 <- brms_fit_indices(bf_water__blue_1);
+  summary(bf_water__blue_1); mcmc_plot(bf_water__blue_1, type="trace"); mcmc_plot(bf_water__blue_1);
+  (hf_water__blue_1 <- brms::hypothesis(bf_water__blue_1, c("dist2lakes_family_r = 0")));
+  (hdif_water__blue_1 <- hdi(bf_water__blue_1, ci=0.95));
+  brms_compare_models(bf_water__blue_1, bf_water__blue_all, "simplified", "full"); # simplified is better than full
+  compare_0_water__blue <- brms_compare_models(b_0__blue, bf_water__blue_1, "null", "+ water"); # no evidence...
+
+  
   # Save results:
   save(compare_0_water__blue, h_water__blue, hdi_water__blue, #b_water__blue, # no need to save the actual model
        file="./cached_results/b_water__blue.RData", compress="xz", compression_level=9);
@@ -2330,6 +2792,8 @@ if( !all(file.exists("./cached_results/b_water__blue.RData")) )
 ```
 
 However, when testing simultaneously the influence of the four distances to large bodies of water (both linear and squared) on the presence of a dedicated word for "blue", only the distance to lakes (*dist2lakes*) has a (linear) negative effect: *&beta;~dist2lakes~* = `r round(h_water__blue$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_water__blue$CI_low[ hdi_water__blue$Parameter == "b_dist2lakes_r" ], hdi_water__blue$CI_high[ hdi_water__blue$Parameter == "b_dist2lakes_r" ])`), posterior probability *p*(*&beta;*=0) = `r sprintf("%.4g",h_water__blue$hypothesis$Post.Prob[1])`; the directional negative effect of distance is also very probable: *p*(*&beta;*<0) = `r sprintf("%.4g",h_water__blue$hypothesis$Post.Prob[2])`.
+
+There is no evidence that distance to large bodies of water from the *origins of the language families* have any effect on the presence of a dedicated word for "blue".
 
 
 
@@ -2504,6 +2968,12 @@ grid.arrange(ggplot() + theme_bw() +
 
 - *gen_D1* and *gen_D4* seem to capture (to various degrees) low versus high latitudes,
 - *gen_D6* and *gen_D4* seem to capture (to various degrees) Europe vs the rest of the world.
+
+
+
+### Putting all these together
+
+
 
 
 
