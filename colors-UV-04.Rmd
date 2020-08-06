@@ -5,9 +5,8 @@ author: "Mathilde Josserand, Emma Meeussen, Dan Dediu and Asifa Majid"
 date: '`r date()`'
 output:
   html_document: 
-    fig_caption: yes
     highlight: textmate
-    theme: readable
+    theme: journal
     toc: yes
     toc_depth: 6
     toc_float: yes
@@ -29,8 +28,11 @@ csl: apa-6th-edition.csl
 - integrate FST_methods.Rmd: **DONE**
 - redo/expand the Bayesian regressions and model comparison
 - decide what to keep to streamline the analysis
-- keep only the needed input files
+- keep only the needed input files: **DONE**
 - do SEM/multiple mediators stuff as I did for syllable and tone
+- change standardization of latitude so that it is highest at the poles: **DONE**
+- redo the mediation using the two new functions: **DONE**
+- update the summary mediation diagram
 
 **What I also did:**
 
@@ -89,8 +91,8 @@ library(bayestestR); # Bayesian model comparison
 library(sjstats); # mediation
 library(performance); # multicollinearity
 
-## DAGs:
-#library(dagitty);
+# DAGs:
+#library(dagitty); # interferes with others, so load it where needed
 
 # Decison trees, random forests, and SVMs:
 library(partykit); # ctree()
@@ -148,14 +150,14 @@ capTabNo = 1; capFigNo = 1; # figure and table caption numbering, for HTML do it
 #Function to add the Table Number
 capTab = function(x){
   if(outputFormat == 'html'){
-    x = paste0("***Table ",capTabNo,".*** _",x,"_")
+    x = paste0("**Table ",capTabNo,".** *",x,"*")
     capTabNo <<- capTabNo + 1
   }; x
 }
 #Function to add the Figure Number
 capFig = function(x){
   if(outputFormat == 'html'){
-    x = paste0("***Figure ",capFigNo,".*** _",x,"_")
+    x = paste0("**Figure ",capFigNo,".** *",x,"*")
     capFigNo <<- capFigNo + 1
   }; x
 }
@@ -510,6 +512,122 @@ panel.hist <- function(x, ...)
   ret_val;
 }
 
+# Fit mediation analysis T -> M -> O
+.fit_mediation_model <- function(d=d_colors, 
+                                 outcome="exists_blue", outcome_name="blue", 
+                                 treatment="latitude_r", treatment_name="latitude", 
+                                 mediator="UVB_r", mediator_name="UVB", 
+                                 family_mediator=gaussian(), family_outcome=bernoulli("logit"), ranefs="(1 | glottocode_family) + (1 | macroarea)",
+                                 cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10),
+                                 save_model=FALSE, show_results=FALSE)
+{
+  # Mediation with brms:
+  f_mediator <- bf(formula(paste0(mediator," ~ ",treatment," + ",                ranefs)), family=family_mediator);
+  f_outcome  <- bf(formula(paste0(outcome, " ~ ",mediator, " + ",treatment," + ",ranefs)), family=family_outcome);
+  model <- brm(f_mediator + f_outcome + set_rescor(FALSE), # uncorrelated residuals
+               save_all_pars=TRUE, # needed for Bayes factors
+               sample_prior=TRUE,  # needed for hypotheses tests
+               data=d, cores=cores, iter=iter, warmup=warmup, thin=thin, control=control);
+  #model <- brms_fit_indices(model);
+  model_summary <- summary(model); if(show_results) { print(model_summary); mcmc_plot(model, type="trace"); mcmc_plot(model); }
+  if( show_results) { sjstats::mediation(model); }
+  model_mediation <- .mediation_multiple_mediators_brms(model, response=outcome, treatment=treatment, mediators=c(mediator)); if( show_results) { print(model_mediation); }
+  #.print_multiple_mediators_brms(model_mediation);
+
+  # Return and possibly save the results:
+  ret_val <- list("outcome"=outcome, "outcome_name"=outcome_name,
+                  "treatment"=treatment, "treatment_name"=treatment_name,
+                  "mediator"=mediator, "mediator_name"=mediator_name,
+                  "formulas"=c("mediator"=paste0(mediator," ~ ",treatment," + ",ranefs), "outcome"=paste0(outcome, " ~ ",mediator, " + ",treatment," + ",ranefs)),
+                  "brms_param"=list("cores"=cores, "iter"=iter, "warmup"=warmup, "thin"=thin, "control"=control),
+                  "model"=if(save_model){ model } else { NULL }, "summary"=list("fixed"=model_summary$fixed), "mediation"=model_mediation);
+  return (ret_val);
+}
+
+# Plot the results of a mediation analysis T -> M -> O using DiagrammeR:
+.plot_mediation_model <- function(model_summary, model_mediation, 
+                                  outcome=NA,   outcome_name="",   outcome_col="gray95",
+                                  treatment=NA, treatment_name="", treatment_col="gray95",
+                                  mediator=NA,  mediator_name="",  mediator_col="gray95",
+                                  edge_ns_col="gray80", edge_neg_col="blue", edge_pos_col="red",
+                                  summary_col_ns="gray50", summary_col_neg="blue", summary_col_pos="red")
+{
+  .edge_col <- function(edge_lo, edge_hi)
+  {
+    if(edge_lo < 0 && 0 < edge_hi)
+      return (edge_ns_col) # ns
+    else if( edge_hi < 0 )
+      return (edge_neg_col) # < 0
+    else
+      return (edge_pos_col); # > 0
+  }
+  
+  .eff_col <- function(eff_estim, eff_p)
+  {
+    if(eff_p >= 0.05)
+      return (summary_col_ns) # ns
+    else if( eff_estim < 0 )
+      return (summary_col_neg) # < 0
+    else
+      return (summary_col_pos); # > 0
+  }
+  
+  T_O <- model_summary$fixed[grep(paste0(gsub("_","",outcome,fixed=TRUE), "_", treatment), rownames(model_summary$fixed), fixed=TRUE),];
+  T_O_0in <- as.numeric(T_O["l-95% CI"] < 0 && 0 < T_O["u-95% CI"])+1;
+  T_O_col <- .edge_col(T_O["l-95% CI"], T_O["u-95% CI"]);
+  T_M <- model_summary$fixed[grep(paste0(gsub("_","",mediator,fixed=TRUE), "_", treatment), rownames(model_summary$fixed), fixed=TRUE),];
+  T_M_0in <- as.numeric(T_M["l-95% CI"] < 0 && 0 < T_M["u-95% CI"])+1;
+  T_M_col <- .edge_col(T_M["l-95% CI"], T_M["u-95% CI"]);
+  M_O <- model_summary$fixed[grep(paste0(gsub("_","",outcome,fixed=TRUE), "_", mediator), rownames(model_summary$fixed), fixed=TRUE),];
+  M_O_0in <- as.numeric(M_O["l-95% CI"] < 0 && 0 < M_O["u-95% CI"])+1;
+  M_O_col <- .edge_col(M_O["l-95% CI"], M_O["u-95% CI"]);
+  TotEf <-  model_mediation[model_mediation$effect == "total",];
+  Tot_col <- .eff_col(TotEf["estimate"], TotEf["p_ROPE"]);
+  DirEf <-  model_mediation[model_mediation$effect == "direct",];
+  Dir_col <- .eff_col(DirEf["estimate"], DirEf["p_ROPE"]);
+  IndEf <-  model_mediation[model_mediation$effect == "indirect",];
+  Ind_col <- .eff_col(IndEf["estimate"], IndEf["p_ROPE"]);
+  
+  DiagrammeR::grViz(paste0('
+    digraph mediation_d2l_lat {
+  
+    # the graph:
+    graph [overlap = true]
+    rankdir="LR";
+  
+    # the nodes:
+    node [shape = box, style = "filled"]
+    T    [label = "',treatment_name,'", tooltip = "treatment", fillcolor = "',treatment_col,'"]; 
+    M    [label = "',mediator_name,'",  tooltip = "mediator",  fillcolor = "',outcome_col,'"]; 
+    R    [label = "',outcome_name,'",   tooltip = "outcome",   fillcolor = "',mediator_col,'"]; 
+  
+    # the edges:
+    edge [style = "solid", color = "black"]
+    T -> R [label="',sprintf("%.2f [%.2f, %.2f]", T_O["Estimate"], T_O["l-95% CI"], T_O["u-95% CI"]),'", tooltip="treatment -> outcome", 
+            style="',c("solid","dashed")[T_O_0in],'", color="',T_O_col,'", fontcolor="',T_O_col,'"]
+    T -> M [label="',sprintf("%.2f [%.2f, %.2f]", T_M["Estimate"], T_M["l-95% CI"], T_M["u-95% CI"]),'", tooltip="treatment -> mediator", 
+            style="',c("solid","dashed")[T_M_0in],'", color="',T_M_col,'", fontcolor="',T_M_col,'"]
+    M -> R [label="',sprintf("%.2f [%.2f, %.2f]", M_O["Estimate"], M_O["l-95% CI"], M_O["u-95% CI"]),'", tooltip="mediator -> outcome", 
+            style="',c("solid","dashed")[M_O_0in],'", color="',M_O_col,'", fontcolor="',M_O_col,'"]
+    
+    # summary:
+    te [shape="none", style="empty", fontcolor="',Tot_col,'", 
+        tooltip="Total effect", label="',sprintf("Total effect = %.2f [%.2f, %.2f], p = %.4g", 
+                                                 TotEf["estimate"], TotEf["estimate_HDI_low"], TotEf["estimate_HDI_high"], TotEf["p_ROPE"]),'"]
+    de [shape="none", style="empty", fontcolor="',Dir_col,'", 
+        tooltip="Direct effect", label="',sprintf("Direct effect = %.2f [%.2f, %.2f], p = %.4g", 
+                                                 DirEf["estimate"], DirEf["estimate_HDI_low"], DirEf["estimate_HDI_high"], DirEf["p_ROPE"]),'"]
+    ie [shape="none", style="empty", fontcolor="',Ind_col,'", 
+        tooltip="Indirect effect", label="',sprintf("Indirect effect = %.2f [%.2f, %.2f], p = %.4g", 
+                                                 IndEf["estimate"], IndEf["estimate_HDI_low"], IndEf["estimate_HDI_high"], IndEf["p_ROPE"]),'"]
+    # trick for aligning them:
+    te -> de [style = "none", color = "none"]
+    de -> ie [style = "none", color = "none"]
+  }
+  '));
+}
+
+
 ```
 
 <style>
@@ -584,9 +702,9 @@ d_colors$dist2rivers_family_r <- log2(d_colors$dist2rivers_family);
 d_colors$dist2ocean_family_r  <- log2(d_colors$dist2ocean_family);
 d_colors$dist2lakes_family_r  <- log2(d_colors$dist2lakes_family);
 # - longitude and latitude: cosine (degrees -> radians):
-d_colors$latitude_r           <- cos(d_colors$latitude*(pi/180));
+d_colors$latitude_r           <- 1.0 - cos(d_colors$latitude*(pi/180)); # make sure these longitudes are still highest at the poles
 d_colors$longitude_r          <- cos(d_colors$longitude*(pi/180));
-d_colors$latitude_family_r    <- cos(d_colors$latitude_family*(pi/180));
+d_colors$latitude_family_r    <- 1.0 - cos(d_colors$latitude_family*(pi/180));
 d_colors$longitude_family_r   <- cos(d_colors$longitude_family*(pi/180));
 # - UV incidence: z-score:
 d_colors$UV_A_mean_r          <- scale(d_colors$UV_A_mean);
@@ -609,7 +727,7 @@ d_colors$clim_PC1_family_r    <- scale(d_colors$clim_PC1_family);
 d_colors$clim_PC2_family_r    <- scale(d_colors$clim_PC2_family);
 d_colors$clim_PC3_family_r    <- scale(d_colors$clim_PC3_family);
 # - daltonism:
-d_colors$daltonism_r          <- max(d_colors$daltonism/100, 0.0001); # prepare for Beta regression: transform it from % into proportions, and replace 0 by a very small proportion (0.01%)
+d_colors$daltonism_r          <- pmax(d_colors$daltonism/100, 0.0001); # prepare for Beta regression: transform it from % into proportions, and replace 0 by a very small proportion (0.01%)
 # - number of color categories: standardize to 0..1:
 d_colors$n_colors_r           <- (d_colors$n_colors - min(d_colors$n_colors,na.rm=TRUE)) / (max(d_colors$n_colors,na.rm=TRUE) - min(d_colors$n_colors,na.rm=TRUE));
 # - genetics: z-score:
@@ -706,6 +824,10 @@ for( i in 1:ncol(neighbor_list) ) neighbor_list[,i] <- d_coords$glottocode[ neig
 # ... and merge them with the data:
 d_colors <- merge(d_colors, neighbor_list, by="glottocode", all.x=TRUE, all.y=FALSE); # NA is used if there are no neighbours >= N
 
+# Use short names for UV-B variables:
+d_colors$UVB        <- d_colors$UV_B_mean;        d_colors$UVB_r        <- d_colors$UV_B_mean_r; 
+d_colors$UVB_family <- d_colors$UV_B_mean_family; d_colors$UVB_family_r <- d_colors$UV_B_mean_family_r; 
+
 
 # Point Pattern Analysis:
 # Store x and y coords in two vectors:
@@ -768,8 +890,8 @@ In our dataset, there are `r length(unique(d_colors$glottocode))` populations, e
 ## Geographic location
 
 The geographic coordinates of the populations were retrieved from the [Glottolog](https://glottolog.org/) based on their *glottocode*s.
-As per @brown_color_2004, we computed the cosine of these *latitude*s and the *longitude*s to be used in the statistical models; `cos(latitude)` captures the closeness to the equator, ranging between 0.0 (one of the poles) and 1.0 (the equator), and `cos(longitude)`range between -1.0 and 1.0 (corresponding to -180 and 180 degrees, respectively); 
-please note that longitude can be coded (and plotted) either as ranging between 0° and 360°, or between -180° and +180°, or, when we need to avoid the International Date Line (IDL) producing an artefactual boundary, we center the work on the Pacific.
+As per @brown_color_2004, we computed the cosine of these *latitude*s and the *longitude*s to be used in the statistical models; while `cos(latitude)` captures the closeness to the equator and ranging between 0.0 (one of the poles) and 1.0 (the equator), we use here `1.0 - cos(latitude)` so that they are 0.0 at the equator and 1.0 at the poles, converving the "natural" interpretation of latitudes, and `cos(longitude)`range between -1.0 and 1.0 (corresponding to -180 and 180 degrees, respectively); 
+please note that longitude can be coded (and plotted) either as ranging between 0° and 360°, or between -180° and +180°, or, when we need to avoid the International Date Line (IDL) producing an artefactual boundary.
 
 ```{r populations map, fig.cap=capFig("Map of the populations in our sample (with language names).")}
 ggplot() + theme_bw() +
@@ -781,6 +903,18 @@ ggplot() + theme_bw() +
       legend.title = element_text(size = 9), 
       legend.text = element_text(size = 10)) +
   NULL;
+```
+
+```{r geographic location transform, fig.cap=capFig("Relationship between raw and transformed values for latitude (left, blue) and longitude (right, red); please note that, as opposed to the map above, longitude was shifted so that longitudes > 180° are negative (i.e., centered on 0°)."), fig.height=4*1, fig.width=4*2}
+grid.arrange(ggplot(data=d_colors, aes(x=latitude, y=latitude_r),) + theme_bw() +
+               xlab("Latitude (raw, in °, negative = south)") + ylab("Latitude transformed = 1 - cos(latitude)") +
+               geom_point(alpha=0.5, color="blue") +
+               NULL,
+             ggplot(data=d_colors, aes(x=longitude_180, y=longitude_r),) + theme_bw() +
+               xlab("Longitude (raw, in °, negative = west)") + ylab("Longitude transformed = cos(longitude)") +
+               geom_point(alpha=0.5, color="red") +
+               NULL,
+             ncol=2);
 ```
 
 
@@ -814,12 +948,19 @@ ggplot() + theme_bw() +
   NULL;
 ```
 
+```{r elevation transform, fig.cap=capFig("Relationship between raw and transformed values for elevation."), fig.height=4*1, fig.width=4*1}
+ggplot(data=d_colors, aes(x=elevation, y=elevation_r),) + theme_bw() +
+  xlab("Elevation (raw, in meters)") + ylab("Elevation transformed = log(elevation + 1)") +
+  geom_point(alpha=0.5, color="blue") +
+  NULL;
+```
+
 
 ## Climate and ecology 
 
 We reused the code from @bentz_evolution_2018 to extract historical data on global weather and climate from [WorldClim](https://www.worldclim.org/) for the period 1960-1990, encoded in 19 variables covering various measures (such as temperature, seasonality or precipitation). 
 As in @bentz_evolution_2018, we conduced a A Principal Component Analysis (PCA) for our data only, and we found similar results, namely that the first two principal components (PCs) explain most of the data and have meaningful interpretations: the PC1 explains 49.7% of the variance and reflects low seasonality, wet and hot climate, whereas PC2 explains 24.7% of the variance and reflects high seasonality, hot and dry climate; PC3 explains only 8.6% and its interpretation is less straightforward; see @bentz_evolution_2018 for details (please note that the sign of the PCs is arbitrary). 
-For the analyses, these variables were z-scored.
+For the analyses, these variables were z-scored (thus, the relationship between raw and transformed values is linear).
 
 
 ### Climate PC1
@@ -983,6 +1124,26 @@ ggplot() + theme_bw() +
 We reused the code from @bentz_evolution_2018 to compute the distances from each of our populations to the nearest lake, ocean, river, and water in general, using [OpenStreetMap](http://openstreetmapdata.com/) raster files[^openstreetmaps]. 
 For the analyses, we use the `log` of these distances.
 
+```{r distance to water transform, fig.cap=capFig("Relationship between raw and transformed values for distance to large bodies of water. For left to right and top to bottom, distances to: lakes, rivers, oceans and water in general."), fig.height=4*2, fig.width=4*2}
+grid.arrange(ggplot(data=d_colors, aes(x=dist2lakes, y=dist2lakes_r),) + theme_bw() +
+               xlab("Distance to lakes (raw, in Km)") + ylab("Distance transformed = log(distance)") +
+               geom_point(alpha=0.5, color="blue") +
+               NULL,
+             ggplot(data=d_colors, aes(x=dist2rivers, y=dist2rivers_r),) + theme_bw() +
+               xlab("Distance to rivers (raw, in Km)") + ylab("Distance transformed = log(distance)") +
+               geom_point(alpha=0.5, color="blue") +
+               NULL,
+             ggplot(data=d_colors, aes(x=dist2ocean, y=dist2ocean_r),) + theme_bw() +
+               xlab("Distance to ocean/sea (raw, in Km)") + ylab("Distance transformed = log(distance)") +
+               geom_point(alpha=0.5, color="blue") +
+               NULL,
+             ggplot(data=d_colors, aes(x=dist2water, y=dist2water_r),) + theme_bw() +
+               xlab("Distance to water (raw, in Km)") + ylab("Distance transformed = log(distance)") +
+               geom_point(alpha=0.5, color="blue") +
+               NULL,
+             ncol=2);
+```
+
 
 ### Distance to lakes
 
@@ -1114,7 +1275,7 @@ ggplot() +
 
 The incidence of ultra-violet light (UV) was calculated from the data available from the [NASA Total Ozone Mapping Spectrometer (TOMS)](http://toms.gsfc.nasa.gov/ery_uv/new_uv/)[^uv] for the year 1998, in order to replicate the procedure in @brown_color_2004. 
 These data contain daily measures of UV radiation received by the human body at four wavelengths (305 nm, 310 nm, 320 nm, and 380 nm) in Joules per square meter (J/m^2^), taking into account the thickness of the ozone layer in the stratosphere, the amount of cloud cover, the elevation, and how high the sun is in the sky. 
-Here, we computed the mean and standard deviation for the whole year for UV-A (315 nm to 400 nm), for UV-B (280 nm to 315 nm) and for the full spectrum; these were further z-scored for the statistical analyses.
+Here, we computed the mean and standard deviation for the whole year for UV-A (315 nm to 400 nm), for UV-B (280 nm to 315 nm) and for the full spectrum; these were further z-scored for the statistical analyses (thus, the relationship between raw and transformed values is linear).
 
 ### UV-A
 
@@ -1323,6 +1484,7 @@ ggplot() + theme_bw() +
 
 @brown_color_2004 and @meeussen_colour_2015 have collected information about the color vocabularies according to the Basic Color Categories of @berlin_basic_1991. 
 Here, we used only two variables: the *size of the color lexicon* (the variable *n_colors*, varying in our data between `r min(d_colors$n_colors, na.rm=TRUE)` and `r max(d_colors$n_colors, na.rm=TRUE)`), and the *presence of a specific term for blue* (variable *exists_blue* with values "yes" or "no").
+For the statistical analyses, *n_colors* was z-scored (thus, the relationship between raw and transformed values is linear).
 
 ### Number of color categories
 
@@ -1393,7 +1555,8 @@ Data on the incidence of abnormal red/green color perception for males was colle
 These data represent the percent of red/green "color blind" males in the population, and, for our data, varies between 0% and 11%. 
 Overall "color blindness" rates were used, unless specific information was available; we include only *deuteranopia*, *deuteranomaly*, *protanopia* and *protanomaly*, and we specifically did not include data on *tritanopia* (as this concerns abnormal color perception in the yellow/blue range). 
 We excluded from the analyses samples which did not distinguish between male and female, or which had data for less than 50 individuals.
-We named here this variable *daltonism*, but, while this is a very short and evocative variable name, as discussed above, we emphatically also considere milder forms of red/green abnormal color perception.
+We named here this variable *daltonism*, but, while this is a very short and evocative variable name, as discussed above, we emphatically also considered milder forms of red/green abnormal color perception.
+For some statistical analyses that do not tolerate 0s (beta regression), we replaced the reported 0% by a very small percentage (0.0001%).
 
 ```{r summary daltonism}
 pander(summary(d_colors$daltonism))
@@ -1508,6 +1671,7 @@ Please see [Appendix I. Distance matrices] for more details.
 
 Finally, we applied classic multi-dimensional scaling (`cmdscale`) to this imputed distance matrix, and we decided to retain the first 10 dimensions (resulting in a goodness-of-fit of 10.5%).
 These dimensions should represent an overall genetic similarity between our populations.
+For the statistical analyses, these were z-scored (thus, the relationship between raw and transformed values is linear).
 
 
 
@@ -1571,7 +1735,7 @@ Please note that, form `brms`, there might be differences between Bayes factors,
 
 For the mediation analysis, we used a Bayesian approach as implemented by `brms`: in essence, given a treatment" $T$ (for example, latitude), a mediator $M$ (for example, UV incidence), as an outcome $O$ (for example, the existence of a specific word for "blue"), the mediation model looks like:
 
-```{r}
+```{r fig.cap=capFig("Visual representation of a mediation, showing the individual estimates (edges, $a$, $b$ and $c$) and the effects (total, direct and indirect). We may use line style and color to differentiate ns, negative and positive edges. Likewise, we may report the total, direct and indirect effects on the diagrem itself using colors to distinguish significant and ns effects.")}
 # Mediation:
 DiagrammeR::grViz('
   digraph mediation_simple {
@@ -1579,17 +1743,36 @@ DiagrammeR::grViz('
   # the graph:
   graph [overlap = true]
   rankdir="LR";
+  
+  # show types of edges:
+  1 [style="none", shape="none", label="", tooltip=""]
+  2 [style="none", shape="none", label="", tooltip=""]
+  1 -> 2 [style="dashed", color="gray80", fontcolor="gray80", label="ns", tooltip="ns"]
+  3 [style="none", shape="none", label="", tooltip=""]
+  4 [style="none", shape="none", label="", tooltip=""]
+  3 -> 4 [style="solid", color="blue", fontcolor="blue", label="< 0 (negative)", tooltip="negative (< 0)"]
+  5 [style="none", shape="none", label="", tooltip=""]
+  6 [style="none", shape="none", label="", tooltip=""]
+  5 -> 6 [style="solid", color="red", fontcolor="red", label="> 0 (positive)", tooltip="negative (> 0)"]
 
   # the nodes:
-  node [shape = box]
-  T [label = "treatment", style = "filled", fillcolor = "green"]; 
-  M [label = "mediator",  style = "filled", fillcolor = "yellow"]; 
-  O [label = "outcome",   style = "filled", fillcolor = "red"]; 
+  node [shape = box, style = "filled", fillcolor = "gray95"]
+  T [label = "treatment"]; 
+  M [label = "mediator"]; 
+  O [label = "outcome"]; 
 
   # the edges:
-  T->O [label = "c", style = "solid", color = "black"]
-  T->M [label = "a", style = "solid", color = "blue"]
-  M->O [label = "b", style = "solid", color = "blue"]
+  edge [style = "solid", color = "black"]
+  T->O [label = "c"]
+  T->M [label = "a"]
+  M->O [label = "b"]
+  
+  # summary:
+  te [shape="none", style="empty", fontcolor="blue",   tooltip="Total effect",    label="Total effect = ab+c < 0 [95%HDI], p < 0.05"]
+  de [shape="none", style="empty", fontcolor="gray50", tooltip="Direct effect",   label="Direct effect = c [95%HDI], ns"]
+  ie [shape="none", style="empty", fontcolor="red",    tooltip="Indirect effect", label="Indirect effect = ab > 0 [95%HDI], p < 0.05"]
+  te -> de [style = "none", color = "none"]
+  de -> ie [style = "none", color = "none"]
 }
 ')
 ```
@@ -1604,6 +1787,7 @@ $$
 \end{array}
 $$
 
+Please note that in our plots, we may draw the edges differently depending on the "significance" and value of their estimates ($a$, $b$ and $c$). 
 
 
 # Results
@@ -2139,20 +2323,14 @@ There is no (or very marginal) evidence that UV (A or B, mean or sd) incidence a
 
 Therefore, we will only consider *UV_B_mean* (renamed to *UVB* for shortness) in the following analyses.
 
-```{r}
-# UV-B variables rename for shortness:
-d_colors$UVB <- d_colors$UV_B_mean; d_colors$UVB_r <- d_colors$UV_B_mean_r; 
-d_colors$UVB_family <- d_colors$UV_B_mean_family; d_colors$UVB_family_r <- d_colors$UV_B_mean_family_r; 
-```
-
 
 
 #### Latitude &rarr; "blue"
 
 The effect of UV-B on the existence of a specific word for "blue" [@lindsey_color_2002;@brown_color_2004] should be due to the physical negative relationship between the latitude of a location on the Earth's surface and the mean annual UB-V radiation it receives; thus, it is justified to investigate the relationship between latitude and "blue". 
-This relationship should specifically be *positive* (i.e., higher latitudes receive less UV-B incidence), but, given the cosine transformation of latitude in our statistical models, with large values closer to the equator, the expected statistical relationship should be *negative*.
+This relationship should specifically be *positive* (i.e., higher latitudes receive less UV-B incidence, which increase the chances of having a word for "blue").
 
-```{r fig.cap=capFig('Probability of having a specific word for "blue" function of latitude of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of latitude, the effect of the absolute value of latitude (i.e., `abs(latitude)`), and the quadratic effect of latitude (i.e., `latitude`^2^).'), fig.height=1*5, fig.width=3*4}
+```{r fig.cap=capFig('Probability of having a specific word for "blue" function of latitude of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of latitude and the quadratic effect of latitude (i.e., `latitude`^2^).'), fig.height=1*5, fig.width=3*4}
 grid.arrange(ggplot(d_colors, aes(y=latitude, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2165,18 +2343,6 @@ grid.arrange(ggplot(d_colors, aes(y=latitude, x=exists_blue, fill=exists_blue)) 
                      legend.position="bottom") +
                scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
                NULL, 
-             ggplot(d_colors, aes(y=abs(latitude), x=exists_blue, fill=exists_blue)) + 
-               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
-               theme_bw() +
-               labs(x='Word for blue?', y="abs(latitude) (°)") +
-               theme(axis.text.x = element_text(size =14, face = "bold"), 
-                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
-                     axis.title=element_text(size=14),
-                     legend.title=element_text(size =16),
-                     legend.text=element_text(size =16),
-                     legend.position="bottom") +
-               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
-               NULL,
              ggplot(d_colors, aes(y=latitude^2, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2189,11 +2355,11 @@ grid.arrange(ggplot(d_colors, aes(y=latitude, x=exists_blue, fill=exists_blue)) 
                      legend.position="bottom") +
                scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
                NULL,
-             ncol=3);
+             ncol=2);
 ```
 
 
-```{r fig.cap=capFig('Probability of having a specific word for "blue" function of latitude of the *origins of the language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of latitude, the effect of the absolute value of latitude (i.e., `abs(latitude)`), and the quadratic effect of latitude (i.e., `latitude`^2^).'), fig.height=1*5, fig.width=3*4, eval=FALSE, include=FALSE}
+```{r fig.cap=capFig('Probability of having a specific word for "blue" function of latitude of the *origins of the language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of latitude and the quadratic effect of latitude (i.e., `latitude`^2^).'), fig.height=1*5, fig.width=3*4, eval=FALSE, include=FALSE}
 grid.arrange(ggplot(d_colors, aes(y=latitude_family, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2206,18 +2372,6 @@ grid.arrange(ggplot(d_colors, aes(y=latitude_family, x=exists_blue, fill=exists_
                      legend.position="bottom") +
                scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
                NULL, 
-             ggplot(d_colors, aes(y=abs(latitude_family), x=exists_blue, fill=exists_blue)) + 
-               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
-               theme_bw() +
-               labs(x='Word for blue?', y="abs(latitude) (°)") +
-               theme(axis.text.x = element_text(size =14, face = "bold"), 
-                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
-                     axis.title=element_text(size=14),
-                     legend.title=element_text(size =16),
-                     legend.text=element_text(size =16),
-                     legend.position="bottom") +
-               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
-               NULL,
              ggplot(d_colors, aes(y=latitude_family^2, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2230,7 +2384,7 @@ grid.arrange(ggplot(d_colors, aes(y=latitude_family, x=exists_blue, fill=exists_
                      legend.position="bottom") +
                scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
                NULL,
-             ncol=3);
+             ncol=2);
 ```
 
 ```{r include=FALSE}
@@ -2238,7 +2392,7 @@ grid.arrange(ggplot(d_colors, aes(y=latitude_family, x=exists_blue, fill=exists_
 if( !all(file.exists("./cached_results/b_lat__blue.RData")) )
 {
   # For languages:
-  b_lat__blue_all <- brm(exists_blue ~ 1 + latitude_r + I(latitude_r^2) + abs(latitude_r) + (1 | glottocode_family) + (1 | macroarea), # latitude -> exists_blue
+  b_lat__blue_all <- brm(exists_blue ~ 1 + latitude_r + I(latitude_r^2) + (1 | glottocode_family) + (1 | macroarea), # latitude -> exists_blue
                          family=bernoulli(link="logit"), data=d_colors, 
                          prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
                                  prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
@@ -2247,30 +2401,23 @@ if( !all(file.exists("./cached_results/b_lat__blue.RData")) )
                          cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
   b_lat__blue_all <- brms_fit_indices(b_lat__blue_all);
   summary(b_lat__blue_all); mcmc_plot(b_lat__blue_all, type="trace"); mcmc_plot(b_lat__blue_all);
-  (h_lat__blue <- brms::hypothesis(b_lat__blue_all, c("latitude_r = 0", "latitude_r < 0", "Ilatitude_rE2 = 0", "Ilatitude_rE2 < 0", "abslatitude_r = 0", "abslatitude_r < 0")));
+  (h_lat__blue <- brms::hypothesis(b_lat__blue_all, c("latitude_r = 0", "latitude_r > 0", "Ilatitude_rE2 = 0", "Ilatitude_rE2 > 0")));
   (hdi_lat__blue <- hdi(b_lat__blue_all, ci=0.95));
   compare_0_lat__blue <- brms_compare_models(b_0__blue, b_lat__blue_all, "null", "+ latitude"); # latitude matters!
-  # Try to remove the linear effect:
-  b_lat__blue_1 <- update(b_lat__blue_all, . ~ . - latitude_r, cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  b_lat__blue_1 <- brms_fit_indices(b_lat__blue_1);
-  summary(b_lat__blue_1); mcmc_plot(b_lat__blue_1, type="trace"); mcmc_plot(b_lat__blue_1);
-  (h_lat__blue_1 <- brms::hypothesis(b_lat__blue_1, c("Ilatitude_rE2 = 0", "Ilatitude_rE2 < 0", "abslatitude_r = 0", "abslatitude_r < 0")));
-  (hdi_lat__blue_1 <- hdi(b_lat__blue_1, ci=0.95));
-  brms_compare_models(b_lat__blue_1, b_lat__blue_all, "- linear", "all"); # linear does not seem needed
-  # Try to remove the abs() also:
-  b_lat__blue_1a <- update(b_lat__blue_1, . ~ . - abs(latitude_r), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  b_lat__blue_1a <- brms_fit_indices(b_lat__blue_1a);
-  summary(b_lat__blue_1a); mcmc_plot(b_lat__blue_1a, type="trace"); mcmc_plot(b_lat__blue_1a);
-  (h_lat__blue_1a <- brms::hypothesis(b_lat__blue_1a, c("Ilatitude_rE2 = 0", "Ilatitude_rE2 < 0")));
-  (hdi_lat__blue_1a <- hdi(b_lat__blue_1a, ci=0.95));
-  brms_compare_models(b_lat__blue_1a, b_lat__blue_all, "- linear - abs", "all"); # linear nor abs() do not seem needed...
-  compare_0_lat__blue <- brms_compare_models(b_0__blue, b_lat__blue_1a, "null", "+ latitude"); # negative effect of latitude^2!
-  # -> quadratic-only model:
-  b_lat__blue <- b_lat__blue_1a; h_lat__blue <- h_lat__blue_1a; hdi_lat__blue <- hdi_lat__blue_1a;
+  # Try to remove the quadratic effect:
+  b_lat__blue_2 <- update(b_lat__blue_all, . ~ . - I(latitude_r^2), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  b_lat__blue_2 <- brms_fit_indices(b_lat__blue_2);
+  summary(b_lat__blue_2); mcmc_plot(b_lat__blue_2, type="trace"); mcmc_plot(b_lat__blue_2);
+  (h_lat__blue_2 <- brms::hypothesis(b_lat__blue_2, c("latitude_r = 0", "latitude_r > 0")));
+  (hdi_lat__blue_2 <- hdi(b_lat__blue_2, ci=0.95));
+  brms_compare_models(b_lat__blue_2, b_lat__blue_all, "linear", "all"); # quadratic does not seem needed
+  compare_0_lat__blue <- brms_compare_models(b_0__blue, b_lat__blue_2, "null", "+ latitude"); # latitude matters!
+  # -> linear-only model:
+  b_lat__blue <- b_lat__blue_2; h_lat__blue <- h_lat__blue_2; hdi_lat__blue <- hdi_lat__blue_2;
 
   
   # For families:
-  bf_lat__blue_all <- brm(exists_blue ~ 1 + latitude_family_r + I(latitude_family_r^2) + abs(latitude_family_r) + (1 | glottocode_family) + (1 | macroarea), # latitude -> exists_blue
+  bf_lat__blue_all <- brm(exists_blue ~ 1 + latitude_family_r + I(latitude_family_r^2) + (1 | glottocode_family) + (1 | macroarea), # latitude -> exists_blue
                           family=bernoulli(link="logit"), data=d_colors, 
                           prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
                                   prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
@@ -2279,18 +2426,18 @@ if( !all(file.exists("./cached_results/b_lat__blue.RData")) )
                           cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
   bf_lat__blue_all <- brms_fit_indices(bf_lat__blue_all);
   summary(bf_lat__blue_all); mcmc_plot(bf_lat__blue_all, type="trace"); mcmc_plot(bf_lat__blue_all);
-  (hf_lat__blue <- brms::hypothesis(bf_lat__blue_all, c("latitude_family_r = 0", "latitude_family_r < 0", "Ilatitude_family_rE2 = 0", "Ilatitude_family_rE2 < 0", "abslatitude_family_r = 0", "abslatitude_family_r < 0")));
+  (hf_lat__blue <- brms::hypothesis(bf_lat__blue_all, c("latitude_family_r = 0", "latitude_family_r > 0", "Ilatitude_family_rE2 = 0", "Ilatitude_family_rE2 > 0")));
   (hdif_lat__blue <- hdi(bf_lat__blue_all, ci=0.95));
   compare_0_lat__blue <- brms_compare_models(b_0__blue, bf_lat__blue_all, "null", "+ latitude"); # latitude does not seem to matter!
-  # Iterative manual simplification:
-  bf_lat__blue_1 <- update(bf_lat__blue_all, . ~ . - abs(latitude_family_r) - I(latitude_family_r^2), 
+  # Try to remove the quadratic effect:
+  bf_lat__blue_2 <- update(bf_lat__blue_all, . ~ . - I(latitude_family_r^2), 
                            cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  bf_lat__blue_1 <- brms_fit_indices(bf_lat__blue_1);
-  summary(bf_lat__blue_1); mcmc_plot(bf_lat__blue_1, type="trace"); mcmc_plot(bf_lat__blue_1);
-  (hf_lat__blue_1 <- brms::hypothesis(bf_lat__blue_1, c("latitude_family_r = 0", "latitude_family_r < 0")));
-  (hdif_lat__blue_1 <- hdi(bf_lat__blue_1, ci=0.95));
-  brms_compare_models(bf_lat__blue_1, bf_lat__blue_all, "simplified", "full"); # simplified is marginally better
-  compare_0_lat__blue <- brms_compare_models(b_0__blue, bf_lat__blue_1, "null", "+ latitude"); # no effect of latitude...
+  bf_lat__blue_2 <- brms_fit_indices(bf_lat__blue_2);
+  summary(bf_lat__blue_2); mcmc_plot(bf_lat__blue_2, type="trace"); mcmc_plot(bf_lat__blue_2);
+  (hf_lat__blue_2 <- brms::hypothesis(bf_lat__blue_2, c("latitude_family_r = 0", "latitude_family_r > 0")));
+  (hdif_lat__blue_2 <- hdi(bf_lat__blue_2, ci=0.95));
+  brms_compare_models(bf_lat__blue_2, bf_lat__blue_all, "simplified", "full"); # simplified is marginally better
+  compare_0_lat__blue <- brms_compare_models(b_0__blue, bf_lat__blue_2, "null", "+ latitude"); # no effect of latitude...
 
 
   # Save results:
@@ -2302,10 +2449,7 @@ if( !all(file.exists("./cached_results/b_lat__blue.RData")) )
 }
 ```
 
-Interestingly, when testing simultaneously the influence of *latitude* (linear effect), `abs(`*latitude*`)` (absolute value), and *latitude*^2^ (quadratic effect) on the presence of a dedicated word for "blue", only the quadratic term has a negative effect: *&beta;~latitude^2^~* = `r round(h_lat__blue$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_lat__blue$CI_low[ hdi_lat__blue$Parameter == "b_Ilatitude_rE2" ], hdi_lat__blue$CI_high[ hdi_lat__blue$Parameter == "b_Ilatitude_rE2" ])`), posterior probability *p*(*&beta;*=0) = `r sprintf("%.4g",h_lat__blue$hypothesis$Post.Prob[1])`, *p*(*&beta;*<0) = `r sprintf("%.4g",h_lat__blue$hypothesis$Post.Prob[2])`.
-
-Please note that @lindsey_color_2002 and @brown_color_2004 would predict that the effect of latitude (mediated by the incidence of UV-B radiation) should be symmetric across the equator, so it should be modeled either as its absolute value (i.e., `abs(`*latitude*`)`) or as an even power of *latitude* (i.e., *latitude*^2*k*^, *k*≥2).
-Thus, the fact that *latitude* is not retained supports this conjecture, while the non-retention of `abs(`*latitude*`)` but of *latitude*^2^ seems to suggest a genuinely non-linear symmetric effect.
+When testing simultaneously the influence of *latitude* (linear effect) and *latitude*^2^ (quadratic effect) on the presence of a dedicated word for "blue", only the linear term has a positive effect: *&beta;~latitude~* = `r round(h_lat__blue$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_lat__blue$CI_low[ hdi_lat__blue$Parameter == "b_latitude_r" ], hdi_lat__blue$CI_high[ hdi_lat__blue$Parameter == "b_latitude_r" ])`), posterior probability *p*(*&beta;*=0) = `r sprintf("%.4g",h_lat__blue$hypothesis$Post.Prob[1])`, *p*(*&beta;*<0) = `r sprintf("%.4g",h_lat__blue$hypothesis$Post.Prob[2])`.
 
 There is no evidence that the latitude of the *origins of language families* has any effect on the existence of a dedicated word for "blue".
 
@@ -3071,213 +3215,313 @@ grid.arrange(ggplot() + theme_bw() +
 
 
 
-### Putting everything these together
+### Mediation analyses
 
-We can use DAGs to represent the possible causal pathways helping explain the presence of a dedicated word for blue, and to identify statistical tests that can be done.
-
-```{r fig.cap=capFig('One of the possible causal diagrams (as a DAG) for explaining the presence of a dedicated word for "blue".'), fig.width=7, fig.height=4}
-library(dagitty);
-h1_dag <- dagitty('dag {
-  bb="0,0,1,1"
-  UVB [exposure,pos="0.127,0.392"]
-  blue [outcome,pos="0.451,0.511"]
-  dist2lakes [pos="0.317,0.201"]
-  latitude [pos="0.128,0.200"]
-  n_colors [exposure,pos="0.667,0.388"]
-  pop_size [pos="0.660,0.199"]
-  subsist [pos="0.498,0.202"]
-  UVB -> blue
-  dist2lakes -> blue
-  latitude -> blue
-  latitude -> UVB
-  n_colors -> blue
-  pop_size -> n_colors
-  subsist -> blue
-  subsist -> n_colors
-  subsist -> pop_size
-}');
-plot(h1_dag);
-```
-
-We can see that:
-
-- there should be a direct influence of *dist2lakes* on *blue*: this is supported by the Bayesian logistic mixed effects regression model above in [Distance to water &rarr; "blue"];
-- the effect of *latitude* should be fully mediated by *UVB* incidence;
-- the effects of subsistence strategy , population size, and number of color categories are more complex.
-
+There are several possible mediated pathways connecting various variables and the existence of a dedicated word for "blue".
 
 #### Latitude &rarr; UVB &rarr; "blue"
 
-```{r}
-# Mediation latitude -> UVB -> blue:
-if( !all(file.exists("./cached_results/bmed_lat_uvb__blue.RData")) )
+```{r include=FALSE}
+file_name <- "./cached_results/bmed_lat_uvb__blue.RData";
+if( !all(file.exists(file_name)) )
 {
-  f_mediator <- bf(UVB_r       ~ latitude_r +         (1 | glottocode_family) + (1 | macroarea), family=gaussian());
-  f_outcome  <- bf(exists_blue ~ UVB_r + latitude_r + (1 | glottocode_family) + (1 | macroarea), family=bernoulli("logit"));
-  bmed_lat_uvb__blue <- brm(f_mediator + f_outcome + set_rescor(FALSE), # uncorrelated residuals
-                            save_all_pars=TRUE, # needed for Bayes factors
-                            sample_prior=TRUE,  # needed for hypotheses tests
-                            data=d_colors, cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
-  #bmed_lat_uvb__blue <- brms_fit_indices(bmed_lat_uvb__blue);
-  (bmed_lat_uvb__blue_sum <- summary(bmed_lat_uvb__blue)); mcmc_plot(bmed_lat_uvb__blue, type="trace"); mcmc_plot(bmed_lat_uvb__blue);
-  sjstats::mediation(bmed_lat_uvb__blue);
-  (bmed_lat_uvb__blue_res <- .mediation_multiple_mediators_brms(bmed_lat_uvb__blue, response="exists_blue", treatment="latitude_r", mediators=c("UVB_r")));
-  #.print_multiple_mediators_brms(bmed_lat_uvb__blue_res);
-  
-  m_mediator <- lme4::lmer(UVB_r ~ latitude_r + (1 | glottocode_family), data=d_colors);
-  m_outcome  <- glmer(exists_blue ~ UVB_r + latitude_r + (1 | glottocode_family), family=binomial("logit"), data=d_colors);
-  m_med <- mediation::mediate(m_mediator, m_outcome, treat="latitude_r", mediator="UVB_r");
-  summary(m_med);
-  
-  m_mediator <- lme4::lmer(UVB_r ~ latitude_r + (1 | macroarea), data=d_colors);
-  m_outcome  <- glmer(exists_blue ~ UVB_r + latitude_r + (1 | macroarea), family=binomial("logit"), data=d_colors);
-  m_med <- mediation::mediate(m_mediator, m_outcome, treat="latitude_r", mediator="UVB_r");
-  summary(m_med);
-
+  # Fit the mediation model:
+  bmed_lat_uvb__blue <- .fit_mediation_model(d=d_colors, 
+                                             outcome="exists_blue", outcome_name="blue", 
+                                             treatment="latitude_r", treatment_name="latitude", 
+                                             mediator="UVB_r", mediator_name="UVB", 
+                                             family_mediator=gaussian(), family_outcome=bernoulli("logit"), ranefs="(1 | glottocode_family) + (1 | macroarea)",
+                                             cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10),
+                                             save_model=FALSE, show_results=TRUE);
   # Save results:
-  save(bmed_lat_uvb__blue_sum, bmed_lat_uvb__blue_res, #bmed_lat_uvb__blue, # no need to save the actual model
-       file="./cached_results/bmed_lat_uvb__blue.RData", compress="xz", compression_level=9);
+  save(bmed_lat_uvb__blue, file=file_name, compress="xz", compression_level=9);
 } else
 {
-  load("./cached_results/bmed_lat_uvb__blue.RData");
+  load(file_name);
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis latitude &rarr; UV-B incidence &rarr; dedicated word for "blue". cos(latitude) is highest at equator. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=7, fig.height=3}
-# Mediation:
-DiagrammeR::grViz(paste0('
-  digraph mediation_latitude_uvb_blue {
-
-  # the graph:
-  graph [overlap = true]
-  rankdir="LR";
-
-  # the nodes:
-  node [shape = box, style = "filled", fillcolor = "gray95"]
-  L [label = "latitude"]; 
-  U [label = "UV-B"]; 
-  B [label = "blue"]; 
-
-  # the edges:
-  edge [style = "solid", color = "black"]
-  L->U [label="',sprintf("%.2f [%.2f, %.2f]", bmed_lat_uvb__blue_sum$fixed["UVBr_latitude_r", "Estimate"], bmed_lat_uvb__blue_sum$fixed["UVBr_latitude_r", "l-95% CI"], bmed_lat_uvb__blue_sum$fixed["UVBr_latitude_r", "u-95% CI"]),'"]
-  L->B [label="',sprintf("%.2f [%.2f, %.2f]", bmed_lat_uvb__blue_sum$fixed["existsblue_latitude_r", "Estimate"], bmed_lat_uvb__blue_sum$fixed["existsblue_latitude_r", "l-95% CI"], bmed_lat_uvb__blue_sum$fixed["existsblue_latitude_r", "u-95% CI"]),'"]
-  U->B [label="',sprintf("%.2f [%.2f, %.2f]", bmed_lat_uvb__blue_sum$fixed["existsblue_UVB_r", "Estimate"], bmed_lat_uvb__blue_sum$fixed["existsblue_UVB_r", "l-95% CI"], bmed_lat_uvb__blue_sum$fixed["existsblue_UVB_r", "u-95% CI"]),'"]
-}
-'))
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+m <- bmed_lat_uvb__blue; .plot_mediation_model(m$summary, m$mediation, 
+                                               outcome=m$outcome, outcome_name=m$outcome_name, 
+                                               treatment=m$treatment, treatment_name=m$treatment_name, 
+                                               mediator=m$mediator, mediator_name=m$mediator_name);
 ```
 
-Indeed, the **total negative effect** of latitude on "blue" (`r sprintf("%.2f, with 95%%HDI [%.2f, %.2f]", bmed_lat_uvb__blue_res$estimate[s <- bmed_lat_uvb__blue_res$effect == "total"], bmed_lat_uvb__blue_res$estimate_HDI_low[s], bmed_lat_uvb__blue_res$estimate_HDI_high[s])`) is almost entirely mediated by UV-B incidence (**negative indirect effect** `r sprintf("%.2f [%.2f, %.2f]", bmed_lat_uvb__blue_res$estimate[s <- bmed_lat_uvb__blue_res$effect == "indirect"], bmed_lat_uvb__blue_res$estimate_HDI_low[s], bmed_lat_uvb__blue_res$estimate_HDI_high[s])`), with a residual **positive direct effect** (`r sprintf("%.2f [%.2f, %.2f]", bmed_lat_uvb__blue_res$estimate[s <- bmed_lat_uvb__blue_res$effect == "direct"], bmed_lat_uvb__blue_res$estimate_HDI_low[s], bmed_lat_uvb__blue_res$estimate_HDI_high[s])`); please remember that UV-B incidence is z-scored, and that latitude is transformed as `cos(`latitude`)` such that it is highest at the equator!
 
+#### Latitude &rarr; climate &rarr; "blue"
+
+```{r include=FALSE}
+file_name <- "./cached_results/bmed_lat_clim__blue.RData";
+if( !all(file.exists(file_name)) )
+{
+  # Fit the mediation model:
+  bmed_lat_clim__blue <- .fit_mediation_model(d=d_colors, 
+                                              outcome="exists_blue", outcome_name="blue", 
+                                              treatment="latitude_r", treatment_name="latitude", 
+                                              mediator="clim_PC1_r", mediator_name="climate PC1", 
+                                              family_mediator=gaussian(), family_outcome=bernoulli("logit"), ranefs="(1 | glottocode_family) + (1 | macroarea)",
+                                              cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10),
+                                              save_model=FALSE, show_results=TRUE);
+  # Save results:
+  save(bmed_lat_clim__blue, file=file_name, compress="xz", compression_level=9);
+} else
+{
+  load(file_name);
+}
+```
+
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+m <- bmed_lat_clim__blue; .plot_mediation_model(m$summary, m$mediation, 
+                                                outcome=m$outcome, outcome_name=m$outcome_name, 
+                                                treatment=m$treatment, treatment_name=m$treatment_name, 
+                                                mediator=m$mediator, mediator_name=m$mediator_name);
+```
 
 
 #### Subsistence &rarr; color vocabulary &rarr; "blue"
 
-There is no evidence for such path...
-
-```{r}
-# Mediation subsistence -> color vocabulary -> blue:
-if( FALSE )
+```{r include=FALSE}
+file_name <- "./cached_results/bmed_subs_ncol__blue.RData";
+if( !all(file.exists(file_name)) )
 {
-  f_mediator <- bf(n_colors_r  ~ subsistence +              (1 | glottocode_family) + (1 | macroarea), family=gaussian());
-  f_outcome  <- bf(exists_blue ~ n_colors_r + subsistence + (1 | glottocode_family) + (1 | macroarea), family=bernoulli("logit"));
-  bmed_subs_ncol__blue <- brm(f_mediator + f_outcome + set_rescor(FALSE), # uncorrelated residuals
-                              save_all_pars=TRUE, # needed for Bayes factors
-                              sample_prior=TRUE,  # needed for hypotheses tests
-                              data=d_colors, cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
-  #bmed_subs_ncol__blue <- brms_fit_indices(bmed_subs_ncol__blue);
-  (bmed_subs_ncol__blue_sum <- summary(bmed_subs_ncol__blue)); mcmc_plot(bmed_subs_ncol__blue, type="trace"); mcmc_plot(bmed_subs_ncol__blue);
-  sjstats::mediation(bmed_subs_ncol__blue);
-  (bmed_subs_ncol__blue_res <- .mediation_multiple_mediators_brms(bmed_subs_ncol__blue, response="exists_blue", treatment="subsistence", mediators=c("n_colors_r")));
-  #.print_multiple_mediators_brms(bmed_subs_ncol__blue_res);
-  
-  m_mediator <- lme4::lmer(n_colors_r ~ subsistence + (1 | glottocode_family), data=d_colors);
-  m_outcome  <- glmer(exists_blue ~ n_colors_r + subsistence + (1 | glottocode_family), family=binomial("logit"), data=d_colors);
-  m_med <- mediation::mediate(m_mediator, m_outcome, treat="subsistence", mediator="n_colors_r");
-  summary(m_med);
-  
-  m_mediator <- lme4::lmer(n_colors_r ~ subsistence + (1 | macroarea), data=d_colors);
-  m_outcome  <- glmer(exists_blue ~ n_colors_r + subsistence + (1 | macroarea), family=binomial("logit"), data=d_colors);
-  m_med <- mediation::mediate(m_mediator, m_outcome, treat="subsistence", mediator="n_colors_r");
-  summary(m_med);
+  # Fit the mediation model:
+  bmed_subs_ncol__blue <- .fit_mediation_model(d=d_colors, 
+                                               outcome="exists_blue", outcome_name="blue", 
+                                               treatment="subsistence", treatment_name="subsistence", 
+                                               mediator="n_colors_r", mediator_name="n_colors", 
+                                               family_mediator=gaussian(), family_outcome=bernoulli("logit"), ranefs="(1 | glottocode_family) + (1 | macroarea)",
+                                               cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10),
+                                               save_model=FALSE, show_results=TRUE);
+  # Save results:
+  save(bmed_subs_ncol__blue, file=file_name, compress="xz", compression_level=9);
+} else
+{
+  load(file_name);
 }
+```
+
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+m <- bmed_subs_ncol__blue; .plot_mediation_model(m$summary, m$mediation, 
+                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
+                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
+                                                 mediator=m$mediator, mediator_name=m$mediator_name);
 ```
 
 
 #### Population size &rarr; color vocabulary &rarr; "blue"
 
-There is no evidence for such path...
-
-```{r}
-# Mediation population size -> color vocabulary -> blue:
-if( !all(file.exists("./cached_results/bmed_pops_ncol__blue.RData")) )
+```{r include=FALSE}
+file_name <- "./cached_results/bmed_pops_ncol__blue.RData"; 
+if( !all(file.exists(file_name)) )
 {
-  f_mediator <- bf(n_colors_r  ~ log_popSize +              (1 | glottocode_family) + (1 | macroarea), family=gaussian());
-  f_outcome  <- bf(exists_blue ~ n_colors_r + log_popSize + (1 | glottocode_family) + (1 | macroarea), family=bernoulli("logit"));
-  bmed_pops_ncol__blue <- brm(f_mediator + f_outcome + set_rescor(FALSE), # uncorrelated residuals
-                              save_all_pars=TRUE, # needed for Bayes factors
-                              sample_prior=TRUE,  # needed for hypotheses tests
-                              data=d_colors, cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
-  #bmed_pops_ncol__blue <- brms_fit_indices(bmed_pops_ncol__blue);
-  (bmed_pops_ncol__blue_sum <- summary(bmed_pops_ncol__blue)); mcmc_plot(bmed_pops_ncol__blue, type="trace"); mcmc_plot(bmed_pops_ncol__blue);
-  sjstats::mediation(bmed_pops_ncol__blue);
-  (bmed_pops_ncol__blue_res <- .mediation_multiple_mediators_brms(bmed_pops_ncol__blue, response="exists_blue", treatment="log_popSize", mediators=c("n_colors_r")));
-  #.print_multiple_mediators_brms(bmed_pops_ncol__blue_res);
-  
-  m_mediator <- lme4::lmer(n_colors_r ~ log_popSize + (1 | glottocode_family), data=d_colors);
-  m_outcome  <- glmer(exists_blue ~ n_colors_r + log_popSize + (1 | glottocode_family), family=binomial("logit"), data=d_colors);
-  m_med <- mediation::mediate(m_mediator, m_outcome, treat="log_popSize", mediator="n_colors_r");
-  summary(m_med);
-  
-  m_mediator <- lme4::lmer(n_colors_r ~ log_popSize + (1 | macroarea), data=d_colors);
-  m_outcome  <- glmer(exists_blue ~ n_colors_r + log_popSize + (1 | macroarea), family=binomial("logit"), data=d_colors);
-  m_med <- mediation::mediate(m_mediator, m_outcome, treat="log_popSize", mediator="n_colors_r");
-  summary(m_med);
-
+  # Fit the mediation model:
+  bmed_pops_ncol__blue <- .fit_mediation_model(d=d_colors, 
+                                               outcome="exists_blue", outcome_name="blue", 
+                                               treatment="log_popSize", treatment_name="pop_size", 
+                                               mediator="n_colors_r", mediator_name="n_colors", 
+                                               family_mediator=gaussian(), family_outcome=bernoulli("logit"), ranefs="(1 | glottocode_family) + (1 | macroarea)",
+                                               cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10),
+                                               save_model=FALSE, show_results=TRUE);
   # Save results:
-  save(bmed_pops_ncol__blue_sum, bmed_pops_ncol__blue_res, #bmed_pops_ncol__blue, # no need to save the actual model
-       file="./cached_results/bmed_pops_ncol__blue.RData", compress="xz", compression_level=9);
+  save(bmed_pops_ncol__blue, file=file_name, compress="xz", compression_level=9);
 } else
 {
-  load("./cached_results/bmed_pops_ncol__blue.RData");
+  load(file_name);
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis population size &rarr; number of color categories &rarr; dedicated word for "blue". Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=7, fig.height=3}
-# Mediation:
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+m <- bmed_pops_ncol__blue; .plot_mediation_model(m$summary, m$mediation, 
+                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
+                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
+                                                 mediator=m$mediator, mediator_name=m$mediator_name); 
+```
+
+
+
+#### UV-B &rarr; color vocabulary &rarr; "blue"
+
+```{r include=FALSE}
+file_name <- "./cached_results/bmed_uvb_ncol__blue.RData";
+if( !all(file.exists(file_name)) )
+{
+  # Fit the mediation model:
+  bmed_uvb_ncol__blue <- .fit_mediation_model(d=d_colors, 
+                                              outcome="exists_blue", outcome_name="blue", 
+                                              treatment="UVB_r", treatment_name="UV-B", 
+                                              mediator="n_colors_r", mediator_name="n_colors", 
+                                              family_mediator=gaussian(), family_outcome=bernoulli("logit"), ranefs="(1 | glottocode_family) + (1 | macroarea)",
+                                              cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10),
+                                              save_model=FALSE, show_results=TRUE);
+  # Save results:
+  save(bmed_uvb_ncol__blue, file=file_name, compress="xz", compression_level=9);
+} else
+{
+  load(file_name);
+}
+```
+
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+m <- bmed_uvb_ncol__blue; .plot_mediation_model(m$summary, m$mediation, 
+                                                outcome=m$outcome, outcome_name=m$outcome_name, 
+                                                treatment=m$treatment, treatment_name=m$treatment_name, 
+                                                mediator=m$mediator, mediator_name=m$mediator_name); 
+```
+
+
+
+#### Extra: what's going on with dist2lakes and climate?
+
+Is the distance to lakes a proxy for something else, such as climate, geographic location or UV-B incidence?
+
+```{r include=FALSE}
+file_name <- "./cached_results/bmed_d2l__blue.RData";
+if( !all(file.exists(file_name)) )
+{
+  # Fit the mediation models:
+  # dist2lakes -> latitude -> "blue":
+  bmed_d2l_lat__blue <- .fit_mediation_model(d=d_colors, 
+                                             outcome="exists_blue", outcome_name="blue", 
+                                             treatment="dist2lakes_r", treatment_name="dist2lakes", 
+                                             mediator="latitude_r", mediator_name="latitude", 
+                                             family_mediator=gaussian(), family_outcome=bernoulli("logit"), ranefs="(1 | glottocode_family) + (1 | macroarea)",
+                                             cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10),
+                                             save_model=FALSE, show_results=TRUE);
+  
+  # dist2lakes -> climate -> "blue":
+  bmed_d2l_clim__blue <- .fit_mediation_model(d=d_colors, 
+                                              outcome="exists_blue", outcome_name="blue", 
+                                              treatment="dist2lakes_r", treatment_name="dist2lakes", 
+                                              mediator="clim_PC1_r", mediator_name="climate PC1", 
+                                              family_mediator=gaussian(), family_outcome=bernoulli("logit"), ranefs="(1 | glottocode_family) + (1 | macroarea)",
+                                              cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10),
+                                              save_model=FALSE, show_results=TRUE);
+  
+  # dist2lakes -> UV-B -> "blue":
+  bmed_d2l_uvb__blue <- .fit_mediation_model(d=d_colors, 
+                                             outcome="exists_blue", outcome_name="blue", 
+                                             treatment="dist2lakes_r", treatment_name="dist2lakes", 
+                                             mediator="UVB_r", mediator_name="UV-B", 
+                                             family_mediator=gaussian(), family_outcome=bernoulli("logit"), ranefs="(1 | glottocode_family) + (1 | macroarea)",
+                                             cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10),
+                                             save_model=FALSE, show_results=TRUE);
+  
+  # dist2lakes -> n_colors -> "blue":
+  bmed_d2l_ncol__blue <- .fit_mediation_model(d=d_colors, 
+                                              outcome="exists_blue", outcome_name="blue", 
+                                              treatment="dist2lakes_r", treatment_name="dist2lakes", 
+                                              mediator="n_colors_r", mediator_name="n_colors", 
+                                              family_mediator=gaussian(), family_outcome=bernoulli("logit"), ranefs="(1 | glottocode_family) + (1 | macroarea)",
+                                              cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10),
+                                              save_model=FALSE, show_results=TRUE);
+  
+  # Save results:
+  save(bmed_d2l_lat__blue, bmed_d2l_clim__blue, bmed_d2l_uvb__blue, bmed_d2l_ncol__blue, file=file_name, compress="xz", compression_level=9);
+} else
+{
+  load(file_name); 
+}
+```
+
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+m <- bmed_d2l_lat__blue; .plot_mediation_model(m$summary, m$mediation, 
+                                                outcome=m$outcome, outcome_name=m$outcome_name, 
+                                                treatment=m$treatment, treatment_name=m$treatment_name, 
+                                                mediator=m$mediator, mediator_name=m$mediator_name);
+```
+
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+m <- bmed_d2l_clim__blue; .plot_mediation_model(m$summary, m$mediation, 
+                                                outcome=m$outcome, outcome_name=m$outcome_name, 
+                                                treatment=m$treatment, treatment_name=m$treatment_name, 
+                                                mediator=m$mediator, mediator_name=m$mediator_name);
+```
+
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+m <- bmed_d2l_uvb__blue; .plot_mediation_model(m$summary, m$mediation, 
+                                                outcome=m$outcome, outcome_name=m$outcome_name, 
+                                                treatment=m$treatment, treatment_name=m$treatment_name, 
+                                                mediator=m$mediator, mediator_name=m$mediator_name);
+```
+
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+m <- bmed_d2l_ncol__blue; .plot_mediation_model(m$summary, m$mediation, 
+                                                outcome=m$outcome, outcome_name=m$outcome_name, 
+                                                treatment=m$treatment, treatment_name=m$treatment_name, 
+                                                mediator=m$mediator, mediator_name=m$mediator_name);
+```
+
+
+
+
+#### Conclusions
+
+Thus, data supports the following pathways:
+
+```{r fig.cap=capFig('The links supported by the mediation and regression analyses. Plese note that we changed latitude back to its "natural" coding such that it is highest at the poles.'), fig.width=7, fig.height=4}
 DiagrammeR::grViz(paste0('
-  digraph mediation_popsize_ncolors_blue {
+  digraph full_blue {
 
   # the graph:
   graph [overlap = true]
   rankdir="LR";
 
   # the nodes:
-  node [shape = box, style = "filled", fillcolor = "gray95"]
-  P [label = "pop_size"]; 
-  N [label = "n_colors"]; 
-  B [label = "blue"]; 
+  node [shape = box, style = "filled", fillcolor = "gray95"];
+  blue [label = "blue",        fillcolor="blue", fontcolor="white"]; 
+  lat  [label = "latitude",    fillcolor="palevioletred1"]; 
+  UVB  [label = "UV-B",        fillcolor="palevioletred1"]; 
+  d2l  [label = "dist2lakes",  fillcolor="steelblue1"]; 
+  clim [label = "clim_PC1",    fillcolor="springgreen"]; 
+  ncol [label = "n_colors",    fillcolor="lightgoldenrod1"]; 
+  psiz [label = "pop_size",    fillcolor="burlywood"]; 
+  subs [label = "subsistence", fillcolor="gray90", fontcolor="gray50"]; 
 
   # the edges:
-  edge [style = "solid", color = "black"]
-  P->N [label="',sprintf("%.2f [%.2f, %.2f]", bmed_pops_ncol__blue_sum$fixed["ncolorsr_log_popSize", "Estimate"], bmed_pops_ncol__blue_sum$fixed["ncolorsr_log_popSize", "l-95% CI"], bmed_pops_ncol__blue_sum$fixed["ncolorsr_log_popSize", "u-95% CI"]),'"]
-  P->B [label="',sprintf("%.2f [%.2f, %.2f]", bmed_pops_ncol__blue_sum$fixed["existsblue_log_popSize", "Estimate"], bmed_pops_ncol__blue_sum$fixed["existsblue_log_popSize", "l-95% CI"], bmed_pops_ncol__blue_sum$fixed["existsblue_log_popSize", "u-95% CI"]),'"]
-  N->B [label="',sprintf("%.2f [%.2f, %.2f]", bmed_pops_ncol__blue_sum$fixed["existsblue_n_colors_r", "Estimate"], bmed_pops_ncol__blue_sum$fixed["existsblue_n_colors_r", "l-95% CI"], bmed_pops_ncol__blue_sum$fixed["existsblue_n_colors_r", "u-95% CI"]),'"]
+  edge [style = "solid", color = "black"];
+  lat  -> blue [color="gray80",     fontcolor="gray80",     style="dashed", label=""];
+  lat  -> UVB  [color="violetred4", fontcolor="violetred4", penwidth=3,     label="-"];
+  UVB  -> blue [color="violetred4", fontcolor="violetred4", penwidth=3,     label="-"];
+  d2l  -> blue [color="slateblue4", fontcolor="slateblue4", penwidth=3,     label="-"];
+  clim -> blue [color="darkgreen",  fontcolor="darkgreen",  penwidth=1,     label="(+)"];
+  lat  -> clim [color="darkgreen",  fontcolor="darkgreen",  penwidth=3,     label="+"];
+  ncol -> blue [color="yellow4",    fontcolor="yellow4",    penwidth=3,     label="+"];
+  psiz -> ncol [color="burlywood4", fontcolor="violetred4", penwidth=3,     label="+"];
+  psiz -> blue [color="gray80",     fontcolor="gray80",     style="dashed", label=""];
+  subs -> blue [color="gray80",     fontcolor="gray80",     style="dashed", label=""];
+  subs -> ncol [color="gray80",     fontcolor="gray80",     style="dashed", label=""]; 
 }
 '))
 ```
 
-The **total positive effect** of population size on "blue" (`r sprintf("%.2f, with 95%%HDI [%.2f, %.2f]", bmed_pops_ncol__blue_res$estimate[s <- bmed_pops_ncol__blue_res$effect == "total"], bmed_pops_ncol__blue_res$estimate_HDI_low[s], bmed_pops_ncol__blue_res$estimate_HDI_high[s])`) is fully mediated by the number of color categories (**positive indirect effect** `r sprintf("%.2f [%.2f, %.2f]", bmed_pops_ncol__blue_res$estimate[s <- bmed_pops_ncol__blue_res$effect == "indirect"], bmed_pops_ncol__blue_res$estimate_HDI_low[s], bmed_pops_ncol__blue_res$estimate_HDI_high[s])`), with **no direct effect** (`r sprintf("%.2f [%.2f, %.2f]", bmed_pops_ncol__blue_res$estimate[s <- bmed_pops_ncol__blue_res$effect == "direct"], bmed_pops_ncol__blue_res$estimate_HDI_low[s], bmed_pops_ncol__blue_res$estimate_HDI_high[s])`).
-
-
-
-
-
+- *latitude* has no direct effect on "blue", but has a mediated positive effect (i.e., languages spoken at higher latitudes have a higher chance of having a dedicated word for "blue"); this is due to the composition of two negative effects: at higher latitudes, *UV-B incidence* is lower, which, in turn, increases the chance of a word for "blue";
+- likewise, *latitude* influences *climate PC1*, which, in turn, affects "blue";
+- *distance to lakes* has a negative effect on "blue";
+- *subsistence strategy* does not have an effect on "blue";
+- *population size* has a mediated positive effect on "blue", fully mediated by its positive effect on the *number of color categories*, which, in turn, has a positive effect on the existence of a dedicated work for "blue".
 
 
 ```{r cache=FALSE}
 knitr::knit_exit();
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
