@@ -29,7 +29,8 @@ csl: apa-6th-edition.csl
 - redo/expand the Bayesian regressions and model comparison
 - decide what to keep to streamline the analysis
 - keep only the needed input files: **DONE**
-- do SEM/multiple mediators stuff as I did for syllable and tone -> modification indices!
+- do SEM/multiple mediators stuff as I did for syllable and tone -> modification indices: **DONE**
+- redo the mediation analysis with the new flow blue -> n_colors
 - change standardization of latitude so that it is highest at the poles: **DONE**
 - redo the mediation using the two new functions: **DONE**
 - update the summary mediation diagram: **DONE**
@@ -97,7 +98,7 @@ library(performance); # multicollinearity
 # Path analysis/SEM:
 library(lavaan); # fit models
 library(lavaanPlot); # plot models
-#library(semPlot);
+library(semPlot);
 
 # Decison trees, random forests, and SVMs:
 library(partykit); # ctree()
@@ -1149,6 +1150,8 @@ grid.arrange(ggplot(data=d_colors, aes(x=dist2lakes, y=dist2lakes_r),) + theme_b
              ncol=2);
 ```
 
+[^openstreetmaps]: Unfortunately, the primary data from [OpenStreetMap](http://openstreetmapdata.com/), the ["Reduced waterbodies as raster masks"](http://openstreetmapdata.com/data/water-reduced-raster) seems to no longer be available for download as of July 2020, so we used here the original data downloaded in March 2018 by Dan Dediu and used in the @bentz_evolution_2018 paper.
+
 
 ### Distance to lakes
 
@@ -1281,6 +1284,8 @@ ggplot() +
 The incidence of ultra-violet light (UV) was calculated from the data available from the [NASA Total Ozone Mapping Spectrometer (TOMS)](http://toms.gsfc.nasa.gov/ery_uv/new_uv/)[^uv] for the year 1998, in order to replicate the procedure in @brown_color_2004. 
 These data contain daily measures of UV radiation received by the human body at four wavelengths (305 nm, 310 nm, 320 nm, and 380 nm) in Joules per square meter (J/m^2^), taking into account the thickness of the ozone layer in the stratosphere, the amount of cloud cover, the elevation, and how high the sun is in the sky. 
 Here, we computed the mean and standard deviation for the whole year for UV-A (315 nm to 400 nm), for UV-B (280 nm to 315 nm) and for the full spectrum; these were further z-scored for the statistical analyses (thus, the relationship between raw and transformed values is linear).
+
+[^uv]: Unfortunately, the primary data from [TOMS](http://toms.gsfc.nasa.gov/ery_uv/new_uv/) seems to no longer be available for download as of July 2020, so we used here the original data downloaded in 2012 by Dan Dediu and used in the @meeussen_colour_2015 MSc thesis.
 
 ### UV-A
 
@@ -3515,60 +3520,6 @@ DiagrammeR::grViz(paste0('
 
 ### Path analysis
 
-The diagram of interest is:
-
-```{r fig.cap=capFig('Graphical representation of the relevant SEM model.')}
-# Mediation:
-DiagrammeR::grViz('
-  digraph mediation_sem {
-
-  # the graph:
-  graph [overlap = true]
-  rankdir="TB";
-
-  # observed nodes:
-  node [shape = box, style = "filled", fillcolor = "lightyellow"]
-  blue [label = "blue", tooltip = "blue", fillcolor="deepskyblue"]; 
-  ncol [label = "n_colors", tooltip = "n_colors"]; 
-  UVB  [label = "UV-B", tooltip = "UV-B"]; 
-  lat  [label = "latitude", tooltip = "latitude"]; 
-  clim [label = "climate PC1", tooltip = "climate PC1"]; 
-  subs [label = "subsistence", tooltip = "subsistence"]; 
-  psiz [label = "pop_size", tooltip = "pop_size"]; 
-  d2l  [label = "dist2lakes", tooltip = "dist2lakes"]; 
-  
-  # latent nodes:
-  CC   [label = "cultural complexity", tooltip = "cultural complexity", style = "filled", fillcolor = "salmon", shape = "ellipse"]; 
-  E2B  [label = "exposure to blue", tooltip = "exposure to blue", style = "filled", fillcolor = "salmon", shape = "ellipse"]; 
-
-  # regresions:
-  # "cultural complexity":
-  subs -> CC   [style = "solid", color = "black"];
-  psiz -> CC   [style = "solid", color = "black"];
-  CC   -> ncol [style = "solid", color = "black"];
-  CC   -> blue [style = "solid", color = "black"];
-  # color vocabulary:
-  ncol -> blue [style = "solid", color = "black"];
-  # UV-B incidence:
-  UVB  -> ncol [style = "solid", color = "black"];
-  UVB  -> blue [style = "solid", color = "black"];
-  lat  -> UVB  [style = "solid", color = "black"];
-  # "exposure to blue":
-  d2l  -> E2B  [style = "solid", color = "black"];
-  CC   -> E2B  [style = "solid", color = "black"];
-  clim -> E2B  [style = "solid", color = "black"];
-  E2B  -> ncol [style = "solid", color = "black"];
-  E2B  -> blue [style = "solid", color = "black"];
-
-  # correlations:
-  clim -> d2l  [style = "solid", color = "gray", dir="both"];
-  psiz -> subs [style = "solid", color = "gray", dir="both"];
-  lat  -> clim [style = "solid", color = "gray", dir="both"];
-  lat  -> d2l  [style = "solid", color = "gray", dir="both"];
-}
-')
-```
-
 ```{r include=FALSE}
 file_name <- "./cached_results/sem_blue.RData";
 if( !all(file.exists(file_name)) )
@@ -3580,185 +3531,62 @@ if( !all(file.exists(file_name)) )
                                  "blue", "ncol", "uvb", "lat", "d2l", "clim", "subs", "psiz");
   # Binary variables recoding (as per https://lavaan.ugent.be/tutorial/cat.html):
   d_colors_lavaan$blue <- ordered(d_colors_lavaan$blue, levels=c("no","yes")); # this is an endogenous (dependent) variable -> make it ordered
-  d_colors_lavaan$subs <- as.numeric(d_colors_lavaan$subs == "AGR"); # 1 == AGR # this is an exogenous (independent) -> make it numeric dummy (0,1)
+  d_colors_lavaan$subs <- ordered(d_colors_lavaan$subs, levels=c("HG","AGR")); # this is an endogenous (dependent) variable -> make it ordered
 
+  
   # The full SEM model:
   sem_blue_full <- '
-    # regressions:
-    # -> blue:
-    blue ~ b_bu   * uvb  # uvb  ---> blue
-           + b_bn * ncol # ncol ---> blue
-           + b_bd * d2l  # d2l  ---> blue
-           + b_bl * lat  # lat ----> blue
-    # -> ncol:
-    ncol ~ b_nu   * uvb  # uvb  ---> ncol
-           + b_ns * subs # subs ---> ncol
-           + b_nc * clim # clim ---> ncol 
-           + b_np * psiz # psiz ---> ncol 
-    # -> uvb:
-    uvb  ~ b_ul   * lat  # lat  ---> uvb
-    # -> clim:
-    clim ~ b_cl   * lat  # lat  ---> clim
-    # -> d2l:
-    d2l  ~ b_dl   * lat  # lat  ---> d2l
-           + b_dc * clim # clim ---> d2l 
+    # blue:
+    blue ~ b_bu * uvb  # uvb  ---> blue 
+         + b_bd * d2l  # d2l  ---> blue 
+         + b_bs * subs # subs ---> blue 
+         + b_bc * clim # clim ---> blue
+         + b_bl * lat  # lat  ---> blue
+
+    # number of color terms:
+    ncol ~ b_nb * blue # blue ---> ncol 
+         + b_ns * subs # subs ---> ncol 
+         + b_nc * clim # clim ---> ncol
+         + b_nu * uvb  # uvb  ---> ncol 
+         + b_nl * lat  # lat  ---> ncol 
+
+    # UV-B incidence:   
+    uvb  ~ b_ul * lat  # lat  ---> uvb  
+         + b_uc * clim # clim ---> uvb  
+    
+    # Climate:
+    clim ~ b_cl * lat  # lat  ---> clim
+       
+    # Distance to lakes:  
+    d2l  ~ b_dl * lat  # lat  ---> d2l
+    d2l ~~ clim + uvb
+    
+    # Subsistence:
+    subs ~ b_sl * lat  # lat  ---> subs 
+         + b_sd * d2l  # d2l  ---> subs
+    subs ~~ clim
   ';
   semfit_blue_full <- sem(sem_blue_full, data=d_colors_lavaan, se="robust.sem");
   summary(semfit_blue_full, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
   lavaanPlot(model=semfit_blue_full, coefs=TRUE, sig=1.00, stand=FALSE, covs=TRUE, stars=c("regress", "latent", "covs"), edge_options=list(color="gray"));
+  semPaths(semfit_blue_full, what="est", edge.label.cex = 1.5, fade = FALSE)
   fitMeasures(semfit_blue_full, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
+  mi <- modindices(semfit_blue_full);
 
-  # Test if the direct influence latitude to blue matters:
-  sem_blue_no_lat__blue <- paste0(sem_blue_full,'
-    # constraints (fix parameters to 0):
-    b_bl == 0 # force lat -/-> blue
-  ');
-  semfit_blue_no_lat__blue <- sem(sem_blue_no_lat__blue, data=d_colors_lavaan, se="robust.sem");
-  summary(semfit_blue_no_lat__blue, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
-  fitMeasures(semfit_blue_no_lat__blue, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
-  (anova_full_no_lat__blue <- anova(semfit_blue_no_lat__blue, semfit_blue_no_clim)); # this direct link does not matter!
+  ## Specific tests:
+  ## - test if UV-B affects blue:
+  #sem_blue_no_uvb__blue <- paste0(sem_blue_full,'
+  #  # constraints (fix parameters to 0):
+  #  b_bu == 0 # force uvb -/-> blue
+  #');
+  #semfit_blue_no_uvb__blue <- sem(sem_blue_no_uvb__blue, data=d_colors_lavaan, se="robust.sem");
+  #summary(semfit_blue_no_uvb__blue, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
+  #fitMeasures(semfit_blue_no_uvb__blue, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
+  #(anova_blue_no_uvb__blue <- anova(semfit_blue_full, semfit_blue_no_uvb__blue)); # p = 0.001919 **
 
-  # Test if climate matters:
-  sem_blue_no_clim <- paste0(sem_blue_full,'
-    # constraints (fix parameters to 0):
-    b_dc == 0 # force clim -/-> d2l
-    b_nc == 0 # force clim -/-> ncol
-  ');
-  semfit_blue_no_clim <- sem(sem_blue_no_clim, data=d_colors_lavaan, se="robust.sem");
-  summary(semfit_blue_no_clim, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
-  fitMeasures(semfit_blue_no_clim, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
-  (anova_full_no_clim <- anova(semfit_blue_full, semfit_blue_no_clim)); # clim does NOT affect d2l and ncol
-
-  # Test if subsistence matters:
-  sem_blue_no_subs <- paste0(sem_blue_full,'
-    # constraints (fix parameters to 0):
-    b_ns == 0 # force subs -/-> ncol
-  ');
-  semfit_blue_no_subs <- sem(sem_blue_no_subs, data=d_colors_lavaan, se="robust.sem");
-  summary(semfit_blue_no_subs, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
-  fitMeasures(semfit_blue_no_subs, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
-  (anova_full_no_subs <- anova(semfit_blue_full, semfit_blue_no_subs)); # subs does NOT affect ncol
-
-  # Test if both climate and subsistence matter simultaneously:
-  sem_blue_no_subs_clim <- paste0(sem_blue_full,'
-    # constraints (fix parameters to 0):
-    b_ns == 0 # force subs -/-> ncol
-    b_dc == 0 # force clim -/-> d2l
-    b_nc == 0 # force clim -/-> ncol
-  ');
-  semfit_blue_no_subs_clim <- sem(sem_blue_no_subs_clim, data=d_colors_lavaan, se="robust.sem");
-  summary(semfit_blue_no_subs_clim, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
-  fitMeasures(semfit_blue_no_subs_clim, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
-  (anova_full_no_clim_subs <- anova(semfit_blue_full, semfit_blue_no_subs_clim)); # indeed, they don't
-
-  # The updated SEM model (remove clim ---> ncol, clim ---> d2l & subs -> ncol):
-  sem_blue <- '
-    # regressions:
-    # -> blue:
-    blue ~ b_bu   * uvb  # uvb  ---> blue
-           + b_bn * ncol # ncol ---> blue
-           + b_bd * d2l  # d2l  ---> blue
-          #+ b_bl * lat  # lat  -/-> blue
-    # -> ncol:
-    ncol ~ b_nu   * uvb  # uvb  ---> ncol
-          #+ b_ns * subs # subs -/-> ncol
-          #+ b_nc * clim # clim -/-> ncol 
-           + b_np * psiz # psiz ---> ncol 
-    # -> uvb:
-    uvb  ~ b_ul   * lat  # lat  ---> uvb
-    # -> clim:
-    clim ~ b_cl   * lat  # lat  ---> clim
-    # -> d2l:
-    d2l  ~ b_dl   * lat  # lat  ---> d2l
-          #+ b_dc * clim # clim -/-> d2l 
-  ';
-  semfit_blue <- sem(sem_blue, data=d_colors_lavaan, se="robust.sem");
-  summary(semfit_blue, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
-  lavaanPlot(model=semfit_blue, coefs=TRUE, sig=1.00, stand=FALSE, covs=TRUE, stars=c("regress", "latent", "covs"), edge_options=list(color="gray"));
-  fitMeasures(semfit_blue, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
-
-  # Test if UV-B affects blue:
-  sem_blue_test_uvb__blue <- paste0(sem_blue,'
-    # constraints (fix parameters to 0):
-    b_bu == 0 # force uvb -/-> blue
-  ');
-  semfit_blue_test_uvb__blue <- sem(sem_blue_test_uvb__blue, data=d_colors_lavaan, se="robust.sem");
-  summary(semfit_blue_test_uvb__blue, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
-  fitMeasures(semfit_blue_test_uvb__blue, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
-  (anova_best_test_uvb__blue <- anova(semfit_blue, semfit_blue_test_uvb__blue)); # UV-B ---> blue does matter!
-
-  # Test if n_colors affects blue:
-  sem_blue_test_ncol__blue <- paste0(sem_blue,'
-    # constraints (fix parameters to 0):
-    b_bn == 0 # force ncol -/-> blue
-  ');
-  semfit_blue_test_ncol__blue <- sem(sem_blue_test_ncol__blue, data=d_colors_lavaan, se="robust.sem");
-  summary(semfit_blue_test_ncol__blue, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
-  fitMeasures(semfit_blue_test_ncol__blue, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
-  (anova_best_test_ncol__blue <- anova(semfit_blue, semfit_blue_test_ncol__blue)); # ncol ---> blue does matter!
-
-  # Test if dist2lakes affects blue:
-  sem_blue_test_d2l__blue <- paste0(sem_blue,'
-    # constraints (fix parameters to 0):
-    b_bd == 0 # force d2l -/-> blue
-  ');
-  semfit_blue_test_d2l__blue <- sem(sem_blue_test_d2l__blue, data=d_colors_lavaan, se="robust.sem");
-  summary(semfit_blue_test_d2l__blue, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
-  fitMeasures(semfit_blue_test_d2l__blue, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
-  (anova_best_test_d2l__blue <- anova(semfit_blue, semfit_blue_test_d2l__blue)); # d2l ---> blue does matter!
-
-  # Test if UV-B as a whole affects colors:
-  sem_blue_test_no_uvb <- paste0(sem_blue,'
-    # constraints (fix parameters to 0):
-    b_bu == 0 # force uvb -/-> blue
-    b_nu == 0 # force uvb -/-> ncol
-  ');
-  semfit_blue_test_no_uvb <- sem(sem_blue_test_no_uvb, data=d_colors_lavaan, se="robust.sem");
-  summary(semfit_blue_test_no_uvb, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
-  fitMeasures(semfit_blue_test_no_uvb, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
-  (anova_best_test_no_uvb <- anova(semfit_blue, semfit_blue_test_no_uvb)); # UV-B does affect colors!
-
-  # Test if pop_size affects n_colors:
-  sem_blue_test_psiz__ncol <- paste0(sem_blue,'
-    # constraints (fix parameters to 0):
-    b_np == 0 # force psiz -/-> ncol
-  ');
-  semfit_blue_test_psiz__ncol <- sem(sem_blue_test_psiz__ncol, data=d_colors_lavaan, se="robust.sem");
-  summary(semfit_blue_test_psiz__ncol, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
-  fitMeasures(semfit_blue_test_psiz__ncol, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
-  (anova_best_test_psiz__ncol <- anova(semfit_blue, semfit_blue_test_psiz__ncol)); # psiz ---> ncol does matter!
-
-  # Test if latitude affects UV-B:
-  sem_blue_test_lat__uvb <- paste0(sem_blue,'
-    # constraints (fix parameters to 0):
-    b_ul == 0 # force lat -/-> uvb
-  ');
-  semfit_blue_test_lat__uvb <- sem(sem_blue_test_lat__uvb, data=d_colors_lavaan, se="robust.sem");
-  summary(semfit_blue_test_lat__uvb, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
-  fitMeasures(semfit_blue_test_lat__uvb, c("chisq", "df", "pvalue", "cfi", "tli", "nnfi", "rfi"));
-  (anova_best_test_lat__uvb <- anova(semfit_blue, semfit_blue_test_lat__uvb)); # lat ---> uvb does matter!
-
-  # So, this is the final model... save it:
-  sem_blue <- list(
-    # the data:
-    "data"=d_colors_lavaan,
-    
-    # the "full" model and tests:
-    "full_model"=semfit_blue_full, 
-    "anova_full_no_lat__blue"=anova_full_no_lat__blue, # test the direct link latitude ---> blue
-    "anova_full_no_clim"=anova_full_no_clim, # test climate
-    "anova_full_no_subs"=anova_full_no_subs, # test subsistence
-    "anova_full_no_clim_subs"=anova_full_no_clim_subs, # test climate and subsistence simultaneously
-    
-    # the best model and tests:
-    "best_model"=semfit_blue,
-    "anova_best_test_uvb__blue"=anova_best_test_uvb__blue, # test uvb ---> blue
-    "anova_best_test_ncol__blue"=anova_best_test_ncol__blue, # test ncol ---> blue
-    "anova_best_test_d2l__blue"=anova_best_test_d2l__blue, # test d2l ---> blue
-    "anova_best_test_no_uvb"=anova_best_test_no_uvb, # test uvb ---> blue and uvb ---> ncol simultaneously
-    "anova_best_test_psiz__ncol"=anova_best_test_psiz__ncol, # test psiz ---> ncol
-    "anova_best_test_lat__uvb"=anova_best_test_lat__uvb # test lat ---> uvb
-    );
+  # Save to file:
+  sem_blue <- list("data"=d_colors_lavaan,
+                   "model"=semfit_blue_full);
   save(sem_blue, file=file_name, compress="xz", compression_level=9);
 } else
 {
@@ -3766,20 +3594,45 @@ if( !all(file.exists(file_name)) )
 } 
 ```
 
-We tested first a "full" path model that includes all the causally plausible paths of interest here:
+We performed [*path analysis*](https://en.wikipedia.org/wiki/Path_analysis_(statistics)) using [`lavaan`](https://lavaan.ugent.be/tutorial/index.html), and we obtained the following model (built principally from *a priori* reasoning, but also incorporating some theoretically sound suggestions based on [modification indices](https://curranbauer.org/what-are-modification-indices-and-should-i-use-them-when-fitting-sems-to-my-own-data/)):
 
-```{r fig.cap=capFig('The "full" path model with standardized coefficients (see @grace_interpreting_2005 about pitfalls in interpreting such coefficients).')}
-lavaanPlot(model=sem_blue$full_model, coefs=TRUE, sig=1.00, stand=TRUE, covs=TRUE, stars=c("regress", "latent", "covs"), edge_options=list(color="gray"));
+```{r fig.cap=capFig('The path model with non-standardized coefficients, showing all estimated path estimates. Single-headed arrows represent regressions, double-headed arrows represent covariance and variance (when refering to the same node), and the arrows emerging from triangles are the intercepts; blue edges have negative estimates, red ones positive estimates.'), fig.width=15, fig.height=10}
+semPaths(sem_blue$model, what="est", edge.label.cex=0.75, fade=FALSE, nCharNodes=0, posCol="red", negCol="blue", layout="tree2");
 ```
 
-This model fits the data pretty badly (`r sprintf("*&chi;*^2^(%d) = %.1f, *p* = %.3g; CFI = %.3f, TLI = %.3f, NNFI = %.3f", fitMeasures(sem_blue$full_model, c("df")), fitMeasures(sem_blue$full_model, c("chisq")), fitMeasures(sem_blue$full_model, c("pvalue")), fitMeasures(sem_blue$full_model, c("cfi")), fitMeasures(sem_blue$full_model, c("tli")), fitMeasures(sem_blue$full_model, c("nnfi")))`), and specific tests (involving fixing path coefficient(s) to 0 and comparing with the model with these parameters free) show that the direct influence of latitude on "blue" (`r sprintf("*p* = %.3g",sem_blue$anova_full_no_lat__blue[2,"Pr(>Chisq)"] )`), of subsistence on the number of colors (`r sprintf("*p* = %.3g",sem_blue$anova_full_no_subs[2,"Pr(>Chisq)"] )`), and of climate on the number of colors and the distance to lakes (`r sprintf("*p* = %.3g",sem_blue$anova_full_no_clim[2,"Pr(>Chisq)"] )`) do not make significant contributions.
-
-Removing these results in the model:
-
-```{r fig.cap=capFig('The "best" path model with standardized coefficients.')}
-lavaanPlot(model=sem_blue$best_model, coefs=TRUE, sig=1.00, stand=TRUE, covs=TRUE, stars=c("regress", "latent", "covs"), edge_options=list(color="gray"));
+```{r fig.cap=capFig('The path model with standardized coefficients; conventions as above.'), fig.width=15, fig.height=10}
+semPaths(sem_blue$model, what="std", edge.label.cex=0.75, fade=FALSE, nCharNodes=0, posCol="red", negCol="blue", layout="tree2");
 ```
 
+```{r fig.cap=capFig('The path model with non-standardized coefficients, showing all path estimates with significance. Single-headed arrows represent regressions, while double-headed arrows represent covariance. Please note that this is not a "standard" SEM/path analysis diagram (see below for such a representation).')}
+lavaanPlot(model=sem_blue$model, coefs=TRUE, sig=1.00, stand=FALSE, covs=TRUE, stars=c("regress", "latent", "covs"), edge_options=list(color="gray"));
+```
+
+```{r fig.cap=capFig('The path model with standardized coefficients (see @grace_interpreting_2005 about pitfalls in interpreting such coefficients) showing only the significant (at the 0.05 level) path estimates with significance.')}
+lavaanPlot(model=sem_blue$model, coefs=TRUE, sig=0.05, stand=TRUE, covs=TRUE, stars=c("regress", "latent", "covs"), edge_options=list(color="gray"));
+```
+
+This model fits the data well[^interpret_sem]: `r sprintf("*&chi;*^2^(%d) = %.1f, *p* = %.3g; CFI = %.3f, TLI = %.3f, NNFI = %.3f, RMSEA = %.3f 90%%CI [%.3f, %.3f]", fitMeasures(sem_blue$model, c("df")), fitMeasures(sem_blue$model, c("chisq")), fitMeasures(sem_blue$model, c("pvalue")), fitMeasures(sem_blue$model, c("cfi")), fitMeasures(sem_blue$model, c("tli")), fitMeasures(sem_blue$model, c("nnfi")), fitMeasures(sem_blue$model, c("rmsea")), fitMeasures(sem_blue$model, c("rmsea.ci.lower")), fitMeasures(sem_blue$model, c("rmsea.ci.upper")))`.
+
+Please note that:
+
+- we coded the endogenous variables *blue* and *subsistence* as `ordered` (as "no" < "yes", and "HG" <  "AGR", respectively) as per https://lavaan.ugent.be/tutorial/cat.html;
+- by default, `lavaan` does not estimate the residual variances of categorical endogenous variables (here, *blue* and *subsistence*), and we did not change this behaviour.
+
+With these, it can be seen that (the full model output is in [Appendix II. Path analysis for "blue"]):
+
+- *latitude* seems to have a direct influence on all the other measures: not only on *UV-B* (-), *blue* (-) and *n_colors* (-), but also on *climate PC1* (+), *distance to lakes* (-), and even *subsistence* (-), the strongest influences being on *climate PC1*, *UV-B* and *n_colors*. While its effects on *climate PC1* and *UV-B* (and, to a certain degree, *distance to lakes* and *subsistence*) are expected, its direct effects on *blue* and *n_colors* suggests that there are some other factors we did not model;
+- *blue* is affected by *UV-B* (-), *latitude* (-), *distance to lakes* (-) and *subsistence* (+), the first strongly supporting the hypothesis of a physiological effect of UV-B incidence, and the latter supporting the idea that "cultural complexity" promotes more complex color vocabularies; intriguingly, the direct influence of *distance to lakes* is supplemented by indirect influences through *UV-B* incidence and *subsistence*;
+- *n_colors* is affected by *latitude* (-), *UV-B* (-) and *blue* (+), the last supporting the stages theory, and the second suggesting that UV-B incidence might have more negative effects on color perception than just those involving "blue"; interestingly, *climate* and *subsistence* do not directly influence *n_colors*, the first in any way, while the second only through *blue*;
+- *climate* influences only *UV-B* incidence (-), which may make physical sense;
+- *subsistence* only influences *blue* (+).
+
+We did not include *population size* in this model as it was highly related to *subsistence* (`r sprintf("Pearson's *r* = %.2f, *p* = %.3g; *t*(%.1f) = %.2f, mean(HG) = %.1f, mean(AGR) = %.1f, *p* = %.3g", (tmp <- cor.test(sem_blue$data$psiz, as.numeric(sem_blue$data$subs == "AGR")))$estimate, tmp$p.value, (tmp <- t.test(sem_blue$data$psiz ~ sem_blue$data$subs))$parameter, tmp$statistic, tmp$estimate["mean in group HG"], tmp$estimate["mean in group AGR"], tmp$p.value)`), as expected, and did not bring any new insights relevant to our questions.
+Likewise, we did include *longitude* in our model (in order to better model the geographical patterning of linguistic diversity), but it did not seem to add anything.
+
+Thus, this path analysis model, despite its caveats (no modeling of measurement error, no modeling of the hierarchical structure due to language families and macroareas), does support the hypothesis of an important influence of UV-B incidence on the existence of a dedicated word for "blue" above and beyond other factors (such as climate and subsistence strategy), but also reveals other influences on the color vocabulary.
+
+[^interpret_sem]: For details about interpreting the results of a path analysis or SEM model, please see [here](https://www.statisticssolutions.com/factor-analysis-sem-path-analysis/), [here](http://davidakenny.net/cm/fit.htm), [here](https://methodenlehre.github.io/SGSCLM-R-course/cfa-and-sem-with-lavaan.html) or [here](https://ninamclean.weebly.com/statistics-and-other-bits-and-pieces/interpreting-results-from-path-analysis), but the main ideas are that the *&chi;*^2^ test should **not** be significant, that the various *fit indices* (such as the Comparative Fit Index (CFI), the Tucker-Lewis Index (TLI), and the Non-normed Fit Index (NNFI)) should be as close to 1.0 as possible (ok if ≥ 0.90), and that the Root Mean Square Error of Approximation (RMSEA) should be as small as possible (≤ 0.05) with a narrow 90% confidence interval (ideally with the lower limit very close to 0.0 and the upper limit ≤ 0.08).
 
 
 
@@ -6760,14 +6613,21 @@ Consequently, we applied the following procedure:
   
 The results of the first two matching rules (1 & 2) are in the *genetic_incomplete* column of the `data_colors.csv` primary dataset, while those of all the three rules (1, 2 & 3) are in the *genetic_full* column -- we used this "fully" matched column for further analyses.
 
-
 [^SNP]: A [*Single Nucleotide Polymorphism* (*SNP*)](https://en.wikipedia.org/wiki/Single-nucleotide_polymorphism) is a common and simple type of genetic variation representing the substitution of a single nucleotide at a specific position in the genome.
 
 [^Microhaplotype]: A [*haplotype*](https://en.wikipedia.org/wiki/Haplotype) has several related meaning, in principle refering to a set of genetic variants that tend to be inherited together; a *microhaplotype* (microhap or *MH*) is a set of small set of closely linked SNPs useful in forensic applications [@oldoni_microhaplotypes_2019]. 
 
-[^openstreetmaps]: Unfortunately, the primary data from [OpenStreetMap](http://openstreetmapdata.com/), the ["Reduced waterbodies as raster masks"](http://openstreetmapdata.com/data/water-reduced-raster) seems to no longer be available for download as of July 2020, so we used here the original data downloaded in March 2018 by Dan Dediu and used in the @bentz_evolution_2018 paper.
 
-[^uv]: Unfortunately, the primary data from [TOMS](http://toms.gsfc.nasa.gov/ery_uv/new_uv/) seems to no longer be available for download as of July 2020, so we used here the original data downloaded in 2012 by Dan Dediu and used in the @meeussen_colour_2015 MSc thesis.
+## Appendix II. Path analysis for "blue"
+
+The full output of this model, with all the fit indices, is:
+
+```{r}
+summary(sem_blue$model);
+fitMeasures(sem_blue$model);
+```
+
+
 
 # References
 
