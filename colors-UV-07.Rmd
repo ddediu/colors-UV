@@ -34,6 +34,9 @@ csl: apa-6th-edition.csl
 - change standardization of latitude so that it is highest at the poles: **DONE**
 - redo the mediation using the two new functions: **DONE**
 - update the summary mediation diagram: **DONE**
+- prediction: put brms, trees, forests, svms together + on the data & training/testing sets
+- discuss causality in these models
+- check if we can get more lexical splits (such as greu -> green + blue): SEM/IRT?
 
 **What I also did:**
 
@@ -3915,6 +3918,121 @@ Thus, this path analysis model, despite its caveats (no modeling of measurement 
 ### Predicting "blue"
 
 #### Multiple regression
+
+We used Bayesian mixed-effects logistic regression to predict the existence of a specific word for "blue" (*blue*) from all the potential predictors, as well as when excluding the number of colors *n_colors*:
+
+```{r include=FALSE}
+file_name <- "./cached_results/brms_blue.RData";
+if( !all(file.exists(file_name)) )
+{
+  # The data:
+  d <- d_colors; d$macroarea <- as.factor(d$macroarea); d$glottocode_family <- as.factor(d$glottocode_family);
+  
+  # Save to file:
+  brms_blue <- list("data"=d);
+  
+  # With all potential predictors:
+  brms_blue__ncol <- brm(exists_blue ~ 1 + 
+                           # the languages:
+                           + UVB_r                                                       # UV-B incidence
+                         + longitude_r + latitude_r                                    # geographic location
+                         + subsistence  + log_popSize                                  # subsistence strategy and population size
+                         + clim_PC1_r + clim_PC2_r + clim_PC3_r + hum_median + hum_IQR # climate, ecology and humidity
+                         + elevation_r                                                 # altitude 
+                         + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r  # distances to large bodies of water 
+                         + n_colors_r                                                  # number of color terms
+                         # the language family origins:
+                         + UVB_family_r                                                                                   # UV incidence
+                         + longitude_family_r + latitude_family_r                                                         # geographic location
+                         + clim_PC1_family_r + clim_PC2_family_r + clim_PC3_family_r + hum_median_family + hum_IQR_family # climate, ecology and humidity 
+                         + elevation_family_r                                                                             # altitude 
+                         + dist2water_family_r + dist2ocean_family_r + dist2lakes_family_r + dist2rivers_family_r         # distances to large bodies of water  
+                         + (1 | glottocode_family) + (1 | macroarea),                   # random factors
+                         data = d, 
+                         family=bernoulli(link="logit"), 
+                         prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
+                                 prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
+                         save_all_pars=TRUE, # needed for Bayes factors
+                         sample_prior=TRUE,  # needed for hypotheses tests
+                         cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  summary(brms_blue__ncol); mcmc_plot(brms_blue__ncol, type="trace"); mcmc_plot(brms_blue__ncol);
+  (hdi_full <- hdi(brms_blue__ncol, ci=0.95)); (rope_full <- rope(brms_blue__ncol));
+  brms_blue__ncol <- brms_fit_indices(brms_blue__ncol);
+  (cmp_null_full <- brms_compare_models(b_0__blue, brms_blue__ncol, "null", "full"));
+  # Iterative manual simplification:
+  brms_blue__ncol_1 <- update(brms_blue__ncol, . ~ . - hum_IQR_family - hum_median_family - hum_IQR - hum_median - clim_PC2_r - dist2water_family_r -
+                                clim_PC2_family_r - latitude_r - UVB_family_r - dist2water_r - dist2rivers_r - elevation_r - elevation_family_r -
+                                dist2ocean_family_r - dist2ocean_r - dist2rivers_family_r - log_popSize - dist2lakes_family_r - clim_PC1_r - UVB_r - latitude_family_r - 
+                                longitude_family_r - clim_PC3_r - subsistence,
+                              save_all_pars=TRUE, sample_prior=TRUE, cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10)); 
+  summary(brms_blue__ncol_1); mcmc_plot(brms_blue__ncol_1, type="trace"); mcmc_plot(brms_blue__ncol_1);
+  (hdi_reduced <- hdi(brms_blue__ncol_1, ci=0.95)); (rope_reduced <- rope(brms_blue__ncol_1));
+  brms_blue__ncol_1 <- brms_fit_indices(brms_blue__ncol_1);
+  # Model comparison and performance:
+  (cmp_full_reduced <- brms_compare_models(brms_blue__ncol, brms_blue__ncol_1, "full", "reduced")); # reduced is better
+  (cmp_null_reduced <- brms_compare_models(b_0__blue, brms_blue__ncol_1, "null", "reduced")); # reduced is better
+  (cm_full    <- confusionMatrix(d$exists_blue, factor(ifelse(predict(brms_blue__ncol)[,"Estimate"] < 0.5, "no", "yes"), levels=c("no", "yes")), positive="yes"));
+  (cm_reduced <- confusionMatrix(d$exists_blue, factor(ifelse(predict(brms_blue__ncol_1)[,"Estimate"] < 0.5, "no", "yes"), levels=c("no", "yes")), positive="yes"));
+  # Save:
+  brms_blue$with_ncolors <- list("full"   =list("cmp_2_null"=cmp_null_full, 
+                                                "HDI"=hdi_full,    "ROPE"=rope_full,    "confusionMatrix"=cm_full), 
+                                 "reduced"=list("cmp_2_null"=cmp_null_reduced, "cmp_2_full"=cmp_full_reduced, 
+                                                "HDI"=hdi_reduced, "ROPE"=rope_reduced, "confusionMatrix"=cm_reduced));
+  
+  # ...and without n_colors:
+  brms_blue__noncol <- brm(exists_blue ~ 1 + 
+                           # the languages:
+                           + UVB_r                                                       # UV-B incidence
+                         + longitude_r + latitude_r                                    # geographic location
+                         + subsistence  + log_popSize                                  # subsistence strategy and population size
+                         + clim_PC1_r + clim_PC2_r + clim_PC3_r + hum_median + hum_IQR # climate, ecology and humidity
+                         + elevation_r                                                 # altitude 
+                         + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r  # distances to large bodies of water 
+                         # the language family origins:
+                         + UVB_family_r                                                                                   # UV incidence
+                         + longitude_family_r + latitude_family_r                                                         # geographic location
+                         + clim_PC1_family_r + clim_PC2_family_r + clim_PC3_family_r + hum_median_family + hum_IQR_family # climate, ecology and humidity 
+                         + elevation_family_r                                                                             # altitude 
+                         + dist2water_family_r + dist2ocean_family_r + dist2lakes_family_r + dist2rivers_family_r         # distances to large bodies of water  
+                         + (1 | glottocode_family) + (1 | macroarea),                   # random factors
+                         data = d, 
+                         family=bernoulli(link="logit"), 
+                         prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
+                                 prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
+                         save_all_pars=TRUE, # needed for Bayes factors
+                         sample_prior=TRUE,  # needed for hypotheses tests
+                         cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  summary(brms_blue__noncol); mcmc_plot(brms_blue__noncol, type="trace"); mcmc_plot(brms_blue__noncol);
+  (hdi_full <- hdi(brms_blue__noncol, ci=0.95)); (rope_full <- rope(brms_blue__noncol));
+  brms_blue__noncol <- brms_fit_indices(brms_blue__noncol);
+  (cmp_null_full <- brms_compare_models(b_0__blue, brms_blue__noncol, "null", "full"));
+  # Iterative manual simplification:
+  brms_blue__noncol_1 <- update(brms_blue__noncol, . ~ . - hum_IQR_family - hum_IQR - hum_median_family - dist2water_r - dist2water_family_r - clim_PC1_r - clim_PC1_family_r - 
+                                  elevation_r - dist2rivers_r - hum_median - dist2ocean_r - elevation_family_r - dist2rivers_family_r - latitude_family_r - dist2lakes_family_r - 
+                                  latitude_r - longitude_family_r - longitude_r - UVB_family_r - clim_PC2_r - clim_PC2_family_r - dist2ocean_family_r - subsistence,
+                              save_all_pars=TRUE, sample_prior=TRUE, cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10)); 
+  summary(brms_blue__noncol_1); mcmc_plot(brms_blue__noncol_1, type="trace"); mcmc_plot(brms_blue__noncol_1);
+  (hdi_reduced <- hdi(brms_blue__noncol_1, ci=0.95)); (rope_reduced <- rope(brms_blue__noncol_1));
+  brms_blue__noncol_1 <- brms_fit_indices(brms_blue__noncol_1);
+  # Model comparison and performance:
+  (cmp_full_reduced <- brms_compare_models(brms_blue__noncol, brms_blue__noncol_1, "full", "reduced")); # reduced is better
+  (cmp_null_reduced <- brms_compare_models(b_0__blue, brms_blue__noncol_1, "null", "reduced")); # reduced is better
+  (cm_full    <- confusionMatrix(d$exists_blue, factor(ifelse(predict(brms_blue__noncol)[,"Estimate"] < 0.5, "no", "yes"), levels=c("no", "yes")), positive="yes"));
+  (cm_reduced <- confusionMatrix(d$exists_blue, factor(ifelse(predict(brms_blue__noncol_1)[,"Estimate"] < 0.5, "no", "yes"), levels=c("no", "yes")), positive="yes"));
+  # Save:
+  brms_blue$without_ncolors <- list("full"   =list("cmp_2_null"=cmp_null_full, 
+                                                   "HDI"=hdi_full,    "ROPE"=rope_full,    "confusionMatrix"=cm_full), 
+                                    "reduced"=list("cmp_2_null"=cmp_null_reduced, "cmp_2_full"=cmp_full_reduced, 
+                                                   "HDI"=hdi_reduced, "ROPE"=rope_reduced, "confusionMatrix"=cm_reduced));
+  
+  # Save:
+  save(brms_blue, file=file_name, compress="xz", compression_level=9);
+} else
+{
+  load(file_name);
+} 
+```
+
 
 
 
