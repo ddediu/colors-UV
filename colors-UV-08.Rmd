@@ -4192,8 +4192,9 @@ tmp <- data.frame("with_ncols" =c("yes", "no"),
                   "accuracy"   =c(tmp_ncol[ grep("accuracy",    names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("accuracy",    names(tmp_noncol), fixed=TRUE) ]),
                   "sensitivity"=c(tmp_ncol[ grep("sensitivity", names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("sensitivity", names(tmp_noncol), fixed=TRUE) ]),
                   "specificity"=c(tmp_ncol[ grep("specificity", names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("specificity", names(tmp_noncol), fixed=TRUE) ]),
+                  "precision"  =c(tmp_ncol[ grep("precision",   names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("precision",   names(tmp_noncol), fixed=TRUE) ]),
                   "recall"     =c(tmp_ncol[ grep("recall",      names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("recall",      names(tmp_noncol), fixed=TRUE) ]));
-kable(tmp, row.names=FALSE, col.names=c("With *n_colors*?", "Accuracy", "Sensitivity", "Specificity", "Recall"),
+kable(tmp, row.names=FALSE, col.names=c("With *n_colors*?", "Accuracy", "Sensitivity", "Specificity", "Precision", "Recall"),
       caption=capTab(paste0("Various measures of success at predicting *blue* using Bayesian mixed effects logistic regressions splitting the dataset randomly into 80% training/20% testing subsets, ",brms_blue$training_testing$replications," times, including or not *n_colors*.")));
 ```
 
@@ -4402,8 +4403,9 @@ tmp <- data.frame("with_ncols" =c("yes", "no"),
                   "accuracy"   =c(tmp_ncol[ grep("accuracy",    names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("accuracy",    names(tmp_noncol), fixed=TRUE) ]),
                   "sensitivity"=c(tmp_ncol[ grep("sensitivity", names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("sensitivity", names(tmp_noncol), fixed=TRUE) ]),
                   "specificity"=c(tmp_ncol[ grep("specificity", names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("specificity", names(tmp_noncol), fixed=TRUE) ]),
+                  "precision"  =c(tmp_ncol[ grep("precision",   names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("precision",   names(tmp_noncol), fixed=TRUE) ]),
                   "recall"     =c(tmp_ncol[ grep("recall",      names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("recall",      names(tmp_noncol), fixed=TRUE) ]));
-kable(tmp, row.names=FALSE, col.names=c("With *n_colors*?", "Accuracy", "Sensitivity", "Specificity", "Recall"),
+kable(tmp, row.names=FALSE, col.names=c("With *n_colors*?", "Accuracy", "Sensitivity", "Specificity", "Precision", "Recall"),
       caption=capTab(paste0("Various measures of success at predicting *blue* using conditional inference trees splitting the dataset randomly into 80% training/20% testing subsets, ",ctree_blue$training_testing$replications," times, including or not *n_colors*.")));
 ```
 
@@ -4564,8 +4566,9 @@ tmp <- data.frame("with_ncols" =rep(c("yes", "no"), each=2),
                   "accuracy"   =c(tmp_ncol[ grep("accuracy",    names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("accuracy",    names(tmp_noncol), fixed=TRUE) ]),
                   "sensitivity"=c(tmp_ncol[ grep("sensitivity", names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("sensitivity", names(tmp_noncol), fixed=TRUE) ]),
                   "specificity"=c(tmp_ncol[ grep("specificity", names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("specificity", names(tmp_noncol), fixed=TRUE) ]),
+                  "precision"  =c(tmp_ncol[ grep("precision",   names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("precision",   names(tmp_noncol), fixed=TRUE) ]),
                   "recall"     =c(tmp_ncol[ grep("recall",      names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("recall",      names(tmp_noncol), fixed=TRUE) ]));
-kable(tmp, row.names=FALSE, col.names=c("With *n_colors*?", "Method", "Accuracy", "Sensitivity", "Specificity", "Recall"),
+kable(tmp, row.names=FALSE, col.names=c("With *n_colors*?", "Method", "Accuracy", "Sensitivity", "Specificity", "Precision", "Recall"),
       caption=capTab(paste0("Various measures of success at predicting *blue* using two random forest methods, ",rforest_blue$replications," replications, and including or not *n_colors*.")));
 ```
 
@@ -4878,10 +4881,15 @@ kable((tmp_all <- data.frame("Predictors" =c("with n_colors", "without n_colors"
 
 The predictors ordered by their importance (only those with importance > 0):
 
-```{r}
+```{r results='asis'}
 tmp <- svm_blue$with_ncolors$pred_importance[ order(svm_blue$with_ncolors$pred_importance$importance, decreasing=TRUE), ];
 tmp <- tmp[ tmp$importance > 0, ];
-paste0(tmp$predictor, " (", round(tmp$importance,2), ")", collapse=", ")
+cat(paste0("- **with** *n_colors*: ", paste0("*",tmp$predictor,"*", " (", round(tmp$importance,2), ")", collapse=", ")));
+
+cat("\n");
+tmp <- svm_blue$without_ncolors$pred_importance[ order(svm_blue$without_ncolors$pred_importance$importance, decreasing=TRUE), ];
+tmp <- tmp[ tmp$importance > 0, ];
+cat(paste0("- **without** *n_colors*: ", paste0("*",tmp$predictor,"*", " (", round(tmp$importance,2), ")", collapse=", ")));
 ```
 
 
@@ -4894,8 +4902,9 @@ tmp <- data.frame("with_ncols" =rep(c("yes", "no")),
                   "accuracy"   =c(tmp_ncol[ grep("accuracy",    names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("accuracy",    names(tmp_noncol), fixed=TRUE) ]),
                   "sensitivity"=c(tmp_ncol[ grep("sensitivity", names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("sensitivity", names(tmp_noncol), fixed=TRUE) ]),
                   "specificity"=c(tmp_ncol[ grep("specificity", names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("specificity", names(tmp_noncol), fixed=TRUE) ]),
+                  "precision"  =c(tmp_ncol[ grep("precision",   names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("precision",   names(tmp_noncol), fixed=TRUE) ]),
                   "recall"     =c(tmp_ncol[ grep("recall",      names(tmp_ncol), fixed=TRUE) ], tmp_noncol[ grep("recall",      names(tmp_noncol), fixed=TRUE) ]));
-kable(tmp, row.names=FALSE, col.names=c("With *n_colors*?", "Accuracy", "Sensitivity", "Specificity", "Recall"),
+kable(tmp, row.names=FALSE, col.names=c("With *n_colors*?", "Accuracy", "Sensitivity", "Specificity", "Precision", "Recall"),
       caption=capTab(paste0("Various measures of success at predicting *blue* using SVMs with ",svm_blue$training_testing$replications," training/testing sets, and including or not *n_colors*.")));
 ```
 
@@ -4980,13 +4989,64 @@ b) when included, *n_colors* is the most important predictor, but not exceedingl
 c) the importance of the other predictors changes quite a bit with or without *n_colors*:
   - with *n_colors*, the next best are: *population size*, *distance to lakes*, *climate PC3* and *distance to oceans for the families*,
   - without *n_colors*, the best are: *population size*, *distance to oceans for the families*, *humidity*, *distance to lakes*, *climate PC1*, *PC2* and *PC3* and *UV-B incidence*.
-  
-However, please note that these are based on generalizing from the 80% training to the 20% testing sets.
 
 
 #### Conclusions
 
+On the full dataset:
 
+- all techniques predict *blue* very well from the available information, with very little difference between them (in fact, Bayesian mixed effects logistic regression tends to be the best)
+- the performance is slightly higher when including *n_colors* among the predictors
+- consistently, the most relevant predictors are: *n_colors*, *UV-B incidence*, *population size*, *climate*/*humidity* and *distance to large bodies of standing water* (mostly lakes but also sometimes seas/oceans).
+
+In what concerns generalizatibility (either when explicitly repeatedly splitting the data into training/testing subsets or internally using random forests):
+
+- all techniques do pretty well and with comparable performance (as expected, lower than when using the full dataset for training and testing)
+- the best are the conditional random forests and conditional trees, followed by Bayesian regression and SVMs.
+
+Thus, the presence of a dedicated word for "blue" is in large part explained by the number of color words and a few environmental variables concerning UV-B radiation, climate and distance to large bodies of standing water.
+
+
+
+### Conclusions: UV-B does influence the color vocabulary
+
+Using various types of methods, we do find, as predicted by  @lindsey_color_2002 and @brown_color_2004 that the presence of a dedicated word for "blue" is influenced negatively by the amount of UV-B incident radiation (i.e., that higher levels of UV-B radiation reduce the probability that a language has such a word).
+Moreover, in support of proposals such as @berlin_basic_1991, the number of color categories present in a language is very strongly positively linked with the presence of a dedicated word for blue, with 5-6 categories as an approximate threshold for its emergence, but it is currently unclear what the precise causal relationship between the two is.
+Interestingly, different techniques vary in their support for an influence of measures of "cultural complexity" (such as subsistence strategy and population size), but there is at least a hint of a positive relationship.
+Likewise, climate, ecology and humidity might affect the presence of a dedicated word for "blue", with drier, higher seasonality increasing the probability of "blue".
+Finally, there is an a priori surprising negative effect of distance to large bodies of standing water (lakes, in particular).
+
+
+
+
+## Hypothesis 2: UV incidence and abnormal color perception
+
+Here we test the second hypothesis [@brown_color_2004], linking UV incidence and the population frequency of abnormal color perception.
+
+```{r fig.cap=capFig("Graphical representation of Hypothesis 2.")}
+DiagrammeR::grViz(paste0('
+  digraph hypothesis_2 {
+
+  # the graph:
+  graph [overlap = true]
+  rankdir="LR";
+
+  # the nodes:
+  node [shape = box, style = "filled", fillcolor = "gray90"];
+  UV   [label = "UV incidence"]; 
+  Gen  [label = "genetics of color perception"];
+  Perc [label = "physiology of color perception"]; 
+  Blue [label = "word for blue", fillcolor = "white", color="gray50"]; 
+
+  # the edges:
+  edge       [style = "solid", color = "black"];
+  UV   -> Perc ;
+  Gen  -> Perc [label = "development", color = "red", fontcolor = "red"] ;
+  Perc -> Gen  [label = "evolution", color = "blue", fontcolor = "blue"];
+  Perc -> Blue [style = "dashed", color = "gray50", fontcolor = "gray50", label = "(H1)"] ;
+}
+'))
+```
 
 
 
@@ -5002,7 +5062,7 @@ However, please note that these are based on generalizing from the 80% training 
 knitr::knit_exit();
 ```
 
-
+# OLD STUFF
 
 
 
