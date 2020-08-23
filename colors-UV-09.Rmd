@@ -5167,7 +5167,7 @@ DiagrammeR::grViz(paste0('
 
 First, we need to investigate the variation between families and macroareas, as we want to model them as random effects in our models.
 
-```{r blue null model, include=FALSE}
+```{r include=FALSE}
 # Null model (intercept) -> daltonism:
 if( !all(file.exists("./cached_results/b_0__daltonism.RData")) )
 {
@@ -5200,7 +5200,7 @@ if( !all(file.exists("./cached_results/b_0__daltonism.RData")) )
   
   b_0__daltonism_beta <- brm(daltonism_r ~ 1 + (1 | glottocode_family) + (1 | macroarea), # null model for daltonism_r
                              family=Beta(), data=d_colors, 
-                             prior=c(prior(student_t(3, 0, 2.5), class="Intercept")), # pretty wide priors centered on 0
+                             prior=c(prior(normal(0, 5), class="Intercept")), # pretty wide priors centered on 0
                              save_all_pars=TRUE, # needed for Bayes factors
                              sample_prior=TRUE,  # needed for hypotheses tests
                              cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
@@ -5248,318 +5248,273 @@ Here we look at the potential predictors individually.
 
 #### "blue" &rarr; daltonism
 
-***TBD***
-
-Here we check if there is a relationship between measures of UV incidence and the existence of a word for "blue"; as per @lindsey_color_2002 and @brown_color_2004, this relationship should be *negative* (i.e., higher UV-B incidence should reduce the probability of a word for "blue").
-
-```{r fig.cap=capFig('Probability of having a specific word for "blue" function of UV incidence at the locations of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). Left: mean incidence across 1998, right: standard deviation of incidence over the days of 1998; top: UV-A, bottom: UV-B.'), fig.height=2*5, fig.width=2*4}
-grid.arrange(ggplot(d_colors, aes(y=UV_A_mean, x=exists_blue, fill=exists_blue)) + 
-               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
-               theme_bw() +
-               labs(x='Word for blue?', y=expression("Mean UV-A (J/m"^"2"~")")) +
-               theme(axis.text.x = element_text(size =14, face = "bold"), 
-                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
-                     axis.title=element_text(size=14),
-                     legend.title=element_text(size =16),
-                     legend.text=element_text(size =16),
-                     legend.position="bottom") +
-               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
-               NULL,
-             ggplot(d_colors, aes(y=UV_A_sd, x=exists_blue, fill=exists_blue)) + 
-               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
-               theme_bw() +
-               labs(x='Word for blue?', y=expression("Std.dev. UV-A (J/m"^"2"~")")) +
-               theme(axis.text.x = element_text(size =14, face = "bold"), 
-                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
-                     axis.title=element_text(size=14),
-                     legend.title=element_text(size =16),
-                     legend.text=element_text(size =16),
-                     legend.position="bottom") +
-               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
-               NULL,   
-             ggplot(d_colors, aes(y=UV_B_mean, x=exists_blue, fill=exists_blue)) + 
-               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
-               theme_bw() +
-               labs(x='Word for blue?', y=expression("Mean UV-B (J/m"^"2"~")")) +
-               theme(axis.text.x = element_text(size =14, face = "bold"), 
-                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
-                     axis.title=element_text(size=14),
-                     legend.title=element_text(size =16),
-                     legend.text=element_text(size =16),
-                     legend.position="bottom") +
-               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
-               NULL,
-             ggplot(d_colors, aes(y=UV_B_sd, x=exists_blue, fill=exists_blue)) + 
-               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
-               theme_bw() +
-               labs(x='Word for blue?', y=expression("Std.dev. UV-B (J/m"^"2"~")")) +
-               theme(axis.text.x = element_text(size =14, face = "bold"), 
-                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
-                     axis.title=element_text(size=14),
-                     legend.title=element_text(size =16),
-                     legend.text=element_text(size =16),
-                     legend.position="bottom") +
-               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
-               NULL,   
-             ncol=2);
-```
-
-```{r fig.cap=capFig('Probability of having a specific word for "blue" function of UV incidence at the *origins of language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). Left: mean incidence across 1998, right: standard deviation of incidence over the days of 1998; top: UV-A, bottom: UV-B.'), fig.height=2*5, fig.width=2*4, eval=FALSE, include=FALSE}
-grid.arrange(ggplot(d_colors, aes(y=UV_A_mean_family, x=exists_blue, fill=exists_blue)) + 
-               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
-               theme_bw() +
-               labs(x='Word for blue?', y=expression("Mean UV-A (J/m"^"2"~")")) +
-               theme(axis.text.x = element_text(size =14, face = "bold"), 
-                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
-                     axis.title=element_text(size=14),
-                     legend.title=element_text(size =16),
-                     legend.text=element_text(size =16),
-                     legend.position="bottom") +
-               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
-               NULL,
-             ggplot(d_colors, aes(y=UV_A_sd_family, x=exists_blue, fill=exists_blue)) + 
-               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
-               theme_bw() +
-               labs(x='Word for blue?', y=expression("Std.dev. UV-A (J/m"^"2"~")")) +
-               theme(axis.text.x = element_text(size =14, face = "bold"), 
-                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
-                     axis.title=element_text(size=14),
-                     legend.title=element_text(size =16),
-                     legend.text=element_text(size =16),
-                     legend.position="bottom") +
-               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
-               NULL,   
-             ggplot(d_colors, aes(y=UV_B_mean_family, x=exists_blue, fill=exists_blue)) + 
-               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
-               theme_bw() +
-               labs(x='Word for blue?', y=expression("Mean UV-B (J/m"^"2"~")")) +
-               theme(axis.text.x = element_text(size =14, face = "bold"), 
-                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
-                     axis.title=element_text(size=14),
-                     legend.title=element_text(size =16),
-                     legend.text=element_text(size =16),
-                     legend.position="bottom") +
-               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
-               NULL,
-             ggplot(d_colors, aes(y=UV_B_sd_family, x=exists_blue, fill=exists_blue)) + 
-               geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
-               theme_bw() +
-               labs(x='Word for blue?', y=expression("Std.dev. UV-B (J/m"^"2"~")")) +
-               theme(axis.text.x = element_text(size =14, face = "bold"), 
-                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
-                     axis.title=element_text(size=14),
-                     legend.title=element_text(size =16),
-                     legend.text=element_text(size =16),
-                     legend.position="bottom") +
-               scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
-               NULL,   
-             ncol=2);
+```{r fig.cap=capFig('Population frequency of daltonism (in %) function of having a specific word for "blue", showing the jittered data points, the densities (colored violins) and boxplots (black).'), fig.height=1*5, fig.width=1*4}
+ggplot(d_colors, aes(y=daltonism, x=exists_blue, fill=exists_blue)) + 
+  geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
+  theme_bw() +
+  labs(x='Word for blue?', y="Population frequency of datonism (%)") +
+  theme(axis.text.x = element_text(size =14, face = "bold"), 
+        axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+        axis.title=element_text(size=14),
+        legend.title=element_text(size =16),
+        legend.text=element_text(size =16),
+        legend.position="bottom") +
+  scale_fill_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + scale_color_manual('Word for blue?', values=c("yes"="blue", "no"="green")) + 
+  NULL;
 ```
 
 ```{r include=FALSE}
-# UV incidence -> word for blue:
-if( !all(file.exists("./cached_results/b_uv__blue.RData")) )
+# word for blue -> daltonism:
+if( !all(file.exists("./cached_results/b_blue__daltonism.RData")) )
 {
-  # For languages:
-  # UV_A_mean:
-  b_uvam__blue <- brm(exists_blue ~ 1 + UV_A_mean_r + I(UV_A_mean_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_A_mean -> exists_blue
-                      family=bernoulli(link="logit"), data=d_colors, 
-                      prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
-                              prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
-                      save_all_pars=TRUE, # needed for Bayes factors
-                      sample_prior=TRUE,  # needed for hypotheses tests
-                      cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  b_uvam__blue <- brms_fit_indices(b_uvam__blue);
-  summary(b_uvam__blue); mcmc_plot(b_uvam__blue, type="trace"); mcmc_plot(b_uvam__blue);
-  (h_uvam__blue <- brms::hypothesis(b_uvam__blue, c("UV_A_mean_r = 0", "UV_A_mean_r < 0", "IUV_A_mean_rE2 = 0")));
-  (hdi_uvam__blue <- hdi(b_uvam__blue, ci=0.95));
-  # Try to remove the quadratic effect:
-  b_uvam__blue_2 <- update(b_uvam__blue, . ~ . - I(UV_A_mean_r^2), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  b_uvam__blue_2 <- brms_fit_indices(b_uvam__blue_2);
-  summary(b_uvam__blue_2); mcmc_plot(b_uvam__blue_2, type="trace"); mcmc_plot(b_uvam__blue_2);
-  (h_uvam__blue_2 <- brms::hypothesis(b_uvam__blue_2, c("UV_A_mean_r = 0", "UV_A_mean_r < 0")));
-  (hdi_uvam__blue_2 <- hdi(b_uvam__blue_2, ci=0.95));
-  brms_compare_models(b_uvam__blue_2, b_uvam__blue, "linear only", "linear + quadratic"); # quadratic is not needed, linear is enough...
-  compare_0_uvam__blue <- brms_compare_models(b_0__blue, b_uvam__blue_2, "null", "+ UV_A_mean"); # clear negative linear effect of UV_A_mean!
-  # The model to keep:
-  b_uvam__blue <- b_uvam__blue_2; h_uvam__blue <- h_uvam__blue_2; hdi_uvam__blue <- hdi_uvam__blue_2;
-  
-  # UV_A_sd:
-  b_uvas__blue <- brm(exists_blue ~ 1 + UV_A_sd_r + I(UV_A_sd_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_A_sd -> exists_blue
-                      family=bernoulli(link="logit"), data=d_colors, 
-                      prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
-                              prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
-                      save_all_pars=TRUE, # needed for Bayes factors
-                      sample_prior=TRUE,  # needed for hypotheses tests
-                      cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  b_uvas__blue <- brms_fit_indices(b_uvas__blue);
-  summary(b_uvas__blue); mcmc_plot(b_uvas__blue, type="trace"); mcmc_plot(b_uvas__blue);
-  (h_uvas__blue <- brms::hypothesis(b_uvas__blue, c("UV_A_sd_r = 0", "IUV_A_sd_rE2 = 0")));
-  (hdi_uvas__blue <- hdi(b_uvas__blue, ci=0.95));
-  compare_0_uvas__blue <- brms_compare_models(b_0__blue, b_uvas__blue, "null", "+ UV_A_sd"); # UV_A_sd does not seem to have an effect...
-  
-  # UV_B_mean:
-  b_uvbm__blue <- brm(exists_blue ~ 1 + UV_B_mean_r + I(UV_B_mean_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_B_mean -> exists_blue
-                      family=bernoulli(link="logit"), data=d_colors, 
-                      prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
-                              prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
-                      save_all_pars=TRUE, # needed for Bayes factors
-                      sample_prior=TRUE,  # needed for hypotheses tests
-                      cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  b_uvbm__blue <- brms_fit_indices(b_uvbm__blue);
-  summary(b_uvbm__blue); mcmc_plot(b_uvbm__blue, type="trace"); mcmc_plot(b_uvbm__blue);
-  (h_uvbm__blue <- brms::hypothesis(b_uvbm__blue, c("UV_B_mean_r = 0", "UV_B_mean_r < 0", "IUV_B_mean_rE2 = 0")));
-  (hdi_uvbm__blue <- hdi(b_uvbm__blue, ci=0.95));
-  # Try to remove the quadratic effect:
-  b_uvbm__blue_2 <- update(b_uvbm__blue, . ~ . - I(UV_B_mean_r^2), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  b_uvbm__blue_2 <- brms_fit_indices(b_uvbm__blue_2);
-  summary(b_uvbm__blue_2); mcmc_plot(b_uvbm__blue_2, type="trace"); mcmc_plot(b_uvbm__blue_2);
-  (h_uvbm__blue_2 <- brms::hypothesis(b_uvbm__blue_2, c("UV_B_mean_r = 0", "UV_B_mean_r < 0")));
-  (hdi_uvbm__blue_2 <- hdi(b_uvbm__blue_2, ci=0.95));
-  brms_compare_models(b_uvbm__blue_2, b_uvbm__blue, "linear only", "linear + quadratic"); # quadratic is not needed, linear is enough...
-  compare_0_uvbm__blue <- brms_compare_models(b_0__blue, b_uvbm__blue_2, "null", "+ UV_B_mean"); # clear negative effect of UV_B_mean!
-  # The model to keep:
-  b_uvbm__blue <- b_uvbm__blue_2; h_uvbm__blue <- h_uvbm__blue_2; hdi_uvbm__blue <- hdi_uvbm__blue_2;
-  
-  # UV_B_sd:
-  b_uvbs__blue <- brm(exists_blue ~ 1 + UV_B_sd_r + I(UV_B_sd_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_B_sd -> exists_blue
-                      family=bernoulli(link="logit"), data=d_colors, 
-                      prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
-                              prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
-                      save_all_pars=TRUE, # needed for Bayes factors
-                      sample_prior=TRUE,  # needed for hypotheses tests
-                      cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  b_uvbs__blue <- brms_fit_indices(b_uvbs__blue);
-  summary(b_uvbs__blue); mcmc_plot(b_uvbs__blue, type="trace"); mcmc_plot(b_uvbs__blue);
-  (h_uvbs__blue <- brms::hypothesis(b_uvbs__blue, c("UV_B_sd_r = 0", "IUV_B_sd_rE2 = 0")));
-  (hdi_uvbs__blue <- hdi(b_uvbs__blue, ci=0.95));
-  compare_0_uvbs__blue <- brms_compare_models(b_0__blue, b_uvbs__blue, "null", "+ UV_B_sd"); # UV_B_sd does not seem to have an effect...
-  
-  # Compare UV_A_mean and UV_B_mean:
-  compare_uvam_uvbm__blue <- brms_compare_models(b_uvam__blue, b_uvbm__blue, "UV_A_mean", "UV_B_mean"); # UV_B_mean fits the data better than UV_A_mean
-  
-  # As check_collinearity() does not currently work with brm, use glm:
-  m_uv__blue <- glmer(exists_blue ~ 1 + UV_A_mean + UV_B_mean + (1 | glottocode_family) + (1 | macroarea),
-                      family=binomial(), data=d_colors);
-  summary(m_uv__blue);
-  (m_uv__blue_VIF <- performance::check_collinearity(m_uv__blue)); # very high VIF -> we must keep only UV_B_mean
-  
-  
-  # For families:
-  # UV_A_mean:
-  bf_uvam__blue <- brm(exists_blue ~ 1 + UV_A_mean_family_r + I(UV_A_mean_family_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_A_mean -> exists_blue
-                       family=bernoulli(link="logit"), data=d_colors, 
-                       prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
-                               prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
-                       save_all_pars=TRUE, # needed for Bayes factors
-                       sample_prior=TRUE,  # needed for hypotheses tests
-                       cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  bf_uvam__blue <- brms_fit_indices(bf_uvam__blue);
-  summary(bf_uvam__blue); mcmc_plot(bf_uvam__blue, type="trace"); mcmc_plot(bf_uvam__blue);
-  (hf_uvam__blue <- brms::hypothesis(bf_uvam__blue, c("UV_A_mean_family_r = 0", "UV_A_mean_family_r < 0", "IUV_A_mean_family_rE2 = 0")));
-  (hdif_uvam__blue <- hdi(bf_uvam__blue, ci=0.95));
-  comparef_0_uvam__blue <- brms_compare_models(b_0__blue, bf_uvam__blue, "null", "+ UV_A_mean"); # null is better...
-  # Iterative manual simplification:
-  bf_uvam__blue_2 <- update(bf_uvam__blue, . ~ . - I(UV_A_mean_family_r^2), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  bf_uvam__blue_2 <- brms_fit_indices(bf_uvam__blue_2);
-  summary(bf_uvam__blue_2); mcmc_plot(bf_uvam__blue_2, type="trace"); mcmc_plot(bf_uvam__blue_2);
-  (h_uvam__blue_2 <- brms::hypothesis(bf_uvam__blue_2, c("UV_A_mean_family_r = 0", "UV_A_mean_family_r < 0")));
-  (hdi_uvam__blue_2 <- hdi(bf_uvam__blue_2, ci=0.95));
-  brms_compare_models(bf_uvam__blue_2, bf_uvam__blue, "simplified", "full"); # simplified is better...
-  compare_0_uvam__blue <- brms_compare_models(b_0__blue, bf_uvam__blue_2, "null", "+ UV_A_mean"); # no real evidence for UV-A...
-
-  # UV_A_sd:
-  bf_uvas__blue <- brm(exists_blue ~ 1 + UV_A_sd_family_r + I(UV_A_sd_family_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_A_sd -> exists_blue
-                       family=bernoulli(link="logit"), data=d_colors, 
-                       prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
-                               prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
-                       save_all_pars=TRUE, # needed for Bayes factors
-                       sample_prior=TRUE,  # needed for hypotheses tests
-                       cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  bf_uvas__blue <- brms_fit_indices(bf_uvas__blue);
-  summary(bf_uvas__blue); mcmc_plot(bf_uvas__blue, type="trace"); mcmc_plot(bf_uvas__blue);
-  (hf_uvas__blue <- brms::hypothesis(bf_uvas__blue, c("UV_A_sd_family_r = 0", "IUV_A_sd_family_rE2 = 0")));
-  (hdif_uvas__blue <- hdi(bf_uvas__blue, ci=0.95));
-  comparef_0_uvas__blue <- brms_compare_models(b_0__blue, bf_uvas__blue, "null", "+ UV_A_sd"); # null is better...
-  # Iterative manual simplification:
-  bf_uvas__blue_2 <- update(bf_uvas__blue, . ~ . - I(UV_A_sd_family_r^2), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  bf_uvas__blue_2 <- brms_fit_indices(bf_uvas__blue_2);
-  summary(bf_uvas__blue_2); mcmc_plot(bf_uvas__blue_2, type="trace"); mcmc_plot(bf_uvas__blue_2);
-  (h_uvas__blue_2 <- brms::hypothesis(bf_uvas__blue_2, c("UV_A_sd_family_r = 0")));
-  (hdi_uvas__blue_2 <- hdi(bf_uvas__blue_2, ci=0.95));
-  brms_compare_models(bf_uvas__blue_2, bf_uvas__blue, "simplified", "full"); # simplified is better...
-  compare_0_uvas__blue <- brms_compare_models(b_0__blue, bf_uvas__blue_2, "null", "+ UV_A_sd"); # very weak evidence for UV-A...
-  
-  # UV_B_mean:
-  bf_uvbm__blue <- brm(exists_blue ~ 1 + UV_B_mean_family_r + I(UV_B_mean_family_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_B_mean -> exists_blue
-                       family=bernoulli(link="logit"), data=d_colors, 
-                       prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
-                               prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
-                       save_all_pars=TRUE, # needed for Bayes factors
-                       sample_prior=TRUE,  # needed for hypotheses tests
-                       cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  bf_uvbm__blue <- brms_fit_indices(bf_uvbm__blue);
-  summary(bf_uvbm__blue); mcmc_plot(bf_uvbm__blue, type="trace"); mcmc_plot(bf_uvbm__blue);
-  (hf_uvbm__blue <- brms::hypothesis(bf_uvbm__blue, c("UV_B_mean_family_r = 0", "UV_B_mean_family_r < 0", "IUV_B_mean_family_rE2 = 0")));
-  (hdif_uvbm__blue <- hdi(bf_uvbm__blue, ci=0.95));
-  comparef_0_uvbm__blue <- brms_compare_models(b_0__blue, bf_uvbm__blue, "null", "+ UV_B_mean"); # null is better...
-  # Iterative manual simplification:
-  bf_uvbm__blue_2 <- update(bf_uvbm__blue, . ~ . - I(UV_B_mean_family_r^2), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  bf_uvbm__blue_2 <- brms_fit_indices(bf_uvbm__blue_2);
-  summary(bf_uvbm__blue_2); mcmc_plot(bf_uvbm__blue_2, type="trace"); mcmc_plot(bf_uvbm__blue_2);
-  (h_uvbm__blue_2 <- brms::hypothesis(bf_uvbm__blue_2, c("UV_B_mean_family_r = 0", "UV_B_mean_family_r < 0")));
-  (hdi_uvbm__blue_2 <- hdi(bf_uvbm__blue_2, ci=0.95));
-  brms_compare_models(bf_uvbm__blue_2, bf_uvbm__blue, "simplified", "full"); # simplified is better...
-  compare_0_uvbm__blue <- brms_compare_models(b_0__blue, bf_uvbm__blue_2, "null", "+ UV_B_mean"); # no real evidence for UV-B...
-  
-  # UV_B_sd:
-  bf_uvbs__blue <- brm(exists_blue ~ 1 + UV_B_sd_family_r + I(UV_B_sd_family_r^2) + (1 | glottocode_family) + (1 | macroarea), # UV_B_sd -> exists_blue
-                       family=bernoulli(link="logit"), data=d_colors, 
-                       prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
-                               prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
-                       save_all_pars=TRUE, # needed for Bayes factors
-                       sample_prior=TRUE,  # needed for hypotheses tests
-                       cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  bf_uvbs__blue <- brms_fit_indices(bf_uvbs__blue);
-  summary(bf_uvbs__blue); mcmc_plot(bf_uvbs__blue, type="trace"); mcmc_plot(bf_uvbs__blue);
-  (hf_uvbs__blue <- brms::hypothesis(bf_uvbs__blue, c("UV_B_sd_family_r = 0", "IUV_B_sd_family_rE2 = 0")));
-  (hdif_uvbs__blue <- hdi(bf_uvbs__blue, ci=0.95));
-  comparef_0_uvbs__blue <- brms_compare_models(b_0__blue, bf_uvbs__blue, "null", "+ UV_B_sd"); # null is better...
-  # Iterative manual simplification:
-  bf_uvbs__blue_2 <- update(bf_uvbs__blue, . ~ . - I(UV_B_sd_family_r^2), cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
-  bf_uvbs__blue_2 <- brms_fit_indices(bf_uvbs__blue_2);
-  summary(bf_uvbs__blue_2); mcmc_plot(bf_uvbs__blue_2, type="trace"); mcmc_plot(bf_uvbs__blue_2);
-  (h_uvbs__blue_2 <- brms::hypothesis(bf_uvbs__blue_2, c("UV_B_sd_family_r = 0")));
-  (hdi_uvbs__blue_2 <- hdi(bf_uvbs__blue_2, ci=0.95));
-  brms_compare_models(bf_uvbs__blue_2, bf_uvbs__blue, "simplified", "full"); # simplified is not much better...
-  compare_0_uvbs__blue <- brms_compare_models(b_0__blue, bf_uvbs__blue_2, "null", "+ UV_B_sd"); # very weak evidence for UV-B...
-
-
+  # Fit the model:
+  b_blue__daltonism <- brm(daltonism_r ~ 1 + exists_blue  + (1 | glottocode_family) + (1 | macroarea), # exists_blue -> daltonism_r
+                             family=Beta(), data=d_colors, 
+                             prior=c(prior(normal(0, 5), class="Intercept"),
+                                     prior(normal(0, 5), class="b")), # pretty wide priors centered on 0
+                             save_all_pars=TRUE, # needed for Bayes factors
+                             sample_prior=TRUE,  # needed for hypotheses tests
+                             cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
+  b_blue__daltonism <- brms_fit_indices(b_blue__daltonism);
+  summary(b_blue__daltonism); mcmc_plot(b_blue__daltonism, type="trace"); mcmc_plot(b_blue__daltonism);
+  (h_blue__daltonism <- brms::hypothesis(b_blue__daltonism, c("exists_blueyes = 0", "exists_blueyes > 0")));
+  (hdi_blue__daltonism <- hdi(b_blue__daltonism, ci=0.95));
+  compare_0_blue__daltonism <- brms_compare_models(b_0__daltonism, b_blue__daltonism, "null", "+ blue"); # clear positive effect of exists_blue!
   
   # Save results:
-  save(compare_0_uvam__blue, h_uvam__blue, hdi_uvam__blue, #b_uvam__blue, # no need to save the actual model
-       compare_0_uvas__blue, h_uvas__blue, hdi_uvas__blue, #b_uvas__blue, # no need to save the actual model
-       compare_0_uvbm__blue, h_uvbm__blue, hdi_uvbm__blue, #b_uvbm__blue, # no need to save the actual model
-       compare_0_uvbs__blue, h_uvbs__blue, hdi_uvbs__blue, #b_uvbs__blue, # no need to save the actual model
-       compare_uvam_uvbm__blue, m_uv__blue_VIF,
-       file="./cached_results/b_uv__blue.RData", compress="xz", compression_level=9);
+  save(compare_0_blue__daltonism, h_blue__daltonism, hdi_blue__daltonism, #b_blue__daltonism, # no need to save the actual model
+       file="./cached_results/b_blue__daltonism.RData", compress="xz", compression_level=9);
 } else
 {
-  load("./cached_results/b_uv__blue.RData");
+  load("./cached_results/b_blue__daltonism.RData");
 }
 ```
 
-Fitting individual Bayesian mixed-effects logistic regressions (with family and macroarea as random effects) predicting *exists_blue* from the mean and standard deviation of the incidence of UV-A and UV-B for 1998 (both linear and quadratic effects), we found that:
+The existence of a dedicated word for "blue" (*exists_blue*) has a significant positive influence on *daltonism*: *&beta;~blue:yes-no~* = `r round(h_blue__daltonism$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_blue__daltonism$CI_low[ hdi_blue__daltonism$Parameter == "b_exists_blueyes" ], hdi_blue__daltonism$CI_high[ hdi_blue__daltonism$Parameter == "b_exists_blueyes" ])`), *p*(*&beta;*=0) = `r sprintf("%.2g",h_blue__daltonism$hypothesis$Post.Prob[1])`, *p*(*&beta;*>0) = `r sprintf("%.2g",h_blue__daltonism$hypothesis$Post.Prob[2])`); and fits the data much better than the null model (Bayes factor = `r sprintf("%.2g",compare_0_blue__daltonism$BF)`, LOO = `r sprintf("%.2f [SE=%.2f]", compare_0_blue__daltonism$LOO["null", "elpd_diff"], compare_0_blue__daltonism$LOO["null", "se_diff"])`, WAIC = `r sprintf("%.2f [SE=%.2f]", compare_0_blue__daltonism$WAIC["null", "elpd_diff"], compare_0_blue__daltonism$WAIC["null", "se_diff"])`, K-fold = `r sprintf("%.2f [SE=%.2f]", compare_0_blue__daltonism$KFOLD["null", "elpd_diff"], compare_0_blue__daltonism$KFOLD["null", "se_diff"])`).
 
-- systematically, the quadratic effects do not contribute,
-- the standard deviations (*UV_A_sd* and *UV_B_sd*) do not predict *exists_blue* (*&beta;~UV_A_sd~* = `r round(h_uvas__blue$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_uvas__blue$CI_low[ hdi_uvas__blue$Parameter == "b_UV_A_sd_r" ], hdi_uvas__blue$CI_high[ hdi_uvas__blue$Parameter == "b_UV_A_sd_r" ])`), *p*(*&beta;*=0) = `r sprintf("%.2g",h_uvas__blue$hypothesis$Post.Prob[1])`; *&beta;~UV_B_sd~* = `r round(h_uvbs__blue$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_uvbs__blue$CI_low[ hdi_uvbs__blue$Parameter == "b_UV_B_sd_r" ], hdi_uvbs__blue$CI_high[ hdi_uvbs__blue$Parameter == "b_UV_B_sd_r" ])`), *p*(*&beta;*=0) = `r sprintf("%.2g",h_uvbs__blue$hypothesis$Post.Prob[1])`),
-- the means (*UV_A_mean* and *UV_B_mean*) both have negative effects on *exists_blue* (*&beta;~UV_A_mean~* = `r round(h_uvam__blue$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_uvam__blue$CI_low[ hdi_uvam__blue$Parameter == "b_UV_A_mean_r" ], hdi_uvam__blue$CI_high[ hdi_uvam__blue$Parameter == "b_UV_A_mean_r" ])`), *p*(*&beta;*=0) = `r sprintf("%.3g",h_uvam__blue$hypothesis$Post.Prob[1])`, *p*(*&beta;*<0) = `r sprintf("%.3g",h_uvam__blue$hypothesis$Post.Prob[2])`; *&beta;~UV_B_mean~* = `r round(h_uvbm__blue$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_uvbm__blue$CI_low[ hdi_uvbm__blue$Parameter == "b_UV_B_mean_r" ], hdi_uvbm__blue$CI_high[ hdi_uvbm__blue$Parameter == "b_UV_B_mean_r" ])`), *p*(*&beta;*=0) = `r sprintf("%.3g",h_uvbm__blue$hypothesis$Post.Prob[1])`, *p*(*&beta;*<0) = `r sprintf("%.3g",h_uvbm__blue$hypothesis$Post.Prob[2])`),
-- the two means are highly multicollinear (VIF~UV_A_mean~ = `r round(m_uv__blue_VIF$VIF[ m_uv__blue_VIF$Parameter == "UV_A_mean" ],1)`, VIF~UV_B_mean~ = `r round(m_uv__blue_VIF$VIF[ m_uv__blue_VIF$Parameter == "UV_B_mean" ],1)`),
-- but *UV_A_mean* fits the data worse than *UV_B_mean* (Bayes factor = `r round(compare_uvam_uvbm__blue$BF,2)`, LOO = `r sprintf("%.2f [SE=%.2f]", compare_uvam_uvbm__blue$LOO["UV_A_mean", "elpd_diff"], compare_uvam_uvbm__blue$LOO["UV_A_mean", "se_diff"])`, WAIC = `r sprintf("%.2f [SE=%.2f]", compare_uvam_uvbm__blue$WAIC["UV_A_mean", "elpd_diff"], compare_uvam_uvbm__blue$WAIC["UV_A_mean", "se_diff"])`, K-fold = `r sprintf("%.2f [SE=%.2f]", compare_uvam_uvbm__blue$KFOLD["UV_A_mean", "elpd_diff"], compare_uvam_uvbm__blue$KFOLD["UV_A_mean", "se_diff"])`).
 
-There is no (or very marginal) evidence that UV (A or B, mean or sd) incidence at the *origins of the language families* has any effect on the presence of a dedicated word for "blue".
+#### daltonism &rarr; "blue"
 
-Therefore, we will only consider *UV_B_mean* (renamed to *UVB* for shortness) in the following analyses.
+```{r include=FALSE}
+# daltonism -> word for blue:
+if( !all(file.exists("./cached_results/b_daltonism__blue.RData")) )
+{
+  # Fit the model:
+  b_daltonism__blue <- brm(exists_blue ~ 1 + daltonism_r + I(daltonism_r^2)  + (1 | glottocode_family) + (1 | macroarea), # daltonism_r -> exists_blue
+                           family=bernoulli(link="logit"), data=d_colors, 
+                           prior=c(prior(student_t(3, 0, 2.5), class="Intercept"),
+                                   prior(student_t(3, 0, 2.5), class="b")), # pretty wide priors centered on 0
+                           save_all_pars=TRUE, # needed for Bayes factors
+                           sample_prior=TRUE,  # needed for hypotheses tests
+                           cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
+  b_daltonism__blue <- brms_fit_indices(b_daltonism__blue);
+  summary(b_daltonism__blue); mcmc_plot(b_daltonism__blue, type="trace"); mcmc_plot(b_daltonism__blue);
+  (h_daltonism__blue <- brms::hypothesis(b_daltonism__blue, c("daltonism_r = 0", "Idaltonism_rE2 = 0")));
+  (hdi_daltonism__blue <- hdi(b_daltonism__blue, ci=0.95));
+  compare_0_daltonism__blue <- brms_compare_models(b_0__blue, b_daltonism__blue, "null", "+ daltonism"); # daltonism has an effect
+  
+  # Try to remove the quadratic effect:
+  b_daltonism__blue_1 <- update(b_daltonism__blue, . ~ . - I(daltonism_r^2), 
+                                   save_all_pars=TRUE, sample_prior=TRUE, cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
+  b_daltonism__blue_1 <- brms_fit_indices(b_daltonism__blue_1);
+  summary(b_daltonism__blue_1); mcmc_plot(b_daltonism__blue_1, type="trace"); mcmc_plot(b_daltonism__blue_1);
+  (h_daltonism__blue_1 <- brms::hypothesis(b_daltonism__blue_1, c("daltonism_r = 0", "daltonism_r > 0")));
+  (hdi_daltonism__blue_1 <- hdi(b_daltonism__blue_1, ci=0.95));
+  compare_daltonism__blue_1 <- brms_compare_models(b_daltonism__blue, b_daltonism__blue_1, "full", "- qudratic"); # quadratic and linear seem equivalent
+  b_daltonism__blue <- b_daltonism__blue_1; h_daltonism__blue <- h_daltonism__blue_1; hdi_daltonism__blue <- hdi_daltonism__blue_1; # keep the linear only
+  
+  # Compare with null:
+  compare_0_daltonism__blue <- brms_compare_models(b_0__blue, b_daltonism__blue, "null", "+ daltonism"); # daltonism has a positive effect...
+  
+  # Save results:
+  save(compare_0_daltonism__blue, h_daltonism__blue, hdi_daltonism__blue, #b_daltonism__blue, # no need to save the actual model
+       file="./cached_results/b_daltonism__blue.RData", compress="xz", compression_level=9);
+} else
+{
+  load("./cached_results/b_daltonism__blue.RData");
+}
+```
+
+Conversely, *daltonism* has a positive effect on the existence of a dedicated word for "blue" (*exists_blue*): *&beta;~daltonism~* = `r round(h_daltonism__blue$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_daltonism__blue$CI_low[ hdi_daltonism__blue$Parameter == "b_daltonism_r" ], hdi_daltonism__blue$CI_high[ hdi_daltonism__blue$Parameter == "b_daltonism_r" ])`), *p*(*&beta;*=0) = `r sprintf("%.2g",h_daltonism__blue$hypothesis$Post.Prob[1])`, *p*(*&beta;*>0) = `r sprintf("%.2g",h_daltonism__blue$hypothesis$Post.Prob[2])`); and fits the data better than the null model (Bayes factor = `r sprintf("%.2g",compare_0_daltonism__blue$BF)`, LOO = `r sprintf("%.2f [SE=%.2f]", compare_0_daltonism__blue$LOO["null", "elpd_diff"], compare_0_daltonism__blue$LOO["null", "se_diff"])`, WAIC = `r sprintf("%.2f [SE=%.2f]", compare_0_daltonism__blue$WAIC["null", "elpd_diff"], compare_0_daltonism__blue$WAIC["null", "se_diff"])`, K-fold = `r sprintf("%.2f [SE=%.2f]", compare_0_daltonism__blue$KFOLD["null", "elpd_diff"], compare_0_daltonism__blue$KFOLD["null", "se_diff"])`).
+
+
+#### UV-B &rarr; daltonism
+
+```{r fig.cap=capFig('Population frequency of daltonism (in %) function of UV-B incidence, showing the data points and the linear and LOESS trends (with 95% CIs).'), fig.height=1*5, fig.width=1*5}
+ggplot(d_colors, aes(y=daltonism, x=UVB)) + 
+  geom_point(alpha=0.35) + 
+  geom_smooth(method="lm", color="blue") + geom_smooth(method="loess", color="red") + 
+  theme_bw() +
+  labs(x=expression("UV-B incidence (J/m"^"2"~")"), y="Population frequency of datonism (%)") +
+  theme(axis.text.x = element_text(size =14, face = "bold"), 
+        axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+        axis.title=element_text(size=14),
+        legend.title=element_text(size =16),
+        legend.text=element_text(size =16),
+        legend.position="bottom") + 
+  NULL;
+```
+
+```{r include=FALSE}
+# UVB -> daltonism:
+if( !all(file.exists("./cached_results/b_uvb__daltonism.RData")) )
+{
+  # Fit the model:
+  b_uvb__daltonism <- brm(daltonism_r ~ 1 + UVB_r + I(UVB_r^2)  + (1 | glottocode_family) + (1 | macroarea), # UVB -> daltonism_r
+                          family=Beta(), data=d_colors, 
+                          prior=c(prior(normal(0, 5), class="Intercept"),
+                                  prior(normal(0, 5), class="b")), # pretty wide priors centered on 0
+                          save_all_pars=TRUE, # needed for Bayes factors
+                          sample_prior=TRUE,  # needed for hypotheses tests
+                          cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
+  b_uvb__daltonism <- brms_fit_indices(b_uvb__daltonism);
+  summary(b_uvb__daltonism); mcmc_plot(b_uvb__daltonism, type="trace"); mcmc_plot(b_uvb__daltonism);
+  (h_uvb__daltonism <- brms::hypothesis(b_uvb__daltonism, c("UVB_r = 0", "UVB_r < 0", "IUVB_rE2 = 0")));
+  (hdi_uvb__daltonism <- hdi(b_uvb__daltonism, ci=0.95));
+  
+  # Try to remove the quadratic effect:
+  b_uvb__daltonism_1 <- update(b_uvb__daltonism, . ~ . - I(UVB_r^2), 
+                               save_all_pars=TRUE, sample_prior=TRUE, cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
+  b_uvb__daltonism_1 <- brms_fit_indices(b_uvb__daltonism_1);
+  summary(b_uvb__daltonism_1); mcmc_plot(b_uvb__daltonism_1, type="trace"); mcmc_plot(b_uvb__daltonism_1);
+  (h_uvb__daltonism_1 <- brms::hypothesis(b_uvb__daltonism_1, c("UVB_r = 0", "UVB_r < 0")));
+  (hdi_uvb__daltonism_1 <- hdi(b_uvb__daltonism_1, ci=0.95));
+  compare_uvb__daltonism_1 <- brms_compare_models(b_uvb__daltonism, b_uvb__daltonism_1, "full", "- qudratic"); # quadratic effect does not matter
+  b_uvb__daltonism <- b_uvb__daltonism_1; h_uvb__daltonism <- h_uvb__daltonism_1; hdi_uvb__daltonism <- hdi_uvb__daltonism_1; # keep the linear only
+  
+  # Compare with null:
+  compare_0_uvb__daltonism <- brms_compare_models(b_0__daltonism, b_uvb__daltonism, "null", "+ UVB"); # clear negative effect of UVB!
+  
+  # Save results:
+  save(compare_0_uvb__daltonism, h_uvb__daltonism, hdi_uvb__daltonism, #b_uvb__daltonism, # no need to save the actual model
+       file="./cached_results/b_uvb__daltonism.RData", compress="xz", compression_level=9);
+} else
+{
+  load("./cached_results/b_uvb__daltonism.RData");
+}
+```
+
+UV-B incidence has a significant negative linear effect on *daltonism* (the quadratic effect is clearly not important): *&beta;~UVB~* = `r round(h_uvb__daltonism$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_uvb__daltonism$CI_low[ hdi_uvb__daltonism$Parameter == "b_UVB_r" ], hdi_uvb__daltonism$CI_high[ hdi_uvb__daltonism$Parameter == "b_UVB_r" ])`), *p*(*&beta;*=0) = `r sprintf("%.2g",h_uvb__daltonism$hypothesis$Post.Prob[1])`, *p*(*&beta;*<0) = `r sprintf("%.2g",h_uvb__daltonism$hypothesis$Post.Prob[2])`); and fits the data much better than the null model (Bayes factor = `r sprintf("%.2g",compare_0_uvb__daltonism$BF)`, LOO = `r sprintf("%.2f [SE=%.2f]", compare_0_uvb__daltonism$LOO["null", "elpd_diff"], compare_0_uvb__daltonism$LOO["null", "se_diff"])`, WAIC = `r sprintf("%.2f [SE=%.2f]", compare_0_uvb__daltonism$WAIC["null", "elpd_diff"], compare_0_uvb__daltonism$WAIC["null", "se_diff"])`, K-fold = `r sprintf("%.2f [SE=%.2f]", compare_0_uvb__daltonism$KFOLD["null", "elpd_diff"], compare_0_uvb__daltonism$KFOLD["null", "se_diff"])`).
+
+
+#### # color categories &rarr; daltonism
+
+```{r fig.cap=capFig('Population frequency of daltonism (in %) function of the number of color categories, showing the data points and the linear and LOESS trends (with 95% CIs).'), fig.height=1*5, fig.width=1*5}
+ggplot(d_colors, aes(y=daltonism, x=n_colors)) + 
+  geom_point(alpha=0.35) + 
+  geom_smooth(method="lm", color="blue") + geom_smooth(method="loess", color="red") + 
+  theme_bw() +
+  labs(x="Number of color categories", y="Population frequency of datonism (%)") +
+  theme(axis.text.x = element_text(size =14, face = "bold"), 
+        axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+        axis.title=element_text(size=14),
+        legend.title=element_text(size =16),
+        legend.text=element_text(size =16),
+        legend.position="bottom") + 
+  NULL;
+```
+
+```{r include=FALSE}
+# n_colors -> daltonism:
+if( !all(file.exists("./cached_results/b_ncolors__daltonism.RData")) )
+{
+  # Fit the model:
+  b_ncolors__daltonism <- brm(daltonism_r ~ 1 + n_colors_r + I(n_colors_r^2)  + (1 | glottocode_family) + (1 | macroarea), # n_colors -> daltonism_r
+                              family=Beta(), data=d_colors, 
+                              prior=c(prior(normal(0, 5), class="Intercept"),
+                                      prior(normal(0, 5), class="b")), # pretty wide priors centered on 0
+                              save_all_pars=TRUE, # needed for Bayes factors
+                              sample_prior=TRUE,  # needed for hypotheses tests
+                              cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
+  b_ncolors__daltonism <- brms_fit_indices(b_ncolors__daltonism);
+  summary(b_ncolors__daltonism); mcmc_plot(b_ncolors__daltonism, type="trace"); mcmc_plot(b_ncolors__daltonism);
+  (h_ncolors__daltonism <- brms::hypothesis(b_ncolors__daltonism, c("n_colors_r = 0", "In_colors_rE2 = 0")));
+  (hdi_ncolors__daltonism <- hdi(b_ncolors__daltonism, ci=0.95));
+  compare_0_ncolors__daltonism <- brms_compare_models(b_0__daltonism, b_ncolors__daltonism, "null", "+ n_colors"); # no effect of n_colors...
+  
+  # Try to remove the quadratic effect:
+  b_ncolors__daltonism_1 <- update(b_ncolors__daltonism, . ~ . - I(n_colors_r^2), 
+                                   save_all_pars=TRUE, sample_prior=TRUE, cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
+  b_ncolors__daltonism_1 <- brms_fit_indices(b_ncolors__daltonism_1);
+  summary(b_ncolors__daltonism_1); mcmc_plot(b_ncolors__daltonism_1, type="trace"); mcmc_plot(b_ncolors__daltonism_1);
+  (h_ncolors__daltonism_1 <- brms::hypothesis(b_ncolors__daltonism_1, c("n_colors_r = 0")));
+  (hdi_ncolors__daltonism_1 <- hdi(b_ncolors__daltonism_1, ci=0.95));
+  compare_ncolors__daltonism_1 <- brms_compare_models(b_ncolors__daltonism, b_ncolors__daltonism_1, "full", "- qudratic"); # quadratic effect does not matter
+  b_ncolors__daltonism <- b_ncolors__daltonism_1; h_ncolors__daltonism <- h_ncolors__daltonism_1; hdi_ncolors__daltonism <- hdi_ncolors__daltonism_1; # keep the linear only
+  
+  # Compare with null:
+  compare_0_ncolors__daltonism <- brms_compare_models(b_0__daltonism, b_ncolors__daltonism, "null", "+ n_colors"); # no effect of n_colors...
+  
+  # Save results:
+  save(compare_0_ncolors__daltonism, h_ncolors__daltonism, hdi_ncolors__daltonism, #b_ncolors__daltonism, # no need to save the actual model
+       file="./cached_results/b_ncolors__daltonism.RData", compress="xz", compression_level=9);
+} else
+{
+  load("./cached_results/b_ncolors__daltonism.RData");
+}
+```
+
+The number of colors categories (*n_colors*) has no (or very weakly positive) effect on *daltonism*: *&beta;~n_colors~* = `r round(h_ncolors__daltonism$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_ncolors__daltonism$CI_low[ hdi_ncolors__daltonism$Parameter == "b_n_colors_r" ], hdi_ncolors__daltonism$CI_high[ hdi_ncolors__daltonism$Parameter == "b_n_colors_r" ])`), *p*(*&beta;*=0) = `r sprintf("%.2g",h_ncolors__daltonism$hypothesis$Post.Prob[1])`); and fits the data comparable to the null model (Bayes factor = `r sprintf("%.2g",compare_0_ncolors__daltonism$BF)`, LOO = `r sprintf("%.2f [SE=%.2f]", compare_0_ncolors__daltonism$LOO["null", "elpd_diff"], compare_0_ncolors__daltonism$LOO["null", "se_diff"])`, WAIC = `r sprintf("%.2f [SE=%.2f]", compare_0_ncolors__daltonism$WAIC["null", "elpd_diff"], compare_0_ncolors__daltonism$WAIC["null", "se_diff"])`, K-fold = `r sprintf("%.2f [SE=%.2f]", compare_0_ncolors__daltonism$KFOLD["null", "elpd_diff"], compare_0_ncolors__daltonism$KFOLD["null", "se_diff"])`).
+
+
+#### daltonism &rarr; # color categories 
+
+```{r fig.cap=capFig('Population frequency of daltonism (in %) affecting the number of color categories, showing the data points and the linear and LOESS trends (with 95% CIs).'), fig.height=1*5, fig.width=1*5}
+ggplot(d_colors, aes(x=daltonism, y=n_colors)) + 
+  geom_point(alpha=0.35) + 
+  geom_smooth(method="lm", color="blue") + geom_smooth(method="loess", color="red") + 
+  theme_bw() +
+  labs(y="Number of color categories", x="Population frequency of datonism (%)") +
+  theme(axis.text.x = element_text(size =14, face = "bold"), 
+        axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+        axis.title=element_text(size=14),
+        legend.title=element_text(size =16),
+        legend.text=element_text(size =16),
+        legend.position="bottom") + 
+  NULL;
+```
+
+```{r include=FALSE}
+# daltonism -> n_colors:
+if( !all(file.exists("./cached_results/b_daltonism__ncolors.RData")) )
+{
+  # Fit the model:
+  b_daltonism__ncolors <- brm(n_colors ~ 1 + daltonism_r + I(daltonism_r^2)  + (1 | glottocode_family) + (1 | macroarea), # daltonism_r -> n_colors_r
+                              family=gaussian(), data=d_colors, 
+                              prior=c(prior(normal(0, 5), class="Intercept"),
+                                      prior(normal(0, 5), class="b")), # pretty wide priors centered on 0
+                              save_all_pars=TRUE, # needed for Bayes factors
+                              sample_prior=TRUE,  # needed for hypotheses tests
+                              cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
+  b_daltonism__ncolors <- brms_fit_indices(b_daltonism__ncolors);
+  summary(b_daltonism__ncolors); mcmc_plot(b_daltonism__ncolors, type="trace"); mcmc_plot(b_daltonism__ncolors);
+  (h_daltonism__ncolors <- brms::hypothesis(b_daltonism__ncolors, c("daltonism_r = 0", "Idaltonism_rE2 = 0")));
+  (hdi_daltonism__ncolors <- hdi(b_daltonism__ncolors, ci=0.95));
+  compare_0_daltonism__ncolors <- brms_compare_models(b_0__ncol, b_daltonism__ncolors, "null", "+ daltonism"); # possible effect of daltonism...
+  
+  # Try to remove the quadratic effect:
+  b_daltonism__ncolors_1 <- update(b_daltonism__ncolors, . ~ . - I(daltonism_r^2), 
+                                   save_all_pars=TRUE, sample_prior=TRUE, cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
+  b_daltonism__ncolors_1 <- brms_fit_indices(b_daltonism__ncolors_1);
+  summary(b_daltonism__ncolors_1); mcmc_plot(b_daltonism__ncolors_1, type="trace"); mcmc_plot(b_daltonism__ncolors_1);
+  (h_daltonism__ncolors_1 <- brms::hypothesis(b_daltonism__ncolors_1, c("daltonism_r = 0")));
+  (hdi_daltonism__ncolors_1 <- hdi(b_daltonism__ncolors_1, ci=0.95));
+  compare_daltonism__ncolors_1 <- brms_compare_models(b_daltonism__ncolors, b_daltonism__ncolors_1, "full", "- qudratic"); # quadratic effect does not matter
+  b_daltonism__ncolors <- b_daltonism__ncolors_1; h_daltonism__ncolors <- h_daltonism__ncolors_1; hdi_daltonism__ncolors <- hdi_daltonism__ncolors_1; # keep the linear only
+  
+  # Compare with null:
+  compare_0_daltonism__ncolors <- brms_compare_models(b_0__ncol, b_daltonism__ncolors, "null", "+ n_colors"); # no real effect of daltonism...
+  
+  # Save results:
+  save(compare_0_daltonism__ncolors, h_daltonism__ncolors, hdi_daltonism__ncolors, #b_daltonism__ncolors, # no need to save the actual model
+       file="./cached_results/b_daltonism__ncolors.RData", compress="xz", compression_level=9);
+} else
+{
+  load("./cached_results/b_daltonism__ncolors.RData");
+}
+```
+
+Conversely, *daltonism* has no (or very weakly positive) effect on the number of colors categories (*n_colors*): *&beta;~daltonism~* = `r round(h_daltonism__ncolors$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_daltonism__ncolors$CI_low[ hdi_daltonism__ncolors$Parameter == "b_daltonism_r" ], hdi_daltonism__ncolors$CI_high[ hdi_daltonism__ncolors$Parameter == "b_daltonism_r" ])`), *p*(*&beta;*=0) = `r sprintf("%.2g",h_daltonism__ncolors$hypothesis$Post.Prob[1])`); and fits the data comparable to the null model (Bayes factor = `r sprintf("%.2g",compare_0_daltonism__ncolors$BF)`, LOO = `r sprintf("%.2f [SE=%.2f]", compare_0_daltonism__ncolors$LOO["null", "elpd_diff"], compare_0_daltonism__ncolors$LOO["null", "se_diff"])`, WAIC = `r sprintf("%.2f [SE=%.2f]", compare_0_daltonism__ncolors$WAIC["null", "elpd_diff"], compare_0_daltonism__ncolors$WAIC["null", "se_diff"])`, K-fold = `r sprintf("%.2f [SE=%.2f]", compare_0_daltonism__ncolors$KFOLD["null", "elpd_diff"], compare_0_daltonism__ncolors$KFOLD["null", "se_diff"])`).
 
 
 
@@ -5732,6 +5687,496 @@ The full model output is in [Appendix III. Path analysis for "daltonism"]), but 
 - *blue* is affected by *UV-B* (-) and *latitude* (-);
 - *n_colors* is affected by *blue* (+);
 - *daltonism* is affected by *UV-B* (-) and *blue* (+), and is not related to *n_colors*.
+
+
+
+### Predicting daltonism
+
+We check how good are various techniques at predicting the population frequency of daltonism from a collection of potential predictors.
+As for "blue", we estimate this on the full dataset and on random training and testing subsets.
+
+```{r include=FALSE}
+load("./cached_results/traning-testing-splits.RData"); # (re)load the data...
+```
+
+
+
+#### Multiple regression
+
+```{r include=FALSE}
+file_name <- "./cached_results/brms_daltonism.RData";
+if( !all(file.exists(file_name)) )
+{
+  # Save to file:
+  brms_daltonism <- list("data"=d);
+
+  ## On the full data:
+  brms_dalto <- brm(daltonism_r ~ 1 
+                    + UVB_r                                                       # UV-B incidence
+                    + longitude_r + latitude_r                                    # geographic location
+                    + subsistence  + log_popSize                                  # subsistence strategy and population size
+                    + clim_PC1_r + clim_PC2_r + clim_PC3_r + hum_median + hum_IQR # climate, ecology and humidity
+                    + elevation_r                                                 # altitude 
+                    + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r  # distances to large bodies of water 
+                    + n_colors_r                                                  # number of color terms
+                    + exists_blue                                                 # dedicated word for blue
+                    + gen_D1_r + gen_D2_r + gen_D3_r + gen_D4_r + gen_D5_r + gen_D6_r + gen_D7_r + gen_D8_r + gen_D9_r + gen_D10_r # genetic distances between populations
+                    + (1 | glottocode_family) + (1 | macroarea),                  # random factors
+                    data = d, 
+                    family=Beta(), 
+                    prior=c(prior(normal(0, 5), class="Intercept"),
+                            prior(normal(0, 5), class="b")), # pretty wide priors centered on 0
+                    save_all_pars=TRUE, # needed for Bayes factors
+                    sample_prior=TRUE,  # needed for hypotheses tests
+                    cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10));
+  summary(brms_dalto); mcmc_plot(brms_dalto, type="trace"); mcmc_plot(v);
+  (hdi_full <- hdi(brms_dalto, ci=0.95)); (rope_full <- rope(brms_dalto, ci=0.95));
+  brms_dalto <- brms_fit_indices(brms_dalto);
+  (cmp_null_full <- brms_compare_models(b_0__daltonism, brms_dalto, "null", "full")); # not clear if daltonism can be predicted with these data...
+  # Iterative manual simplification:
+  brms_dalto_1 <- update(brms_dalto, . ~ . - log_popSize - dist2rivers_r - elevation_r - clim_PC3_r - gen_D10_r - gen_D7_r - gen_D6_r - gen_D4_r - gen_D1_r - 
+                           clim_PC2_r - hum_median - dist2ocean_r - hum_IQR - gen_D3_r - gen_D9_r - dist2lakes_r - gen_D5_r - latitude_r - UVB_r - n_colors_r - 
+                           subsistence - gen_D2_r,
+                         save_all_pars=TRUE, sample_prior=TRUE, cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10)); 
+  summary(brms_dalto_1); mcmc_plot(brms_dalto_1, type="trace"); mcmc_plot(brms_dalto_1) + xlim(c(-5, 5)); # phi is too big and swamps the plot
+  (hdi_reduced <- hdi(brms_dalto_1, ci=0.95)); (rope_reduced <- rope(brms_dalto_1, ci=0.95)); fixef_reduced <- fixef(brms_dalto_1);
+  brms_dalto_1 <- brms_fit_indices(brms_dalto_1);
+  # Model comparison and performance:
+  (cmp_full_reduced <- brms_compare_models(brms_dalto, brms_dalto_1, "full", "reduced")); # reduced is better
+  (cmp_null_reduced <- brms_compare_models(b_0__daltonism, brms_dalto_1, "null", "reduced")); # reduced is better
+  (r2_full    <- bayes_R2(brms_dalto));
+  (r2_reduced <- bayes_R2(brms_dalto_1));
+  (rmse_full    <- sqrt(mean(predictive_error(brms_dalto, resp="daltonism_r")^2)));
+  (rmse_reduced <- sqrt(mean(predictive_error(brms_dalto_1, resp="daltonism_r")^2)));
+  # Save:
+  brms_daltonism$all_data <- list("full"   =list("cmp_2_null"=cmp_null_full, 
+                                                 "HDI"=hdi_full, "ROPE"=rope_full, "R2"=r2_full["R2", "Estimate"], "RMSE"=rmse_full), 
+                                  "reduced"=list("cmp_2_null"=cmp_null_reduced, "cmp_2_full"=cmp_full_reduced, 
+                                                 "fixef"=fixef_reduced, "HDI"=hdi_reduced, "ROPE"=rope_reduced, "R2"=r2_reduced["R2", "Estimate"], "RMSE"=rmse_reduced));
+  
+    
+  ## On the training/testing sets:
+  results <- pblapply(1:n_train, function(i) # very computationally expensive
+    {
+      # split the data:
+      data_train <- training(train_test_splits[[i]]);
+      data_test  <- testing(train_test_splits[[i]]);
+
+      # fit the models: avoid recompiling the model by "updating" the data it is fit on:
+      invisible(capture.output(brms_train <- update(brms_dalto, newdata=data_train, refresh=0, 
+                                                    save_all_pars=TRUE, sample_prior=TRUE, cores=brms_ncores, 
+                                                    iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.9999, max_treedepth=10)),
+                               type="message")); # capture the messages printed by Stan
+      
+      # performance:
+      r2_train   <- bayes_R2(brms_train, newdata=data_test, allow_new_levels=TRUE);
+      rmse_train <- sqrt(mean(predictive_error(brms_train, newdata=data_test, allow_new_levels=TRUE, resp="daltonism_r")^2));
+
+      # predictors:
+      hdi_train <- hdi(brms_train, ci=0.95); rope_train <- rope(brms_train, ci=0.95, verbose=FALSE);
+
+      # return the results:
+      success_train <- data.frame("replication" =i, # replication
+                                  "R2"          =r2_train["R2", "Estimate"],
+                                  "RMSE"        =rmse_train,
+                                  row.names=NULL);
+      preds_train <- data.frame("replication"=i, # replication,
+                                "predictor"  =rownames(fixef(brms_train)), 
+                                "estimate"   =fixef(brms_train)[,"Estimate"],
+                                as.data.frame(hdi_train)[,c("CI_low", "CI_high")],
+                                as.data.frame(rope_train)[,c("ROPE_low", "ROPE_high", "ROPE_Percentage")],
+                                row.names=NULL);
+      
+      return (list("replication"       =i,
+                   "data_train_indices"=train_test_splits[[i]]$in_id, 
+                   "data_test_indices" =setdiff(1:nrow(train_test_splits[[i]]$data), train_test_splits[[i]]$in_id),
+                   "performance"       =list("success"=success_train, "predictors"=preds_train)));
+    });
+  
+  # Assemble the various results and save them:
+  brms_daltonism$training_testing <- list("replications"=n_train,
+                                          "performance" =list("success"   =do.call(rbind, lapply(results, function(x) x$performance$success)),   
+                                                              "predictors"=do.call(rbind, lapply(results, function(x) x$performance$predictors))));
+  
+    
+  # Save:
+  save(brms_daltonism, file=file_name, compress="xz", compression_level=9);
+} else
+{
+  load(file_name);
+} 
+```
+
+
+On the full dataset, Bayesian mixed effects logistic regression with family and macroarea as random effects and using all potential predictors as fixed effects, fits the data very well: `r sprintf("R^2^ = %.1f%%, RMSE = %.3f", brms_daltonism$all_data$full$R2*100, brms_daltonism$all_data$full$RMSE)`.
+After iterative manual simplification, we still fit the data very well (`r sprintf("R^2^ = %.1f%%, RMSE = %.3f", brms_daltonism$all_data$reduced$R2*100, brms_daltonism$all_data$reduced$RMSE)`), and the retained predictors are:
+
+```{r}
+kable(data.frame("predictor"  =rownames(brms_daltonism$all_data$reduced$fixef), 
+                 "estimate"   =round(brms_daltonism$all_data$reduced$fixef[,"Estimate"],2),
+                 "hdi"=paste0("[", round(brms_daltonism$all_data$reduced$HDI[,"CI_low"],2), ",", round(brms_daltonism$all_data$reduced$HDI[,"CI_high"],2), "]"),
+                 "p.rope"=sprintf("%.2g",brms_daltonism$all_data$reduced$ROPE[,"ROPE_Percentage"]),
+                 row.names=NULL), 
+      row.names=FALSE, col.names=c("Predictor", "*&beta;* (estimate)", "*&beta;* (95% HDI)", "*p*~ROPE~"),
+      caption=capTab(paste0("Retained predictors for Bayesian mixed effects logistic regressions following iterative maual simplification on the full dataset. The ROPE is [", round(brms_daltonism$all_data$reduced$ROPE[1,"ROPE_low"],2), ",", round(brms_daltonism$all_data$reduced$ROPE[1,"ROPE_high"],2), "].")));
+```
+
+
+When randomly splitting the dataset into 80% training/20% testing subsets `r brms_daltonism$training_testing$replications` times, using all the potential predictors, we obtain `r sprintf("R^2^ = %.1f%% ±%.1f%%, and RMSE = %.3f ±%.3f", mean(brms_daltonism$training_testing$performance$success$R2,na.rm=TRUE)*100, sd(brms_daltonism$training_testing$performance$success$R2,na.rm=TRUE)*100, mean(brms_daltonism$training_testing$performance$success$RMSE,na.rm=TRUE), sd(brms_daltonism$training_testing$performance$success$RMSE,na.rm=TRUE))`.
+
+```{r fig.cap=capFig(paste0("Various measures of success using Bayesian mixed effects logistic regressions splitting the dataset randomly into 80% training/20% testing subsets, ",brms_daltonism$training_testing$replications," times. Boxplots show the spread of the traning/tesing values, while the solid horizontal lines show the values when using the full dataset.")), fig.width=2*2, fig.height=5}
+grid.arrange(ggplot(brms_daltonism$training_testing$performance$success, aes(y=R2*100, x="")) + 
+               geom_jitter(alpha=0.50, color="steelblue") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("blue",0.30)) + 
+               theme_bw() +
+               ylim(c(0,100)) + xlab("") + ylab(expression("R"^2)) +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               # measures on the full dataset:
+               geom_hline(yintercept=brms_daltonism$all_data$full$R2*100, color="blue", linetype="solid", size=1) + 
+               theme(legend.position="right") +
+             NULL,
+             ggplot(brms_daltonism$training_testing$performance$success, aes(y=RMSE, x="")) + 
+               geom_jitter(alpha=0.50, color="salmon") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("red",0.30)) + 
+               theme_bw() +
+               ylim(c(0.0,0.1)) + xlab("") + ylab("RMSE") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               # measures on the full dataset:
+               geom_hline(yintercept=brms_daltonism$all_data$full$RMSE, color="red", linetype="solid", size=1) + 
+               NULL,
+             ncol=2);
+```
+
+
+
+#### Conditional inference trees
+
+We used conditional inference trees (as implemented by `ctree()` in package `partykit`) to predict the population frequency of *daltonism* from all the potential predictors:
+
+```{r include=FALSE}
+file_name <- "./cached_results/ctree_daltonism.RData";
+if( !all(file.exists(file_name)) )
+{
+  ## On the full data:
+  ctree_dalto <- ctree(daltonism_r ~ 
+                         macroarea                                                   # macroarea
+                       + UVB_r                                                       # UV-B incidence
+                       + longitude_r + latitude_r                                    # geographic location
+                       + subsistence  + log_popSize                                  # subsistence strategy and population size
+                       + clim_PC1_r + clim_PC2_r + clim_PC3_r + hum_median + hum_IQR # climate, ecology and humidity
+                       + elevation_r                                                 # altitude 
+                       + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r  # distances to large bodies of water 
+                       + n_colors_r                                                  # number of color terms
+                       + exists_blue                                                 # dedicated word for blue
+                       + gen_D1_r + gen_D2_r + gen_D3_r + gen_D4_r + gen_D5_r + gen_D6_r + gen_D7_r + gen_D8_r + gen_D9_r + gen_D10_r, # genetic distances between populations
+                       data = d, control = ctree_control(testtype = c("MonteCarlo")));
+  (r2_all   <- 1.0 - (sum((d$daltonism_r - predict(ctree_dalto))^2)) / (sum((d$daltonism_r - mean(d$daltonism_r))^2)));
+  (rmse_all <- sqrt(mean((d$daltonism_r - predict(ctree_dalto))^2)));
+  
+    
+  ## On the training/testing sets:
+  results <- pblapply(1:n_train, function(i) # very computationally expensive
+    {
+      # split the data:
+      data_train <- training(train_test_splits[[i]]);
+      data_test  <- testing(train_test_splits[[i]]);
+
+      # fit the models:
+      ctree_train <- ctree(daltonism_r ~ 
+                             macroarea                                                   # macroarea
+                           + UVB_r                                                       # UV-B incidence
+                           + longitude_r + latitude_r                                    # geographic location
+                           + subsistence  + log_popSize                                  # subsistence strategy and population size
+                           + clim_PC1_r + clim_PC2_r + clim_PC3_r + hum_median + hum_IQR # climate, ecology and humidity
+                           + elevation_r                                                 # altitude 
+                           + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r  # distances to large bodies of water 
+                           + n_colors_r                                                  # number of color terms
+                           + exists_blue                                                 # dedicated word for blue
+                           + gen_D1_r + gen_D2_r + gen_D3_r + gen_D4_r + gen_D5_r + gen_D6_r + gen_D7_r + gen_D8_r + gen_D9_r + gen_D10_r, # genetic distances between populations
+                           data = data_train, control = ctree_control(testtype = c("MonteCarlo")));
+      
+      # performance:
+      err_pred <- NULL;
+      try(err_pred <- (data_test$daltonism_r - predict(ctree_train, newdata=data_test, allow_new_levels=TRUE))^2, silent=TRUE);
+      if( !is.null(err_pred) )
+      {
+        (r2_train   <- 1.0 - sum(err_pred) / (sum((data_test$daltonism_r - mean(data_test$daltonism_r))^2)));
+        (rmse_train <- sqrt(mean(err_pred)));
+        
+        # return the results:
+        success_train <- data.frame("replication" =i, # replication
+                                    "R2"          =r2_train,
+                                    "RMSE"        =rmse_train,
+                                    row.names=NULL);
+      } else
+      {
+        success_train <- data.frame("replication" =i, # replication
+                                    "R2"          =NA,
+                                    "RMSE"        =NA,
+                                    row.names=NULL);
+      }
+      
+      return (list("replication"       =i,
+                   "data_train_indices"=train_test_splits[[i]]$in_id, 
+                   "data_test_indices" =setdiff(1:nrow(train_test_splits[[i]]$data), train_test_splits[[i]]$in_id),
+                   "performance"       =list("success"=success_train)));
+  });
+  
+  
+  # Save to file:
+  ctree_daltonism <- list("data"=d,
+                          "all_data"=list("model"=ctree_train, "R2"=r2_all, "RMSE"=rmse_all), 
+                          "training_testing"=list("replications"   =n_train,
+                                                  "performance"=list("success"=do.call(rbind, lapply(results, function(x) x$performance$success)))));
+  save(ctree_daltonism, file=file_name, compress="xz", compression_level=9);
+} else
+{
+  load(file_name);
+} 
+```
+
+On the full dataset, the conditional inference tree using all potential predictors as fixed effects, fits the data very well: `r sprintf("R^2^ = %.1f%%, RMSE = %.3f", ctree_daltonism$all_data$R2*100, ctree_daltonism$all_data$RMSE)`, and the tree is:
+
+```{r fig.cap=capFig('Conditional inference trees for predicting *daltonism* using all the potential predictors.'), fig.width=10, fig.height=6, fig.show='hold', out.height="50%"}
+plot(ctree_daltonism$all_data$model, gp=gpar(fontsize = 11));
+```
+
+
+When randomly splitting the dataset into 80% training/20% testing subsets `r ctree_daltonism$training_testing$replications` times, using all the potential predictors, we obtain `r sprintf("R^2^ = %.1f%% ±%.1f%%, and RMSE = %.3f ±%.3f", mean(ctree_daltonism$training_testing$performance$success$R2,na.rm=TRUE)*100, sd(ctree_daltonism$training_testing$performance$success$R2,na.rm=TRUE)*100, mean(ctree_daltonism$training_testing$performance$success$RMSE,na.rm=TRUE), sd(ctree_daltonism$training_testing$performance$success$RMSE,na.rm=TRUE))`.
+
+```{r fig.cap=capFig(paste0("Various measures of success using Bayesian mixed effects logistic regressions splitting the dataset randomly into 80% training/20% testing subsets, ",ctree_daltonism$training_testing$replications," times. Boxplots show the spread of the traning/tesing values, while the solid horizontal lines show the values when using the full dataset.")), fig.width=2*2, fig.height=5}
+grid.arrange(ggplot(ctree_daltonism$training_testing$performance$success, aes(y=R2*100, x="")) + 
+               geom_jitter(alpha=0.50, color="steelblue") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("blue",0.30)) + 
+               theme_bw() +
+               ylim(c(0,100)) + xlab("") + ylab(expression("R"^2)) +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               # measures on the full dataset:
+               geom_hline(yintercept=ctree_daltonism$all_data$R2*100, color="blue", linetype="solid", size=1) + 
+               theme(legend.position="right") +
+             NULL,
+             ggplot(ctree_daltonism$training_testing$performance$success, aes(y=RMSE, x="")) + 
+               geom_jitter(alpha=0.50, color="salmon") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("red",0.30)) + 
+               theme_bw() +
+               ylim(c(0.0,0.1)) + xlab("") + ylab("RMSE") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               # measures on the full dataset:
+               geom_hline(yintercept=ctree_daltonism$all_data$RMSE, color="red", linetype="solid", size=1) + 
+               NULL,
+             ncol=2);
+```
+
+
+#### Random forests
+
+We used random forests (as implemented by `randomForest()` in package `randomForest`) and conditional random forests (as implemented by `cforest()` in package `partykit`) to predict the existence of a specific word for "blue" (*blue*) from all the potential predictors, as well as when excluding the number of colors *n_colors*:
+
+```{r include=FALSE}
+file_name <- "./cached_results/rforest_daltonism.RData";
+if( !all(file.exists(file_name)) )
+{
+  # Collect the success measures and the predictor importance based on the gini index (randomForest) and the accuracy indices (randomForest and cForest):
+  n_replications <- n_train; # the number of replications
+  cf_ntree       <- 500; # the number of trees for cforest
+  cf_nperm       <- 10;  # number of permutations for cforest:varimp
+  results <- pblapply(1:n_replications, function(i) # very computationally expensive
+    {
+      # fit the random forests:
+      rf_dalto <- randomForest(daltonism_r ~ 
+                                 macroarea                                                   # macroarea
+                               + UVB_r                                                       # UV-B incidence
+                               + longitude_r + latitude_r                                    # geographic location
+                               + subsistence  + log_popSize                                  # subsistence strategy and population size
+                               + clim_PC1_r + clim_PC2_r + clim_PC3_r + hum_median + hum_IQR # climate, ecology and humidity
+                               + elevation_r                                                 # altitude 
+                               + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r  # distances to large bodies of water 
+                               + n_colors_r                                                  # number of color terms
+                               + exists_blue                                                 # dedicated word for blue
+                               + gen_D1_r + gen_D2_r + gen_D3_r + gen_D4_r + gen_D5_r + gen_D6_r + gen_D7_r + gen_D8_r + gen_D9_r + gen_D10_r, # genetic distances between populations
+                               data=d, importance=TRUE);
+      cf_dalto <- cforest(daltonism_r ~ 
+                            macroarea                                                   # macroarea
+                          + UVB_r                                                       # UV-B incidence
+                          + longitude_r + latitude_r                                    # geographic location
+                          + subsistence  + log_popSize                                  # subsistence strategy and population size
+                          + clim_PC1_r + clim_PC2_r + clim_PC3_r + hum_median + hum_IQR # climate, ecology and humidity
+                          + elevation_r                                                 # altitude 
+                          + dist2water_r + dist2ocean_r + dist2lakes_r + dist2rivers_r  # distances to large bodies of water 
+                          + n_colors_r                                                  # number of color terms
+                          + exists_blue                                                 # dedicated word for blue
+                          + gen_D1_r + gen_D2_r + gen_D3_r + gen_D4_r + gen_D5_r + gen_D6_r + gen_D7_r + gen_D8_r + gen_D9_r + gen_D10_r, # genetic distances between populations
+                          data=d, ntree=cf_ntree);
+      
+      # performance:
+      rf_err_pred <- (d$daltonism_r - rf_dalto$predicted)^2;
+      (rf_r2   <- 1.0 - sum(rf_err_pred) / (sum((d$daltonism_r - mean(d$daltonism_r))^2)));
+      (rf_rmse <- sqrt(mean(rf_err_pred)));
+      cf_err_pred <- (d$daltonism_r - predict(cf_dalto))^2;
+      (cf_r2   <- 1.0 - sum(cf_err_pred) / (sum((d$daltonism_r - mean(d$daltonism_r))^2)));
+      (cf_rmse <- sqrt(mean(cf_err_pred)));
+        
+      # return the results:
+      success_train <- data.frame("replication" =i, # replication
+                                  "R2"          =r2_train,
+                                  "RMSE"        =rmse_train,
+                                  row.names=NULL);
+
+      # predictor importance:
+      pia_rf_dalto <- importance(rf_dalto, type=1); # accuracy-based
+      pig_rf_dalto <- importance(rf_dalto, type=2); # gini-based
+      piu_cf_dalto <- varimp(cf_dalto, conditional=FALSE, nperm=cf_nperm); # unconditional
+
+      # return the results:
+      success_dalto <- data.frame("replication"     =i,       # replication
+                                  "rf_R2"           =rf_r2,   # randomForest
+                                  "rf_RMSE"         =rf_rmse,
+                                  "cf_R2"           =cf_r2,   # cforest
+                                  "cf_RMSE"         =cf_rmse,
+                                  row.names=NULL);
+      pi_df_dalto <- data.frame("replication"      =i,                                  # replication
+                                "predictor"        =attr(cf_dalto$terms,"term.labels"), # predictors
+                                "rf_accuracy_based"=pia_rf_dalto,                       # randomForest accuracy-based
+                                "rf_gini_based"    =pig_rf_dalto,                       # randomForest gini-based
+                                "cf_unconditional" =piu_cf_dalto,                       # cforest unconditional
+                                row.names=NULL);
+
+      return (list("replication" =i,
+                   "performance" =list("success"=success_dalto, "pred_importance"=pi_df_dalto)));
+    }); #, mc.cores=max(detectCores(all.tests=TRUE, logical=FALSE), 1, na.rm=TRUE)); # try to use multiple cores, if present (limited to a maximum of 8)
+  
+  # Assemble the various results and save them:
+  rforest_daltonism <- list("data"        =d,
+                            "replications"=n_replications,
+                            "results"=list("success"=do.call(rbind, lapply(results, function(x) x$performance$success)),   
+                                           "pred_importance"=do.call(rbind, lapply(results, function(x) x$performance$pred_importance))));
+  save(rforest_daltonism, file=file_name, compress="xz", compression_level=9);
+} else
+{
+  load(file_name);
+} 
+```
+
+On the full dataset, the (conditional) random forests using all potential predictors as fixed effects, fit the data very well: 
+
+- random forests: `r sprintf("R^2^ = %.1f%% ±%.1f%%, RMSE = %.3f ±%.3f", mean(rforest_daltonism$results$success$rf_R2*100), sd(rforest_daltonism$results$success$rf_R2*100), mean(rforest_daltonism$results$success$rf_RMSE), sd(rforest_daltonism$results$success$rf_RMSE))`
+- conditional random forests: `r sprintf("R^2^ = %.1f%% ±%.1f%%, RMSE = %.3f ±%.3f", mean(rforest_daltonism$results$success$cf_R2*100), sd(rforest_daltonism$results$success$cf_R2*100), mean(rforest_daltonism$results$success$cf_RMSE), sd(rforest_daltonism$results$success$cf_RMSE))`.
+
+```{r fig.cap=capFig(paste0("Various measures of success using random forests (RF) and conditional random forests (CRF).")), fig.width=4*2, fig.height=1*5}
+grid.arrange(ggplot(rforest_daltonism$results$success, aes(y=rf_R2*100, x="")) + 
+               geom_jitter(alpha=0.50, color="steelblue") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("blue",0.30)) + 
+               theme_bw() +
+               ylim(c(0,100)) + xlab("RF") + ylab(expression("R"^2)) +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               theme(legend.position="right") +
+             NULL,
+             ggplot(rforest_daltonism$results$success, aes(y=cf_R2*100, x="")) + 
+               geom_jitter(alpha=0.50, color="steelblue") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("blue",0.30)) + 
+               theme_bw() +
+               ylim(c(0,100)) + xlab("CRF") + ylab(expression("R"^2)) +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               theme(legend.position="right") +
+             NULL,
+             ggplot(rforest_daltonism$results$success, aes(y=rf_RMSE, x="")) + 
+               geom_jitter(alpha=0.50, color="salmon") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("red",0.30)) + 
+               theme_bw() +
+               ylim(c(0.0,0.1)) + xlab("RF") + ylab("RMSE") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               NULL,
+             ggplot(rforest_daltonism$results$success, aes(y=cf_RMSE, x="")) + 
+               geom_jitter(alpha=0.50, color="salmon") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("red",0.30)) + 
+               theme_bw() +
+               ylim(c(0.0,0.1)) + xlab("CRF") + ylab("RMSE") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               NULL,
+             ncol=4);
+```
+
+The importance of the predictors is:
+
+```{r fig.cap=capFig(paste0("Predictor importance from random forests using ",rforest_blue$replications," replications using random forests (left: accuracy-based, middle: Gini-index based) and conditional random forests (right).")), fig.width=4*3, fig.height=7*1}
+grid.arrange(ggplot(rforest_daltonism$results$pred_importance, 
+                    aes(x=reorder(predictor, X.IncMSE, median), y=X.IncMSE)) +
+               theme_bw() +
+               geom_boxplot(fill="salmon", color="black") +
+               labs(x="Predictors (sorted by decreasing importance)", y="Mean decrease accuracy") +
+               theme(axis.text.y = element_text(angle=30, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=10),
+                     axis.title=element_text(size=16),
+                     legend.position="none") +
+               coord_flip() + 
+               NULL,
+             ggplot(rforest_daltonism$results$pred_importance, 
+                    aes(x=reorder(predictor, IncNodePurity, median), y=IncNodePurity)) +
+               theme_bw() +
+               geom_boxplot(fill="salmon", color="black") +
+               labs(x="Predictors (sorted by decreasing importance)", y="Node purity") +
+               theme(axis.text.y = element_text(angle=30, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=10),
+                     axis.title=element_text(size=16),
+                     legend.position="none") +
+               coord_flip() + 
+               NULL,
+             ggplot(rforest_daltonism$results$pred_importance, 
+                    aes(x=reorder(predictor, cf_unconditional, median), y=cf_unconditional)) +
+               theme_bw() +
+               geom_boxplot(fill="salmon", color="black") +
+               labs(x="Predictors (sorted by decreasing importance)", y="Unconditional") +
+               theme(axis.text.y = element_text(angle=30, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=10),
+                     axis.title=element_text(size=16),
+                     legend.position="none") +
+               coord_flip() + 
+               NULL,
+             ncol=3);
+```
+
+
+#### SVM
+
+
+
+
+
+
+
+
 
 
 
