@@ -30,13 +30,13 @@ csl: apa-6th-edition.csl
 - decide what to keep to streamline the analysis
 - keep only the needed input files: **DONE**
 - do SEM/multiple mediators stuff as I did for syllable and tone -> modification indices: **DONE**
-- redo the mediation analysis with the new flow blue -> n_colors
+- redo the mediation analysis with the new flow blue -> n_colors: **DONE**
 - change standardization of latitude so that it is highest at the poles: **DONE**
 - redo the mediation using the two new functions: **DONE**
 - update the summary mediation diagram: **DONE**
-- prediction: put brms, trees, forests, svms together + on the data & training/testing sets
-- discuss causality in these models
-- check if we can get more lexical splits (such as grue -> green + blue): SEM/IRT?
+- prediction: put brms, trees, forests, svms together + on the data & training/testing sets: **DONE**
+- discuss causality in these models: **DONE**
+- check if we can get more lexical splits (such as grue -> green + blue): SEM/IRT?: **FOR THE FUTURE**
 
 **What I also did:**
 
@@ -5517,6 +5517,102 @@ if( !all(file.exists("./cached_results/b_daltonism__ncolors.RData")) )
 Conversely, *daltonism* has no (or very weakly positive) effect on the number of colors categories (*n_colors*): *&beta;~daltonism~* = `r round(h_daltonism__ncolors$hypothesis$Estimate[1],2)` (95%HDI = `r sprintf("[%.2f, %.2f]", hdi_daltonism__ncolors$CI_low[ hdi_daltonism__ncolors$Parameter == "b_daltonism_r" ], hdi_daltonism__ncolors$CI_high[ hdi_daltonism__ncolors$Parameter == "b_daltonism_r" ])`), *p*(*&beta;*=0) = `r sprintf("%.2g",h_daltonism__ncolors$hypothesis$Post.Prob[1])`); and fits the data comparable to the null model (Bayes factor = `r sprintf("%.2g",compare_0_daltonism__ncolors$BF)`, LOO = `r sprintf("%.2f [SE=%.2f]", compare_0_daltonism__ncolors$LOO["null", "elpd_diff"], compare_0_daltonism__ncolors$LOO["null", "se_diff"])`, WAIC = `r sprintf("%.2f [SE=%.2f]", compare_0_daltonism__ncolors$WAIC["null", "elpd_diff"], compare_0_daltonism__ncolors$WAIC["null", "se_diff"])`, K-fold = `r sprintf("%.2f [SE=%.2f]", compare_0_daltonism__ncolors$KFOLD["null", "elpd_diff"], compare_0_daltonism__ncolors$KFOLD["null", "se_diff"])`).
 
 
+#### daltonism and genetic distances
+
+```{r fig.cap=capFig('Population frequency of daltonism (in %) function of genetic distance between populations.'), fig.height=3*4, fig.width=3*5}
+grid.arrange(grobs=lapply(grep("gen_D", names(d_colors), fixed=TRUE), function(i)
+              {
+                d_1 <- d_colors[,c("daltonism", names(d_colors)[i])]; names(d_1) <- c("daltonism", "gen_D");
+                ggplot(d_1, aes(x=gen_D, y=daltonism)) + 
+                  geom_point(alpha=0.35) + 
+                  geom_smooth(method="lm", color="blue") + geom_smooth(method="loess", color="red") + 
+                  theme_bw() +
+                  labs(y="Datonism (%)", x=names(d_colors)[i]) +
+                  theme(axis.text.x = element_text(size =14, face = "bold"), 
+                        axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                        axis.title=element_text(size=14),
+                        legend.title=element_text(size =16),
+                        legend.text=element_text(size =16),
+                        legend.position="bottom") + 
+                  NULL;
+              }),
+              ncol=4);
+```
+
+```{r include=FALSE}
+# genetic distances -> daltonism:
+if( !all(file.exists("./cached_results/b_genetics__daltonism.RData")) )
+{
+  # Fit the model:
+  b_genetics__daltonism <- brm(daltonism_r ~ 1 + 
+                                 gen_D1 + gen_D2 + gen_D3 + gen_D4 + gen_D5 + gen_D6 + gen_D7 + gen_D8 + gen_D9 + gen_D10 + 
+                                 I(gen_D1^2) + I(gen_D2^2) + I(gen_D3^2) + I(gen_D4^2) + I(gen_D5^2) + 
+                                 I(gen_D6^2) + I(gen_D7^2) + I(gen_D8^2) + I(gen_D9^2) + I(gen_D10^2) +  # genetics -> daltonism_r
+                                 (1 | glottocode_family) + (1 | macroarea),
+                               family=Beta(), data=d_colors, 
+                               prior=c(prior(normal(0, 5), class="Intercept"),
+                                       prior(normal(0, 5), class="b")), # pretty wide priors centered on 0
+                               save_all_pars=TRUE, # needed for Bayes factors
+                               sample_prior=TRUE,  # needed for hypotheses tests
+                               cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10));
+  b_genetics__daltonism <- brms_fit_indices(b_genetics__daltonism);
+  summary(b_genetics__daltonism); mcmc_plot(b_genetics__daltonism, type="trace"); mcmc_plot(b_genetics__daltonism);
+  (hdi_genetics__daltonism <- hdi(b_genetics__daltonism, ci=0.95));
+  compare_0_genetics__daltonism <- brms_compare_models(b_0__daltonism, b_genetics__daltonism, "null", "+ genetics"); # not clear if genetics matters...
+  # Iterative manual simplification:
+  b_genetics__daltonism_1 <- update(b_genetics__daltonism, . ~ . - I(gen_D7^2) - I(gen_D8^2) - I(gen_D9^2) - I(gen_D10^2) - gen_D6 - gen_D9 - gen_D4 - gen_D5 - 
+                                      I(gen_D1^2) - I(gen_D3^2) - gen_D7 - I(gen_D4^2) - I(gen_D6^2) - gen_D10 - gen_D3 - gen_D2,
+                         save_all_pars=TRUE, sample_prior=TRUE, cores=brms_ncores, iter=4000, warmup=2000, thin=2, control=list(adapt_delta=0.99, max_treedepth=10)); 
+  summary(b_genetics__daltonism_1); mcmc_plot(b_genetics__daltonism_1, type="trace"); mcmc_plot(b_genetics__daltonism_1) + xlim(c(-0.5, 0.5)); # phi and intercept are too big
+  (hdi_reduced <- hdi(b_genetics__daltonism_1, ci=0.95)); (rope_reduced <- rope(b_genetics__daltonism_1, ci=0.95)); fixef_reduced <- fixef(b_genetics__daltonism_1);
+  b_genetics__daltonism_1 <- brms_fit_indices(b_genetics__daltonism_1);
+  # Model comparison:
+  (cmp_full_reduced <- brms_compare_models(b_genetics__daltonism, b_genetics__daltonism_1, "full", "reduced")); # reduced is better
+  (cmp_null_reduced <- brms_compare_models(b_0__daltonism, b_genetics__daltonism_1, "null", "reduced")); # reduced is better
+  # Keep the reduced model:
+  b_genetics__daltonism <- b_genetics__daltonism_1; compare_0_genetics__daltonism <- cmp_null_reduced; 
+  hdi_genetics__daltonism <- hdi_reduced; rope_genetics__daltonism <- rope_reduced; fixef_genetics__daltonism <- fixef_reduced;
+  r2_genetics__daltonism <- bayes_R2(b_genetics__daltonism_1);
+  
+  
+  # Mantel correlations:
+  library(vegan); # mantel correlations
+  # Load the genetic distances with ultrametric imputation:
+  d_gen_ult <- read.table("./input_files/distmat_gen_ult.csv", header=TRUE, sep=","); rownames(d_gen_ult) <- d_gen_ult[,1]; d_gen_ult <- d_gen_ult[,-1]; d_gen_ult <- as.matrix(d_gen_ult);
+  # Compute the daltonism distances:
+  tmp <- matrix(d_colors$daltonism/100, ncol=1); rownames(tmp) <- d_colors$glottocode; d_dalto <- as.matrix(dist(tmp));
+  # Make sure the two matrices correspond:
+  s <- sort(intersect(rownames(d_gen_ult), rownames(d_dalto)));
+  # Compute the correlation:
+  (mantel_r_genetics__daltonism   <- vegan::mantel(d_gen_ult[s,s], d_dalto[s,s], method="pearson",  permutations=999)); # r=0.07798, p=0.001
+  (mantel_rho_genetics__daltonism <- vegan::mantel(d_gen_ult[s,s], d_dalto[s,s], method="spearman", permutations=999)); # r=0.07694, p=0.001
+  
+  
+  # Save results:
+  save(compare_0_genetics__daltonism, hdi_genetics__daltonism, rope_genetics__daltonism, fixef_genetics__daltonism, #b_genetics__daltonism, # no need to save the actual model
+       r2_genetics__daltonism,
+       mantel_r_genetics__daltonism, mantel_rho_genetics__daltonism,
+       file="./cached_results/b_genetics__daltonism.RData", compress="xz", compression_level=9);
+} else
+{
+  load("./cached_results/b_genetics__daltonism.RData");
+}
+```
+
+Interestingly, the population frequency of daltonism is only weakly correlated with the inter-population genetic distances: a Bayesian mixed-effects quadratic Beta regression of daltonism with family and macorarea as random effects and the first 10 MDS dimensions of the ultrametrically-imputed genetic distances matrix with manual simplification is better than the null model (Bayes factor = `r sprintf("%.2g",compare_0_genetics__daltonism$BF)`, LOO = `r sprintf("%.2f [SE=%.2f]", compare_0_genetics__daltonism$LOO["null", "elpd_diff"], compare_0_genetics__daltonism$LOO["null", "se_diff"])`, WAIC = `r sprintf("%.2f [SE=%.2f]", compare_0_genetics__daltonism$WAIC["null", "elpd_diff"], compare_0_genetics__daltonism$WAIC["null", "se_diff"])`, K-fold = `r sprintf("%.2f [SE=%.2f]", compare_0_genetics__daltonism$KFOLD["null", "elpd_diff"], compare_0_genetics__daltonism$KFOLD["null", "se_diff"])`), has `r sprintf("R^2^= %.1f%% ±%.1f%%", r2_genetics__daltonism["R2", "Estimate"]*100, r2_genetics__daltonism["R2", "Est.Error"]*100)`, and the retained predictors are:
+
+```{r}
+kable(data.frame("predictor"  =rownames(fixef_genetics__daltonism), 
+                 "estimate"   =round(fixef_genetics__daltonism[,"Estimate"],2),
+                 "hdi"=paste0("[", round(hdi_genetics__daltonism[,"CI_low"],2), ",", round(hdi_genetics__daltonism[,"CI_high"],2), "]"),
+                 "p.rope"=sprintf("%.2g",rope_genetics__daltonism[,"ROPE_Percentage"]),
+                 row.names=NULL), 
+      row.names=FALSE, col.names=c("Predictor", "*&beta;* (estimate)", "*&beta;* (95% HDI)", "*p*~ROPE~"),
+      caption=capTab(paste0("Retained predictors ; the ROPE is [", round(rope_genetics__daltonism[1,"ROPE_low"],2), ",", round(rope_genetics__daltonism[1,"ROPE_high"],2), "].")));
+```
+
+Likewise, the Mantel correlations between the Euclidean distances between population frequencies in daltonism and ultrametrically-imputed genetic distances matrix are weak but significant (using 1000 permutations): with Pearson `r sprintf("*r*=%.3f, *p*=%.4g", mantel_r_genetics__daltonism$statistic, mantel_r_genetics__daltonism$signif)`, and with Spearman `r sprintf("*&rho;*=%.3f, *p*=%.4g", mantel_rho_genetics__daltonism$statistic, mantel_rho_genetics__daltonism$signif)`.
+
 
 
 ### Mediation analyses
@@ -6169,6 +6265,165 @@ grid.arrange(ggplot(rforest_daltonism$results$pred_importance,
 
 
 #### SVM
+
+We used Support Vector Machines (SVMs, as implemented by `fit(...,model="svm")` in the `rminer` package) to predict the population frequency of daltonism (*daltonism*) from all the potential predictors.
+
+```{r include=FALSE}
+file_name <- "./cached_results/svm_daltonism.RData";
+if( !all(file.exists(file_name)) )
+{
+  # The potential predictors:
+  list_vars <- c("macroarea",                                                       # macroarea
+                 "UVB_r",                                                           # UV-B incidence
+                 "longitude_r", "latitude_r",                                       # geographic location
+                 "subsistence", "log_popSize",                                      # subsistence strategy and population size
+                 "clim_PC1_r", "clim_PC2_r", "clim_PC3_r", "hum_median", "hum_IQR", # climate, ecology and humidity
+                 "elevation_r",                                                     # altitude 
+                 "dist2water_r", "dist2ocean_r", "dist2lakes_r", "dist2rivers_r",   # distances to large bodies of water
+                 "n_colors_r",                                                      # number of color terms
+                 "exists_blue",                                                     # dedicated word for blue
+                 "gen_D1_r", "gen_D2_r", "gen_D3_r", "gen_D4_r", "gen_D5_r",        # genetic distances between populations
+                 "gen_D6_r", "gen_D7_r", "gen_D8_r", "gen_D9_r", "gen_D10_r");
+  # formula:
+  f_svm <- formula(paste0("daltonism_r ~ ", paste0(list_vars,collapse=" + ")));
+  # remove the NAs in the relevant variables as SVM complains...
+  d <- d[ complete.cases(d[,c("daltonism_r", list_vars)]), c("daltonism_r", list_vars)];
+
+  
+  ## On the full data:
+  # fit the SVMs:
+  svm_fit_alldata <- rminer::fit(f_svm, d, model="svm", task="reg");
+  
+  # success:
+  (r2_all   <- 1.0 - (sum((d$daltonism_r - predict(svm_fit_alldata, d))^2)) / (sum((d$daltonism_r - mean(d$daltonism_r))^2)));
+  (rmse_all <- sqrt(mean((d$daltonism_r - predict(svm_fit_alldata, d))^2)));
+  
+  # predictor importance (based on sensitivity analysis):
+  tmp             <- rminer::Importance(svm_fit_alldata, d, method="sensv"); 
+  pia_svm_alldata <- tmp$imp; names(pia_svm_alldata) <- names(d); pia_svm_alldata <- pia_svm_alldata[names(pia_svm_alldata) %in% list_vars];
+
+      
+  # Using training/testing subsets:
+  results <- pblapply(1:n_train, function(i)
+    {
+      # split the dataset into a training (80%) and a testing (20%) set stratified by exists_blue:
+      data_train <- training(train_test_splits[[i]]);
+      data_test  <- testing(train_test_splits[[i]]);
+      # keep only the relevant columns and no NAs:
+      data_train <- data_train[ complete.cases(data_train[,c("daltonism_r", list_vars)]), c("daltonism_r", list_vars)];
+      data_test  <- data_test [ complete.cases(data_test [,c("daltonism_r", list_vars)]), c("daltonism_r", list_vars)];
+      
+      # fit the SVM:
+      svm_fit_train <- rminer::fit(f_svm, data_train, model="svm", task="reg");
+
+      # success:
+      (r2_train   <- 1.0 - (sum((data_test$daltonism_r - predict(svm_fit_train, data_test))^2)) / (sum((data_test$daltonism_r - mean(data_test$daltonism_r))^2)));
+      (rmse_train <- sqrt(mean((data_test$daltonism_r - predict(svm_fit_train, data_test))^2)));
+    
+      # predictor importance (based on sensitivity analysis):
+      tmp           <- rminer::Importance(svm_fit_train, data_train, method="sensv"); 
+      pia_svm_train <- tmp$imp; names(pia_svm_train) <- names(data_train); pia_svm_train <- pia_svm_train[names(pia_svm_train) %in% list_vars];
+
+      # return the results:
+      success_train <- data.frame("replication"=i, # replication
+                                  "R2"  =r2_train,
+                                  "RMSE"=rmse_train,
+                                  row.names=NULL);
+      pi_df_train   <- data.frame("replication"=i,                        # replication
+                                  "predictor"  =list_vars,                # predictors
+                                  "importance" =pia_svm_train[list_vars], # sensitivity-based
+                                  row.names=NULL);
+      
+      return (list("replication"       =i,
+                   "data_train_indices"=train_test_splits[[i]]$in_id, 
+                   "data_test_indices" =setdiff(1:nrow(train_test_splits[[i]]$data), train_test_splits[[i]]$in_id),
+                   "performance"       =list("success"=success_train, "pred_importance"=pi_df_train)));
+    });
+  
+  # Save to file:
+  svm_daltonism <- list("data"=d,
+                        "all_data"=list("model"          =svm_fit_alldata, 
+                                        "success"        =data.frame("R2"=r2_all, "RMSE"=rmse_all), 
+                                        "pred_importance"=data.frame("predictor"  =list_vars,                  # predictors
+                                                                     "importance" =pia_svm_alldata[list_vars], # sensitivity-based
+                                                                     row.names=NULL)), 
+                        "training_testing"=list("replications"   =n_train,
+                                                "performance"=list("success"        =do.call(rbind, lapply(results, function(x) x$performance$success)),
+                                                                   "pred_importance"=do.call(rbind, lapply(results, function(x) x$performance$pred_importance)))));
+  save(svm_daltonism, file=file_name, compress="xz", compression_level=9);
+} else
+{
+  load(file_name);
+} 
+```
+
+On the full dataset, SVMs using all potential predictors, fits the data very well: `r sprintf("R^2^ = %.1f%%, RMSE = %.3f", svm_daltonism$all_data$success$R2*100, svm_daltonism$all_data$success$RMSE)`, and the variable importance is (only those with importance > 0):
+
+```{r results='asis'}
+tmp <- svm_daltonism$all_data$pred_importance[ order(svm_daltonism$all_data$pred_importance$importance, decreasing=TRUE), ];
+tmp <- tmp[ tmp$importance > 0, ];
+cat(paste0("*",tmp$predictor,"*", " (", round(tmp$importance,3), ")", collapse=", "));
+```
+
+
+When randomly splitting the dataset into 80% training/20% testing subsets `r svm_daltonism$training_testing$replications` times, using all the potential predictors, we obtain `r sprintf("R^2^ = %.1f%% ±%.1f%%, and RMSE = %.3f ±%.3f", mean(svm_daltonism$training_testing$performance$success$R2,na.rm=TRUE)*100, sd(svm_daltonism$training_testing$performance$success$R2,na.rm=TRUE)*100, mean(svm_daltonism$training_testing$performance$success$RMSE,na.rm=TRUE), sd(svm_daltonism$training_testing$performance$success$RMSE,na.rm=TRUE))`.
+
+```{r fig.cap=capFig(paste0("Various measures of success using SVMs splitting the dataset randomly into 80% training/20% testing subsets, ",svm_daltonism$training_testing$replications," times. Boxplots show the spread of the traning/tesing values, while the solid horizontal lines show the values when using the full dataset.")), fig.width=2*2, fig.height=5}
+grid.arrange(ggplot(svm_daltonism$training_testing$performance$success, aes(y=R2*100, x="")) + 
+               geom_jitter(alpha=0.50, color="steelblue") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("blue",0.30)) + 
+               theme_bw() +
+               ylim(c(0,100)) + xlab("") + ylab(expression("R"^2)) +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               # measures on the full dataset:
+               geom_hline(yintercept=svm_daltonism$all_data$success$R2*100, color="blue", linetype="solid", size=1) + 
+               theme(legend.position="right") +
+             NULL,
+             ggplot(svm_daltonism$training_testing$performance$success, aes(y=RMSE, x="")) + 
+               geom_jitter(alpha=0.50, color="salmon") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("red",0.30)) + 
+               theme_bw() +
+               ylim(c(0.0,0.1)) + xlab("") + ylab("RMSE") +
+               theme(axis.text.x = element_text(size =14, face = "bold"), 
+                     axis.text.y = element_text(hjust = 1, size =14, face = "bold"),
+                     axis.title=element_text(size=14),
+                     legend.title=element_text(size =16),
+                     legend.text=element_text(size =16),
+                     legend.position="bottom") +
+               # measures on the full dataset:
+               geom_hline(yintercept=svm_daltonism$all_data$success$RMSE, color="red", linetype="solid", size=1) + 
+               NULL,
+             ncol=2);
+```
+
+The importance of the predictors is:
+
+```{r fig.cap=capFig(paste0("Specificity-based predictor importance from SVMs using ",svm_daltonism$training_testing$replications," traning/testing sets, and including or not *n_colors*.")), fig.width=4*3, fig.height=7*1}
+ggplot(svm_daltonism$training_testing$performance$pred_importance, 
+       aes(x=reorder(predictor, importance, mean), y=importance)) +
+  theme_bw() +
+  geom_boxplot(color="black", fill="salmon") +
+  labs(x="Predictors (sorted by importance)", y="Importance") +
+  theme(axis.text.y = element_text(angle=30, hjust=1, size=10), 
+        axis.text.x = element_text(hjust=1, size=10),
+        axis.title=element_text(size=16),
+        legend.position="bottom") +
+  coord_flip() +
+  NULL;
+```
+
+
+
+### Conclusions: daltonism, UV-B and the color vocabulary
+
+When focusing on the evolutionary hypothesis [@brown_color_2004] linking UV-B incidence and the population frequency of red/green abnormal color perception ("daltonism"), we found that, indeed, this is supported by our data. 
+The overall negative impact of UV-B is largely mediated by the existence of a dedicated word for "blue", supporting the conjecture that already experiencing UV-B-induced blue/green perception loss generates selective pressures against red/green abnormal color perception.
+There is no evidence for a link between the number of color categories and the frequency of daltonism (except through its correlation with the existence of a dedicated word for "blue").
+Interestingly, the overall genetic distance between populations is not a good predictor of the frequency of daltonism, again suggesting that daltonism is affected by other evolutionary forces than just drift and demographic history.
+
 
 
 
