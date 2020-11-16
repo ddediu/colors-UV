@@ -1,143 +1,143 @@
-glottocode,daltonism,n_colors,exists_blue,subsistence,stage,L1,macroarea,longitude,latitude,log_popSize,glottocode_family,latitude_family,longitude_family,macro_family,genetic_incomplete,genetic_full
-abua1244,2.13,5,no,AGR,999,Abua,Africa,6.615,4.831,10.13,atla1278,8.75,8.25,Niger-Congo,,Edo
-acol1236,2.61,6,no,AGR,999,Acoli,Africa,32.515,3.577,13.97,nilo1247,4.75,29.75,Nilo-Saharan,,Luhya
-ainu1240,1.18,4,no,HG,3a,Ainu (Hokkaido),Eurasia,142.462,43.634,2.3,ainu1252,43.63,142.46,Ainu,,Hezhe
-alba1267,7.4,11,yes,AGR,7,Albanian,Eurasia,20,41,22.84,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
-alge1239,6.56,11,yes,AGR,7,Arabic (Algerian),Africa,3.23,35.421,17.07,afro1255,8.67,8.08,Afro-Asiatic,Arabs,Arabs
-amha1245,3.2,10,yes,AGR,7,Amharic,Africa,39.543,11.708,16.89,afro1255,8.67,8.08,Afro-Asiatic,,Somali
-anga1288,0,12,no,AGR,7,Angami Naga,Eurasia,93.867,25.684,11.79,sino1245,26.1,94.75,Sino-Tibetan,Indian..Mixed,Indian..Mixed
-mesc1238,2.5,7,no,HG,999,Apache ,North America,254.434,33.129,7.31,atha1245,53.75,236.5,Na-Dene,Amerindians,Amerindians
-stan1318,5.35,11,yes,AGR,7,Arabic (Standard),Eurasia,43.853,27.963,19.14,afro1255,8.67,8.08,Afro-Asiatic,Arabs,Arabs
-nucl1235,5.43,7,yes,AGR,5,Armenian (Eastern),Eurasia,45,40,14.96,indo1319,34,71.55,Indo-European,,Turks
-assa1263,1.41,11,yes,AGR,7,Assamese,Eurasia,91.293,26.088,16.37,indo1319,34,71.55,Indo-European,Kachari,Kachari
-assy1241,6,9,yes,AGR,999,Neo-Aramaic (Assyrian),Eurasia,43,36.75,10.31,afro1255,8.67,8.08,Afro-Asiatic,,Iraqi
-awng1244,3.03,3,no,AGR,2,Agaw,Africa,36.692,10.982,13.1,afro1255,8.67,8.08,Afro-Asiatic,,Somali
-cent2142,5.66,7,yes,AGR,999,Aymara (Central),South America,291.5,-17,14.56,ayma1253,-17,291.5,Aymaran,Peruvian,Peruvian
-kara1465,4.2,8,yes,AGR,6,Karachay-Balkar,Eurasia,42.261,43.565,12.63,turk1311,56,125,Altaic,,Khanty
-basq1248,4.3,11,yes,AGR,7,Basque,Eurasia,-1.32,43.28,19.52,basq1248,43.28,-1.32,Basque,Basque,Basque
-bela1254,8.7,7,yes,AGR,999,Belarusian,Eurasia,25.604,53.231,15.72,indo1319,34,71.55,Indo-European,Russians,Russians
-krio1252,2.33,11,yes,AGR,7,Kriol,Australia,137.669,-18.135,8.34,indo1319,34,71.55,Indo-European,Afro.Caribbeans,Afro.Caribbeans
-bhil1251,0.7,7,no,AGR,999,Bhili,Eurasia,73.959,20.85,15.01,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
-biet1238,4.94,4,no,AGR,3a,Biete,Eurasia,92.943,24.274,9.85,sino1245,26.1,94.75,Sino-Tibetan,Indian..Mixed,Indian..Mixed
-bulg1262,6.45,11,yes,AGR,7,Bulgarian,Eurasia,25.047,43.365,15.55,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
-yuec1235,4,11,yes,AGR,7,Cantonese,Eurasia,113,23,17.77,sino1245,26.1,94.75,Sino-Tibetan,Han,Han
-cham1312,3.25,6,no,AGR,5,Chamorros,Papunesia,144.745,13.438,11.04,aust1307,23.76,120.98,Austronesian,Micronesians,Micronesians
-mand1415,5.66,10,yes,AGR,7,Mandarin Chinese,Eurasia,116.228,40.021,20.55,sino1245,26.1,94.75,Sino-Tibetan,Han,Han
-chot1239,6.5,4,no,AGR,3a,Chothe,Eurasia,94.241,24.372,8.19,sino1245,26.1,94.75,Sino-Tibetan,Indian..Mixed,Indian..Mixed
-chuv1255,5.16,6,yes,AGR,5,Chuvash,Eurasia,47.163,55.487,13.86,turk1311,56,125,Altaic,Chuvash,Chuvash
-czec1258,10.5,11,yes,AGR,7,Czech,Eurasia,15.104,49.873,16.04,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
-dani1285,6.36,9,yes,AGR,7,Danish,Eurasia,9.363,54.866,15.51,indo1319,34,71.55,Indo-European,Danes,Danes
-dubl1239,2.75,5,no,AGR,4,Dubli,Eurasia,73.218,21.516,12.44,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
-dutc1256,4.95,11,yes,AGR,7,Dutch,Eurasia,5,52,16.61,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
-stan1293,5.09,11,yes,AGR,7,English,Eurasia,-1,53,17.88,indo1319,34,71.55,Indo-European,British,British
-erzy1239,7.77,6,yes,AGR,5,Erzya,Eurasia,45.39,52.855,12.98,ural1272,68,30,Uralic,,Chuvash
-peno1244,7.04,5,no,AGR,4,Peñoles Mixtec,North America,262.99,17.067,8.61,otom1299,17.67,262.58,Oto-Manguean,Mexicans,Mexicans
-west2369,2.63,11,yes,AGR,7,Farsi (Western),Eurasia,55.159,28.659,17.62,indo1319,34,71.55,Indo-European,Iranian,Iranian
-fiji1243,0.4,5,no,AGR,999,Fijian,Papunesia,178.33,-18,12.71,aust1307,23.76,120.98,Austronesian,Micronesians,Micronesians
-taga1270,4.28,7,yes,AGR,999,Tagalog,Papunesia,121.747,14.06,16.88,aust1307,23.76,120.98,Austronesian,Micronesians,Micronesians
-finn1318,8.21,11,yes,AGR,7,Finnish,Eurasia,25.558,64.763,15.36,ural1272,68,30,Uralic,Finns,Finns
-stan1290,6.8,11,yes,AGR,7,French,Eurasia,2,48,17.8,indo1319,34,71.55,Indo-European,French,French
-pula1263,1.3,6,no,AGR,999,Pulaar,Africa,-13.448,13.869,14.82,atla1278,8.75,8.25,Niger-Congo,,Hausa
-scot1245,6.58,10,yes,AGR,7,Gaelic (Scottish),Eurasia,-5.244,56.757,10.98,indo1319,34,71.55,Indo-European,Orcadian,Orcadian
-gami1242,2.72,5,no,AGR,4,Gamit,Eurasia,73.684,21.07,12.56,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
-stan1295,6.37,11,yes,AGR,7,German,Eurasia,12.468,48.649,18.14,indo1319,34,71.55,Indo-European,Germans,Germans
-pare1266,1.33,5,no,AGR,4,Gorum-Parenga,Eurasia,83.972,19.075,0,aust1305,14.83,100.5,Austro-Asiatic,Thoti,Thoti
-mode1248,5.75,9,yes,AGR,7,Greek (Modern),Eurasia,24.87,42.322,16.19,indo1319,34,71.55,Indo-European,Greeks,Greeks
-guja1252,5.08,12,yes,AGR,7,Gujarati,Eurasia,71.096,22.687,17.64,indo1319,34,71.55,Indo-European,Gujarati,Gujarati
-gusi1247,0,7,no,AGR,999,Gusii,Africa,34.768,-0.789,14.61,atla1278,8.75,8.25,Niger-Congo,Bantu.speakers,Bantu.speakers
-hadz1240,1.42,4,no,HG,3a,Hadza,Africa,35.05,-3.83,9.97,hadz1240,-3.83,35.05,Hadza,,Sandawe
-hakk1236,5.58,10,yes,AGR,7,Hakka Chinese,Eurasia,116,25,17.06,sino1245,26.1,94.75,Sino-Tibetan,Hakka,Hakka
-haus1257,1.76,4,no,AGR,3a,Hausa,Africa,8.78,11.151,16.73,afro1255,8.67,8.08,Afro-Asiatic,Hausa,Hausa
-hind1269,3.72,9,yes,AGR,6,Hindi,Eurasia,77,25,19.37,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
-hung1274,3.82,11,yes,AGR,7,Hungarian,Eurasia,19.656,46.907,16.07,ural1272,68,30,Uralic,Hungarian,Hungarian
-kala1399,5.41,5,no,HG,4,Inuktitut (Kalaallisut),Eurasia,307.136,69.376,10.82,eski1264,63.69,189.52,Eskimo-Aleut,Greenlander,Greenlander
-nort2945,1.11,7,yes,HG,5,Eskimo (Inupiaq),North America,198.193,64.78,8.63,eski1264,63.69,189.52,Eskimo-Aleut,,Hezhe
-ital1282,3.82,11,yes,AGR,7,Italian,Eurasia,12.649,43.046,17.82,indo1319,34,71.55,Indo-European,Italians,Italians
-teso1249,4.87,7,yes,AGR,6,Teso,Africa,33.939,1.183,14.27,nilo1247,4.75,29.75,Nilo-Saharan,,Luhya
-nucl1643,4.3,10,yes,AGR,7,Japanese,Eurasia,135,35,18.61,japo1237,37,140,Japanese,Japanese,Japanese
-hebr1245,6.68,11,yes,AGR,7,Hebrew (Modern),Eurasia,35.018,31.106,15.39,afro1255,8.67,8.08,Afro-Asiatic,Jews..Ashkenazi,Jews..Ashkenazi
-jola1263,2.11,7,yes,AGR,999,Jola-Fonyi,Africa,-15.735,12.758,12.74,atla1278,8.75,8.25,Niger-Congo,,Malinke
-kaba1278,3.5,6,no,AGR,999,Kabardian,Eurasia,43.392,43.508,13.15,abkh1242,43.06,41.16,Abkhaz-Adyge,Adygei,Adygei
-kaya1330,0.28,6,no,HG,999,Kayapó,South America,308.326,-7.774,8.87,nucl1710,-11,310,Nuclear-Macro-Je,,Karitiana
-dhan1264,1.8,5,no,AGR,4,Dhanki,Eurasia,73.742,20.772,11.84,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
-chig1238,3.9,6,yes,AGR,999,Chiga,Africa,29.912,-1.044,14.27,atla1278,8.75,8.25,Niger-Congo,,Luhya
-kiku1240,0.28,7,no,AGR,999,Kikuyu,Africa,36.719,-0.29,15.71,atla1278,8.75,8.25,Niger-Congo,Bantu.speakers,Bantu.speakers
-kili1267,1.61,5,no,AGR,4,Kilivila,Papunesia,151.072,-8.726,9.9,aust1307,23.76,120.98,Austronesian,Papuan.New.Guinean,Papuan.New.Guinean
-komi1268,2.85,5,yes,AGR,999,Komi-Zyrian,Eurasia,54.946,64.053,11.96,ural1272,68,30,Uralic,Komi.Zyrian,Komi.Zyrian
-komi1269,7.1,5,yes,AGR,999,Komi-Permyak,Eurasia,54.796,59.66,11.05,ural1272,68,30,Uralic,Komi.Zyrian,Komi.Zyrian
-konk1267,5,10,yes,AGR,7,Konkani (Maharashtrian),Eurasia,73.917,19.241,14.7,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
-kore1280,3.21,11,yes,AGR,7,Korean,Eurasia,128,37.5,17.55,kore1284,37.5,128,Koreanic,Koreans,Koreans
-krah1246,1.9,2,no,AGR,1,Krahô,South America,312.423,-8.012,7.55,nucl1710,-11,310,Nuclear-Macro-Je,,Karitiana
-kurd1259,3.2,10,yes,AGR,6,Kurdish,Eurasia,45.81,35.65,24.25,indo1319,34,71.55,Indo-European,,Iranian
-laca1243,3.6,5,no,AGR,4,Lacandon,North America,268.577,17.021,6.33,maya1287,15.42,268.17,Mayan,Mexicans,Mexicans
-latv1249,9.32,11,yes,AGR,7,Latvian,Eurasia,24.309,56.826,14.2,indo1319,34,71.55,Indo-European,,Russians
-ling1263,1.7,3,no,AGR,2,Lingala (Kinshasa),Africa,19.783,1.403,14.53,atla1278,8.75,8.25,Niger-Congo,,Zaramo
-gand1255,1.86,3,no,AGR,2,Ganda,Africa,32.152,0.669,15.23,atla1278,8.75,8.25,Niger-Congo,Bantu.speakers,Bantu.speakers
-luok1236,0.61,10,no,AGR,4,Dholuo,Africa,34.49,-0.933,15.21,nilo1247,4.75,29.75,Nilo-Saharan,,Sandawe
-liby1240,1.11,11,yes,AGR,7,Arabic (Libyan),Africa,15.001,22.003,15.2,afro1255,8.67,8.08,Afro-Asiatic,Libya,Libya
-maha1287,1.18,5,no,AGR,999,Mahasu Pahari,Eurasia,77.532,31.009,13.82,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
-manx1243,5.91,10,yes,AGR,7,Manx,Eurasia,-4.454,54.26,0,indo1319,34,71.55,Indo-European,Irish,Irish
-maor1246,2.28,9,yes,HG,999,Maori,Papunesia,176.541,-38.288,11,aust1307,23.76,120.98,Austronesian,,Micronesians
-mara1378,2.3,9,yes,AGR,999,Marathi,Eurasia,76.667,17.934,18.09,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
-mari1278,3.27,8,yes,AGR,6,Mari,Eurasia,48.41,55.83,18.61,ural1272,68,30,Uralic,,Chuvash
-yuca1254,3.2,5,no,AGR,4,Maya (Yucatec),North America,271.043,18.776,13.51,maya1287,15.42,268.17,Mayan,Maya..Yucatan,Maya..Yucatan
-meso1252,3.27,11,yes,AGR,7,Arabic (Gilit Mesopotamian),Eurasia,43.11,33.818,16.26,afro1255,8.67,8.08,Afro-Asiatic,Iraqi,Iraqi
-stan1288,3.22,11,yes,AGR,7,Spanish,Eurasia,-1.118,40.441,17.21,indo1319,34,71.55,Indo-European,Mexicans,Mexicans
-minn1241,5.64,11,yes,AGR,7,Min Nan Chinese,Eurasia,118.17,24.5,17.06,sino1245,26.1,94.75,Sino-Tibetan,Han,Han
-moks1248,8.61,7,yes,AGR,999,Moksha,Eurasia,42.673,54.186,12.98,ural1272,68,30,Uralic,,Chuvash
-moro1292,1.63,11,yes,AGR,7,Arabic (Moroccan),Africa,-7.5,32.5,16.75,afro1255,8.67,8.08,Afro-Asiatic,Moroccans,Moroccans
-muyu1244,3.06,5,no,HG,4,Muyuw,Papunesia,152.731,-9.195,8.7,aust1307,23.76,120.98,Austronesian,Papuan.New.Guinean,Papuan.New.Guinean
-cent2132,2.79,5,no,AGR,4,Nahuatl (Central),North America,261.7,19.125,10.6,utoa1244,27.5,249.75,Uto-Aztecan,Nahuas,Nahuas
-nava1243,1.81,5,no,AGR,4,Navajo,North America,249.918,36.211,12.05,atha1245,53.75,236.5,Na-Dene,Amerindians,Amerindians
-nene1249,4.74,4,no,HG,3b,Nenets (Tundra),Eurasia,71.023,66.178,9.99,ural1272,68,30,Uralic,,Khanty
-nepa1254,3.17,11,yes,AGR,7,Nepali,Eurasia,85,28,23.73,indo1319,34,71.55,Indo-European,Tibetan,Tibetan
-newa1246,4.2,8,yes,AGR,7,Newar,Eurasia,84.958,27.261,13.62,sino1245,26.1,94.75,Sino-Tibetan,,Tibetan
-nhen1239,0,4,no,AGR,3a,Nhengatu,South America,293.035,1.045,9.24,tupi1275,-8,298,Tupian,Colombian,Colombian
-carn1240,2.31,6,no,AGR,999,Nicobarese (Car),Eurasia,92.767,9.189,10.52,aust1305,14.83,100.5,Austro-Asiatic,Indian..Mixed,Indian..Mixed
-nyan1307,5.3,6,yes,AGR,5,Nyankole,Africa,30.548,-0.464,14.66,atla1278,8.75,8.25,Niger-Congo,,Luhya
-norw1258,8.09,11,yes,AGR,7,Norwegian,Eurasia,10.71,59.92,15.35,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
-nyun1247,0.97,7,yes,HG,999,Nyunga,Australia,118.151,-33.12,5.48,pama1250,-12.17,142.49,Pama-Nyungan,Australian.Aborigines,Australian.Aborigines
-khan1278,2.09,5,no,AGR,4,Ogoni,Africa,7.444,4.709,12.21,atla1278,8.75,8.25,Niger-Congo,Bantu.speakers,Bantu.speakers
-pott1240,2.42,3,no,AGR,2,Ollari,Eurasia,82.759,18.597,9.62,drav1251,21.53,79.92,Dravidian,Indian..Mixed,Indian..Mixed
-rian1262,1.54,6,yes,AGR,5,Riang,Eurasia,92.032,23.68,11.25,sino1245,26.1,94.75,Sino-Tibetan,,Dai
-poli1260,10.68,10,yes,AGR,7,Polish,Eurasia,18.626,51.844,17.42,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
-west2386,4.82,11,yes,AGR,7,Punjab,Eurasia,75.347,30.095,17.92,indo1319,34,71.55,Indo-European,Punjabi,Punjabi
-rund1242,2.6,3,no,AGR,2,Rundi,Africa,31.319,-1.442,16.12,atla1278,8.75,8.25,Niger-Congo,Masai,Masai
-russ1263,7.97,12,yes,AGR,7,Russian,Eurasia,50,59,18.74,indo1319,34,71.55,Indo-European,Russians,Russians
-lule1254,6.3,9,yes,AGR,7,Saami,Eurasia,17.806,67.276,7.31,ural1272,68,30,Uralic,,Khanty
-samo1305,0,6,yes,AGR,5,Samoa,Papunesia,188.17,-13.92,12.2,aust1307,23.76,120.98,Austronesian,Samoans,Samoans
-sere1260,1.57,7,yes,AGR,999,Sereer,Africa,-16.392,13.894,13.94,atla1278,8.75,8.25,Niger-Congo,Bantu.speakers,Bantu.speakers
-shua1257,7.1,9,yes,AGR,999,Shuar,South America,281.811,-3.451,10.46,jiva1245,-3.45,281.81,Chicham,Peruvian,Peruvian
-sici1248,5.03,6,yes,AGR,5,Sicilian,Eurasia,14.041,37.574,15.36,indo1319,34,71.55,Indo-European,Sardinian,Sardinian
-sind1272,3.1,6,no,AGR,999,Sindhi,Eurasia,69,26,16.73,indo1319,34,71.55,Indo-European,Sindhi,Sindhi
-sout2807,2.45,7,no,AGR,999,Sotho (Southern),Africa,27.895,-30.445,14.39,atla1278,8.75,8.25,Niger-Congo,,San
-sout3123,6.45,10,yes,AGR,7,Arabic (South Levantine),Eurasia,38.084,31.56,15.07,afro1255,8.67,8.08,Afro-Asiatic,Palestinian,Palestinian
-swis1247,6.97,11,yes,AGR,7,Swiss German,Eurasia,8.464,47.052,15.35,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
-tata1255,6.09,10,yes,AGR,7,Tatar,Eurasia,50,55,15.27,turk1311,56,125,Altaic,,Chuvash
-telu1262,2.1,8,yes,HG,999,Telugu,Eurasia,78.702,16.453,18.12,drav1251,21.53,79.92,Dravidian,Telugu,Telugu
-thai1261,5.61,8,yes,AGR,999,Thai,Eurasia,100.671,14.192,16.82,taik1256,24,108,Tai-Kadai,Lao.Loum,Lao.Loum
-ticu1245,0,5,no,AGR,4,Ticuna,South America,290.128,-3.663,10.39,ticu1244,-3.66,290.13,Ticuna-Yuri,Ticuna,Ticuna
-tigr1270,2.86,5,no,AGR,4,Tigre,Africa,38.223,17.349,13.86,afro1255,8.67,8.08,Afro-Asiatic,,Somali
-tong1325,7.5,6,no,AGR,999,Tonga,Papunesia,184.75,-21.17,11.48,aust1307,23.76,120.98,Austronesian,Micronesians,Micronesians
-tswa1253,2,5,no,AGR,4,Tswana,Africa,24.759,-24.368,13.88,atla1278,8.75,8.25,Niger-Congo,Bantu.speakers,Bantu.speakers
-tuni1259,5.49,11,yes,AGR,7,Arabic (Tunisian),Africa,9.562,33.797,16.01,afro1255,8.67,8.08,Afro-Asiatic,Tunisian,Tunisian
-nucl1301,2.94,11,yes,AGR,7,Turkish,Eurasia,32.867,39.867,17.65,turk1311,56,125,Altaic,Turks,Turks
-tzel1254,0,5,no,AGR,4,Tzeltal,North America,267.721,16.638,12.83,maya1287,15.42,268.17,Mayan,Mexicans,Mexicans
-tzot1259,1.72,5,no,AGR,4,Tzotzil,South America,267.26,16.64,18.62,maya1287,15.42,268.17,Mayan,Mexicans,Mexicans
-ukra1253,6.52,12,yes,AGR,7,Ukrainian,Eurasia,24.396,48.176,17.28,indo1319,34,71.55,Indo-European,Russians,Russians
-urdu1245,5.41,11,yes,AGR,7,Urdu,Eurasia,67,25,16.12,indo1319,34,71.55,Indo-European,,Burusho
-vasa1239,10,5,no,AGR,4,Vasavi,Eurasia,73.865,21.362,14,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
-cent2150,2.3,6,no,AGR,999,Tunebo (Central),South America,287.903,6.887,7.82,chib1249,9.75,276.58,Chibchan,Colombian,Colombian
-vend1245,1.19,5,no,AGR,4,Venda,Africa,29.952,-22.188,13.8,atla1278,8.75,8.25,Niger-Congo,,San
-viet1252,7.56,10,no,AGR,999,Vietnamese,Eurasia,105.774,20.681,18,aust1305,14.83,100.5,Austro-Asiatic,Vietnamese,Vietnamese
-wall1257,7.6,8,yes,AGR,7,East Uvean,Papunesia,183.793,-13.29,9.17,aust1307,23.76,120.98,Austronesian,Micronesians,Micronesians
-pano1254,0,4,no,AGR,3a,Panoan Katukína,South America,288.438,-7.975,6.55,pano1259,-7.5,285,Panoan,,Karitiana
-wels1247,6.98,8,no,AGR,999,Welsh,Eurasia,-4,52,13.14,indo1319,34,71.55,Indo-European,Irish,Irish
-nucl1347,1.14,8,yes,AGR,6,Wolof,Africa,-15.383,15.253,15.18,atla1278,8.75,8.25,Niger-Congo,,Bantu.speakers
-xava1240,0,3,no,HG,2,Xavánte,South America,307.563,-14.302,9.17,nucl1710,-11,310,Nuclear-Macro-Je,,Karitiana
-xhos1239,4.51,10,no,AGR,999,Xhosa,Africa,28.077,-31.039,15.87,atla1278,8.75,8.25,Niger-Congo,,San
-yano1261,5.2,7,no,HG,999,Yanomamo,South America,295.122,1.68,9.66,yano1268,1.68,295.12,Yanomamic,,Karitiana
-yoru1245,3.33,6,yes,AGR,5,Yoruba,Africa,3.672,7.153,16.76,atla1278,8.75,8.25,Niger-Congo,Yoruba,Yoruba
-yucu1253,0,5,no,AGR,4,Yucuna,South America,288.997,-0.761,7.5,araw1281,1,290.83,Arawakan,Colombian,Colombian
-cent2127,0,6,no,HG,4,Yupik,North America,198.514,60.306,9.21,eski1264,63.69,189.52,Eskimo-Aleut,,Hezhe
-zulu1248,2.91,10,yes,AGR,7,Zulu,Africa,31.351,-25.331,16.12,atla1278,8.75,8.25,Niger-Congo,,San
+glottocode,daltonism,exists_blue,subsistence,L1,macroarea,longitude,latitude,log_popSize,glottocode_family,latitude_family,longitude_family,macro_family,genetic_incomplete,genetic_full
+abua1244,2.13,no,AGR,Abua,Africa,6.615,4.831,10.13,atla1278,8.75,8.25,Niger-Congo,,Edo
+acol1236,2.61,no,AGR,Acoli,Africa,32.515,3.577,13.97,nilo1247,4.75,29.75,Nilo-Saharan,,Luhya
+ainu1240,1.18,no,HG,Ainu (Hokkaido),Eurasia,142.462,43.634,2.3,ainu1252,43.63,142.46,Ainu,,Hezhe
+alba1267,7.4,yes,AGR,Albanian,Eurasia,20,41,22.84,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
+alge1239,6.56,yes,AGR,Arabic (Algerian),Africa,3.23,35.421,17.07,afro1255,8.67,8.08,Afro-Asiatic,Arabs,Arabs
+amha1245,3.2,yes,AGR,Amharic,Africa,39.543,11.708,16.89,afro1255,8.67,8.08,Afro-Asiatic,,Somali
+anga1288,0,no,AGR,Angami Naga,Eurasia,93.867,25.684,11.79,sino1245,26.1,94.75,Sino-Tibetan,Indian..Mixed,Indian..Mixed
+mesc1238,2.5,no,HG,Apache ,North America,254.434,33.129,7.31,atha1245,53.75,236.5,Na-Dene,Amerindians,Amerindians
+stan1318,5.35,yes,AGR,Arabic (Standard),Eurasia,43.853,27.963,19.14,afro1255,8.67,8.08,Afro-Asiatic,Arabs,Arabs
+nucl1235,5.43,yes,AGR,Armenian (Eastern),Eurasia,45,40,14.96,indo1319,34,71.55,Indo-European,,Turks
+assa1263,1.41,yes,AGR,Assamese,Eurasia,91.293,26.088,16.37,indo1319,34,71.55,Indo-European,Kachari,Kachari
+assy1241,6,yes,AGR,Neo-Aramaic (Assyrian),Eurasia,43,36.75,10.31,afro1255,8.67,8.08,Afro-Asiatic,,Iraqi
+awng1244,3.03,no,AGR,Agaw,Africa,36.692,10.982,13.1,afro1255,8.67,8.08,Afro-Asiatic,,Somali
+cent2142,5.66,yes,AGR,Aymara (Central),South America,291.5,-17,14.56,ayma1253,-17,291.5,Aymaran,Peruvian,Peruvian
+kara1465,4.2,yes,AGR,Karachay-Balkar,Eurasia,42.261,43.565,12.63,turk1311,56,125,Altaic,,Khanty
+basq1248,4.3,yes,AGR,Basque,Eurasia,-1.32,43.28,19.52,basq1248,43.28,-1.32,Basque,Basque,Basque
+bela1254,8.7,yes,AGR,Belarusian,Eurasia,25.604,53.231,15.72,indo1319,34,71.55,Indo-European,Russians,Russians
+krio1252,2.33,yes,AGR,Kriol,Australia,137.669,-18.135,8.34,indo1319,34,71.55,Indo-European,Afro.Caribbeans,Afro.Caribbeans
+bhil1251,0.7,no,AGR,Bhili,Eurasia,73.959,20.85,15.01,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
+biet1238,4.94,no,AGR,Biete,Eurasia,92.943,24.274,9.85,sino1245,26.1,94.75,Sino-Tibetan,Indian..Mixed,Indian..Mixed
+bulg1262,6.45,yes,AGR,Bulgarian,Eurasia,25.047,43.365,15.55,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
+yuec1235,4,yes,AGR,Cantonese,Eurasia,113,23,17.77,sino1245,26.1,94.75,Sino-Tibetan,Han,Han
+cham1312,3.25,no,AGR,Chamorros,Papunesia,144.745,13.438,11.04,aust1307,23.76,120.98,Austronesian,Micronesians,Micronesians
+mand1415,5.66,yes,AGR,Mandarin Chinese,Eurasia,116.228,40.021,20.55,sino1245,26.1,94.75,Sino-Tibetan,Han,Han
+chot1239,6.5,no,AGR,Chothe,Eurasia,94.241,24.372,8.19,sino1245,26.1,94.75,Sino-Tibetan,Indian..Mixed,Indian..Mixed
+chuv1255,5.16,yes,AGR,Chuvash,Eurasia,47.163,55.487,13.86,turk1311,56,125,Altaic,Chuvash,Chuvash
+czec1258,10.5,yes,AGR,Czech,Eurasia,15.104,49.873,16.04,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
+dani1285,6.36,yes,AGR,Danish,Eurasia,9.363,54.866,15.51,indo1319,34,71.55,Indo-European,Danes,Danes
+dubl1239,2.75,no,AGR,Dubli,Eurasia,73.218,21.516,12.44,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
+dutc1256,4.95,yes,AGR,Dutch,Eurasia,5,52,16.61,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
+stan1293,5.09,yes,AGR,English,Eurasia,-1,53,17.88,indo1319,34,71.55,Indo-European,British,British
+erzy1239,7.77,yes,AGR,Erzya,Eurasia,45.39,52.855,12.98,ural1272,68,30,Uralic,,Chuvash
+peno1244,7.04,no,AGR,Peñoles Mixtec,North America,262.99,17.067,8.61,otom1299,17.67,262.58,Oto-Manguean,Mexicans,Mexicans
+west2369,2.63,yes,AGR,Farsi (Western),Eurasia,55.159,28.659,17.62,indo1319,34,71.55,Indo-European,Iranian,Iranian
+fiji1243,0.4,no,AGR,Fijian,Papunesia,178.33,-18,12.71,aust1307,23.76,120.98,Austronesian,Micronesians,Micronesians
+taga1270,4.28,yes,AGR,Tagalog,Papunesia,121.747,14.06,16.88,aust1307,23.76,120.98,Austronesian,Micronesians,Micronesians
+finn1318,8.21,yes,AGR,Finnish,Eurasia,25.558,64.763,15.36,ural1272,68,30,Uralic,Finns,Finns
+stan1290,6.8,yes,AGR,French,Eurasia,2,48,17.8,indo1319,34,71.55,Indo-European,French,French
+pula1263,1.3,no,AGR,Pulaar,Africa,-13.448,13.869,14.82,atla1278,8.75,8.25,Niger-Congo,,Hausa
+scot1245,6.58,yes,AGR,Gaelic (Scottish),Eurasia,-5.244,56.757,10.98,indo1319,34,71.55,Indo-European,Orcadian,Orcadian
+gami1242,2.72,no,AGR,Gamit,Eurasia,73.684,21.07,12.56,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
+stan1295,6.37,yes,AGR,German,Eurasia,12.468,48.649,18.14,indo1319,34,71.55,Indo-European,Germans,Germans
+pare1266,1.33,no,AGR,Gorum-Parenga,Eurasia,83.972,19.075,0,aust1305,14.83,100.5,Austro-Asiatic,Thoti,Thoti
+mode1248,5.75,yes,AGR,Greek (Modern),Eurasia,24.87,42.322,16.19,indo1319,34,71.55,Indo-European,Greeks,Greeks
+guja1252,5.08,yes,AGR,Gujarati,Eurasia,71.096,22.687,17.64,indo1319,34,71.55,Indo-European,Gujarati,Gujarati
+gusi1247,0,no,AGR,Gusii,Africa,34.768,-0.789,14.61,atla1278,8.75,8.25,Niger-Congo,Bantu.speakers,Bantu.speakers
+hadz1240,1.42,no,HG,Hadza,Africa,35.05,-3.83,9.97,hadz1240,-3.83,35.05,Hadza,,Sandawe
+hakk1236,5.58,yes,AGR,Hakka Chinese,Eurasia,116,25,17.06,sino1245,26.1,94.75,Sino-Tibetan,Hakka,Hakka
+haus1257,1.76,no,AGR,Hausa,Africa,8.78,11.151,16.73,afro1255,8.67,8.08,Afro-Asiatic,Hausa,Hausa
+hind1269,3.72,yes,AGR,Hindi,Eurasia,77,25,19.37,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
+hung1274,3.82,yes,AGR,Hungarian,Eurasia,19.656,46.907,16.07,ural1272,68,30,Uralic,Hungarian,Hungarian
+kala1399,5.41,no,HG,Inuktitut (Kalaallisut),Eurasia,307.136,69.376,10.82,eski1264,63.69,189.52,Eskimo-Aleut,Greenlander,Greenlander
+nort2945,1.11,yes,HG,Eskimo (Inupiaq),North America,198.193,64.78,8.63,eski1264,63.69,189.52,Eskimo-Aleut,,Hezhe
+ital1282,3.82,yes,AGR,Italian,Eurasia,12.649,43.046,17.82,indo1319,34,71.55,Indo-European,Italians,Italians
+teso1249,4.87,yes,AGR,Teso,Africa,33.939,1.183,14.27,nilo1247,4.75,29.75,Nilo-Saharan,,Luhya
+nucl1643,4.3,yes,AGR,Japanese,Eurasia,135,35,18.61,japo1237,37,140,Japanese,Japanese,Japanese
+hebr1245,6.68,yes,AGR,Hebrew (Modern),Eurasia,35.018,31.106,15.39,afro1255,8.67,8.08,Afro-Asiatic,Jews..Ashkenazi,Jews..Ashkenazi
+jola1263,2.11,yes,AGR,Jola-Fonyi,Africa,-15.735,12.758,12.74,atla1278,8.75,8.25,Niger-Congo,,Malinke
+kaba1278,3.5,no,AGR,Kabardian,Eurasia,43.392,43.508,13.15,abkh1242,43.06,41.16,Abkhaz-Adyge,Adygei,Adygei
+kaya1330,0.28,no,HG,Kayapó,South America,308.326,-7.774,8.87,nucl1710,-11,310,Nuclear-Macro-Je,,Karitiana
+dhan1264,1.8,no,AGR,Dhanki,Eurasia,73.742,20.772,11.84,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
+chig1238,3.9,yes,AGR,Chiga,Africa,29.912,-1.044,14.27,atla1278,8.75,8.25,Niger-Congo,,Luhya
+kiku1240,0.28,no,AGR,Kikuyu,Africa,36.719,-0.29,15.71,atla1278,8.75,8.25,Niger-Congo,Bantu.speakers,Bantu.speakers
+kili1267,1.61,no,AGR,Kilivila,Papunesia,151.072,-8.726,9.9,aust1307,23.76,120.98,Austronesian,Papuan.New.Guinean,Papuan.New.Guinean
+komi1268,2.85,yes,AGR,Komi-Zyrian,Eurasia,54.946,64.053,11.96,ural1272,68,30,Uralic,Komi.Zyrian,Komi.Zyrian
+komi1269,7.1,yes,AGR,Komi-Permyak,Eurasia,54.796,59.66,11.05,ural1272,68,30,Uralic,Komi.Zyrian,Komi.Zyrian
+konk1267,5,yes,AGR,Konkani (Maharashtrian),Eurasia,73.917,19.241,14.7,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
+kore1280,3.21,yes,AGR,Korean,Eurasia,128,37.5,17.55,kore1284,37.5,128,Koreanic,Koreans,Koreans
+krah1246,1.9,no,AGR,Krahô,South America,312.423,-8.012,7.55,nucl1710,-11,310,Nuclear-Macro-Je,,Karitiana
+kurd1259,3.2,yes,AGR,Kurdish,Eurasia,45.81,35.65,24.25,indo1319,34,71.55,Indo-European,,Iranian
+laca1243,3.6,no,AGR,Lacandon,North America,268.577,17.021,6.33,maya1287,15.42,268.17,Mayan,Mexicans,Mexicans
+latv1249,9.32,yes,AGR,Latvian,Eurasia,24.309,56.826,14.2,indo1319,34,71.55,Indo-European,,Russians
+ling1263,1.7,no,AGR,Lingala (Kinshasa),Africa,19.783,1.403,14.53,atla1278,8.75,8.25,Niger-Congo,,Zaramo
+gand1255,1.86,no,AGR,Ganda,Africa,32.152,0.669,15.23,atla1278,8.75,8.25,Niger-Congo,Bantu.speakers,Bantu.speakers
+luok1236,0.61,no,AGR,Dholuo,Africa,34.49,-0.933,15.21,nilo1247,4.75,29.75,Nilo-Saharan,,Sandawe
+liby1240,1.11,yes,AGR,Arabic (Libyan),Africa,15.001,22.003,15.2,afro1255,8.67,8.08,Afro-Asiatic,Libya,Libya
+maha1287,1.18,no,AGR,Mahasu Pahari,Eurasia,77.532,31.009,13.82,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
+manx1243,5.91,yes,AGR,Manx,Eurasia,-4.454,54.26,0,indo1319,34,71.55,Indo-European,Irish,Irish
+maor1246,2.28,yes,HG,Maori,Papunesia,176.541,-38.288,11,aust1307,23.76,120.98,Austronesian,,Micronesians
+mara1378,2.3,yes,AGR,Marathi,Eurasia,76.667,17.934,18.09,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
+mari1278,3.27,yes,AGR,Mari,Eurasia,48.41,55.83,18.61,ural1272,68,30,Uralic,,Chuvash
+yuca1254,3.2,no,AGR,Maya (Yucatec),North America,271.043,18.776,13.51,maya1287,15.42,268.17,Mayan,Maya..Yucatan,Maya..Yucatan
+meso1252,3.27,yes,AGR,Arabic (Gilit Mesopotamian),Eurasia,43.11,33.818,16.26,afro1255,8.67,8.08,Afro-Asiatic,Iraqi,Iraqi
+stan1288,3.22,yes,AGR,Spanish,Eurasia,-1.118,40.441,17.21,indo1319,34,71.55,Indo-European,Mexicans,Mexicans
+minn1241,5.64,yes,AGR,Min Nan Chinese,Eurasia,118.17,24.5,17.06,sino1245,26.1,94.75,Sino-Tibetan,Han,Han
+moks1248,8.61,yes,AGR,Moksha,Eurasia,42.673,54.186,12.98,ural1272,68,30,Uralic,,Chuvash
+moro1292,1.63,yes,AGR,Arabic (Moroccan),Africa,-7.5,32.5,16.75,afro1255,8.67,8.08,Afro-Asiatic,Moroccans,Moroccans
+muyu1244,3.06,no,HG,Muyuw,Papunesia,152.731,-9.195,8.7,aust1307,23.76,120.98,Austronesian,Papuan.New.Guinean,Papuan.New.Guinean
+cent2132,2.79,no,AGR,Nahuatl (Central),North America,261.7,19.125,10.6,utoa1244,27.5,249.75,Uto-Aztecan,Nahuas,Nahuas
+nava1243,1.81,no,AGR,Navajo,North America,249.918,36.211,12.05,atha1245,53.75,236.5,Na-Dene,Amerindians,Amerindians
+nene1249,4.74,no,HG,Nenets (Tundra),Eurasia,71.023,66.178,9.99,ural1272,68,30,Uralic,,Khanty
+nepa1254,3.17,yes,AGR,Nepali,Eurasia,85,28,23.73,indo1319,34,71.55,Indo-European,Tibetan,Tibetan
+newa1246,4.2,yes,AGR,Newar,Eurasia,84.958,27.261,13.62,sino1245,26.1,94.75,Sino-Tibetan,,Tibetan
+nhen1239,0,no,AGR,Nhengatu,South America,293.035,1.045,9.24,tupi1275,-8,298,Tupian,Colombian,Colombian
+carn1240,2.31,no,AGR,Nicobarese (Car),Eurasia,92.767,9.189,10.52,aust1305,14.83,100.5,Austro-Asiatic,Indian..Mixed,Indian..Mixed
+nyan1307,5.3,yes,AGR,Nyankole,Africa,30.548,-0.464,14.66,atla1278,8.75,8.25,Niger-Congo,,Luhya
+norw1258,8.09,yes,AGR,Norwegian,Eurasia,10.71,59.92,15.35,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
+nyun1247,0.97,yes,HG,Nyunga,Australia,118.151,-33.12,5.48,pama1250,-12.17,142.49,Pama-Nyungan,Australian.Aborigines,Australian.Aborigines
+khan1278,2.09,no,AGR,Ogoni,Africa,7.444,4.709,12.21,atla1278,8.75,8.25,Niger-Congo,Bantu.speakers,Bantu.speakers
+pott1240,2.42,no,AGR,Ollari,Eurasia,82.759,18.597,9.62,drav1251,21.53,79.92,Dravidian,Indian..Mixed,Indian..Mixed
+rian1262,1.54,yes,AGR,Riang,Eurasia,92.032,23.68,11.25,sino1245,26.1,94.75,Sino-Tibetan,,Dai
+poli1260,10.68,yes,AGR,Polish,Eurasia,18.626,51.844,17.42,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
+west2386,4.82,yes,AGR,Punjab,Eurasia,75.347,30.095,17.92,indo1319,34,71.55,Indo-European,Punjabi,Punjabi
+rund1242,2.6,no,AGR,Rundi,Africa,31.319,-1.442,16.12,atla1278,8.75,8.25,Niger-Congo,Masai,Masai
+russ1263,7.97,yes,AGR,Russian,Eurasia,50,59,18.74,indo1319,34,71.55,Indo-European,Russians,Russians
+lule1254,6.3,yes,AGR,Saami,Eurasia,17.806,67.276,7.31,ural1272,68,30,Uralic,,Khanty
+samo1305,0,yes,AGR,Samoa,Papunesia,188.17,-13.92,12.2,aust1307,23.76,120.98,Austronesian,Samoans,Samoans
+sere1260,1.57,yes,AGR,Sereer,Africa,-16.392,13.894,13.94,atla1278,8.75,8.25,Niger-Congo,Bantu.speakers,Bantu.speakers
+shua1257,7.1,yes,AGR,Shuar,South America,281.811,-3.451,10.46,jiva1245,-3.45,281.81,Chicham,Peruvian,Peruvian
+sici1248,5.03,yes,AGR,Sicilian,Eurasia,14.041,37.574,15.36,indo1319,34,71.55,Indo-European,Sardinian,Sardinian
+sind1272,3.1,no,AGR,Sindhi,Eurasia,69,26,16.73,indo1319,34,71.55,Indo-European,Sindhi,Sindhi
+sout2807,2.45,no,AGR,Sotho (Southern),Africa,27.895,-30.445,14.39,atla1278,8.75,8.25,Niger-Congo,,San
+sout3123,6.45,yes,AGR,Arabic (South Levantine),Eurasia,38.084,31.56,15.07,afro1255,8.67,8.08,Afro-Asiatic,Palestinian,Palestinian
+swis1247,6.97,yes,AGR,Swiss German,Eurasia,8.464,47.052,15.35,indo1319,34,71.55,Indo-European,Europeans..Mixed,Europeans..Mixed
+tata1255,6.09,yes,AGR,Tatar,Eurasia,50,55,15.27,turk1311,56,125,Altaic,,Chuvash
+telu1262,2.1,yes,HG,Telugu,Eurasia,78.702,16.453,18.12,drav1251,21.53,79.92,Dravidian,Telugu,Telugu
+thai1261,5.61,yes,AGR,Thai,Eurasia,100.671,14.192,16.82,taik1256,24,108,Tai-Kadai,Lao.Loum,Lao.Loum
+ticu1245,0,no,AGR,Ticuna,South America,290.128,-3.663,10.39,ticu1244,-3.66,290.13,Ticuna-Yuri,Ticuna,Ticuna
+tigr1270,2.86,no,AGR,Tigre,Africa,38.223,17.349,13.86,afro1255,8.67,8.08,Afro-Asiatic,,Somali
+tong1325,7.5,no,AGR,Tonga,Papunesia,184.75,-21.17,11.48,aust1307,23.76,120.98,Austronesian,Micronesians,Micronesians
+tswa1253,2,no,AGR,Tswana,Africa,24.759,-24.368,13.88,atla1278,8.75,8.25,Niger-Congo,Bantu.speakers,Bantu.speakers
+tuni1259,5.49,yes,AGR,Arabic (Tunisian),Africa,9.562,33.797,16.01,afro1255,8.67,8.08,Afro-Asiatic,Tunisian,Tunisian
+nucl1301,2.94,yes,AGR,Turkish,Eurasia,32.867,39.867,17.65,turk1311,56,125,Altaic,Turks,Turks
+tzel1254,0,no,AGR,Tzeltal,North America,267.721,16.638,12.83,maya1287,15.42,268.17,Mayan,Mexicans,Mexicans
+tzot1259,1.72,no,AGR,Tzotzil,South America,267.26,16.64,18.62,maya1287,15.42,268.17,Mayan,Mexicans,Mexicans
+ukra1253,6.52,yes,AGR,Ukrainian,Eurasia,24.396,48.176,17.28,indo1319,34,71.55,Indo-European,Russians,Russians
+urdu1245,5.41,yes,AGR,Urdu,Eurasia,67,25,16.12,indo1319,34,71.55,Indo-European,,Burusho
+vasa1239,10,no,AGR,Vasavi,Eurasia,73.865,21.362,14,indo1319,34,71.55,Indo-European,Indian..Mixed,Indian..Mixed
+cent2150,2.3,no,AGR,Tunebo (Central),South America,287.903,6.887,7.82,chib1249,9.75,276.58,Chibchan,Colombian,Colombian
+vend1245,1.19,no,AGR,Venda,Africa,29.952,-22.188,13.8,atla1278,8.75,8.25,Niger-Congo,,San
+viet1252,7.56,no,AGR,Vietnamese,Eurasia,105.774,20.681,18,aust1305,14.83,100.5,Austro-Asiatic,Vietnamese,Vietnamese
+wall1257,7.6,yes,AGR,East Uvean,Papunesia,183.793,-13.29,9.17,aust1307,23.76,120.98,Austronesian,Micronesians,Micronesians
+pano1254,0,no,AGR,Panoan Katukína,South America,288.438,-7.975,6.55,pano1259,-7.5,285,Panoan,,Karitiana
+wels1247,6.98,no,AGR,Welsh,Eurasia,-4,52,13.14,indo1319,34,71.55,Indo-European,Irish,Irish
+nucl1347,1.14,yes,AGR,Wolof,Africa,-15.383,15.253,15.18,atla1278,8.75,8.25,Niger-Congo,,Bantu.speakers
+xava1240,0,no,HG,Xavánte,South America,307.563,-14.302,9.17,nucl1710,-11,310,Nuclear-Macro-Je,,Karitiana
+xhos1239,4.51,no,AGR,Xhosa,Africa,28.077,-31.039,15.87,atla1278,8.75,8.25,Niger-Congo,,San
+yano1261,5.2,no,HG,Yanomamo,South America,295.122,1.68,9.66,yano1268,1.68,295.12,Yanomamic,,Karitiana
+yoru1245,3.33,yes,AGR,Yoruba,Africa,3.672,7.153,16.76,atla1278,8.75,8.25,Niger-Congo,Yoruba,Yoruba
+yucu1253,0,no,AGR,Yucuna,South America,288.997,-0.761,7.5,araw1281,1,290.83,Arawakan,Colombian,Colombian
+cent2127,0,no,HG,Yupik,North America,198.514,60.306,9.21,eski1264,63.69,189.52,Eskimo-Aleut,,Hezhe
+zulu1248,2.91,yes,AGR,Zulu,Africa,31.351,-25.331,16.12,atla1278,8.75,8.25,Niger-Congo,,San

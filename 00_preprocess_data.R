@@ -145,7 +145,7 @@ if( !file.exists("./input_files/data_humidity.tsv") )
     if( download.file("http://iridl.ldeo.columbia.edu/SOURCES/.NOAA/.NCEP-NCAR/.CDAS-1/.MONTHLY/.Diagnostic/.above_ground/.qa/data.nc", 
                       destfile="./input_files/noaa-humidity.nc") != 0 )
     {
-      stop("Cannot specific retrive humidity data from the NOAA (http://iridl.ldeo.columbia.edu/SOURCES/.NOAA/.NCEP-NCAR/.CDAS-1/.MONTHLY/.Diagnostic/.above_ground/.qa/datafiles.html)!\n");
+      stop("Cannot download specific retrive humidity data from the NOAA (http://iridl.ldeo.columbia.edu/SOURCES/.NOAA/.NCEP-NCAR/.CDAS-1/.MONTHLY/.Diagnostic/.above_ground/.qa/datafiles.html)!\n");
     }
   }
   
@@ -348,6 +348,11 @@ if( !file.exists("./input_files/data_dist2water.tsv") )
       NULL;
   }
   
+  # Remove temporary files:
+  unlink("./input_files/lakes-raster-reduced-3857", recursive=TRUE);
+  unlink("./input_files/river-raster-reduced-3857", recursive=TRUE);
+  unlink("./input_files/ocean-raster-reduced-3857", recursive=TRUE);
+  
   # Save the data:
   write.table(d_colors_water, file="./input_files/data_dist2water.tsv", quote=FALSE, sep="\t", row.names=FALSE);
 }
@@ -370,7 +375,8 @@ if( !file.exists("./input_files/data_dist2water.tsv") )
 # UV-B are the most dangerous portion of UV radiation that can reach ground level [...]"
 #
 # Unfortunately, as of July 2020, this data is not longer available online (seems to have been repackaged as per
-# https://disc.gsfc.nasa.gov/datacollection/TOMSEPL3mery_008.html), but we provide the originally processed data for reproductibility.
+# https://disc.gsfc.nasa.gov/datacollection/TOMSEPL3mery_008.html), but we provide the originally processed data for reproducibility
+# in the toms_nasa_uv folder.
 if( !file.exists("./input_files/data_UV_incidence.tsv") )
 {
   library(dplyr);
