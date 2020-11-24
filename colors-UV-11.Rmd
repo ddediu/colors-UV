@@ -3432,6 +3432,36 @@ m <- bmed_subs_psiz__blue; .plot_mediation_model(m$summary, m$mediation,
                                                 mediator=m$mediator, mediator_name=m$mediator_name);
 ```
 
+#### Climate &rarr; subsistence &rarr; population size
+
+```{r include=FALSE}
+file_name <- "./cached_results/bmed_clim_subs__psiz.RData";
+if( !all(file.exists(file_name)) )
+{
+  # Fit the mediation model:
+  bmed_clim_subs__psiz <- .fit_mediation_model(d=d_colors, 
+                                              outcome="log_popSize", outcome_name="Population size", 
+                                              treatment="clim_PC1_r", treatment_name="Climate PC1", 
+                                              mediator="subsistence", mediator_name="subsistence", 
+                                              family_mediator=bernoulli("logit"), family_outcome=gaussian(), ranefs="(1 | glottocode_family) + (1 | macroarea)",
+                                              cores=brms_ncores, iter=6000, warmup=2000, thin=2, control=list(adapt_delta=0.999, max_treedepth=10),
+                                              save_model=FALSE, show_results=TRUE);
+  # Save results:
+  save(bmed_clim_subs__psiz, file=file_name, compress="xz", compression_level=9);
+} else
+{
+  load(file_name);
+}
+```
+
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+m <- bmed_clim_subs__psiz; .plot_mediation_model(m$summary, m$mediation, 
+                                                outcome=m$outcome, outcome_name=m$outcome_name, 
+                                                treatment=m$treatment, treatment_name=m$treatment_name, 
+                                                mediator=m$mediator, mediator_name=m$mediator_name);
+```
+
+
 #### Extra: what's going on with dist2lakes?
 
 ```{r include=FALSE}
