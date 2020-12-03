@@ -3874,10 +3874,10 @@ if( !all(file.exists(file_name)) )
                                type="message")); # capture the messages printed by Stan
       
       # confusion matrices:
-      cm_brms_full   <- confusionMatrix(data_test$exists_blue, factor(ifelse(predict(brms_blue__full,   newdata=data_test, allow_new_levels=TRUE)[,"Estimate"] < 0.5, 
+      cm_brms_full   <- confusionMatrix(data_test$exists_blue, factor(ifelse(predict(brms_1,   newdata=data_test, allow_new_levels=TRUE)[,"Estimate"] < 0.5, 
                                                                             "no", "yes"), levels=c("no", "yes")), positive="yes");
       # predictors:
-      hdi_full   <- hdi(brms_blue__full, ci=0.95); rope_full   <- rope(brms_blue__full,   ci=0.95, verbose=FALSE);
+      hdi_full   <- hdi(brms_blue__full, ci=0.95); rope_full   <- rope(brms_1,   ci=0.95, verbose=FALSE);
 
       # return the results:
       success_full <- data.frame("replication"  =i, # replication
@@ -3888,8 +3888,8 @@ if( !all(file.exists(file_name)) )
                                  "recall"       =cm_brms_full$byClass["Recall"],
                                  row.names=NULL);
       preds_full <- data.frame("replication"=i, # replication,
-                               "predictor"  =rownames(fixef(brms_blue__full)), 
-                               "estimate"   =fixef(brms_blue__full)[,"Estimate"],
+                               "predictor"  =rownames(fixef(brms_1)), 
+                               "estimate"   =fixef(brms_1)[,"Estimate"],
                                as.data.frame(hdi_full)[,c("CI_low", "CI_high")],
                                as.data.frame(rope_full)[,c("ROPE_low", "ROPE_high", "ROPE_Percentage")],
                                row.names=NULL);
