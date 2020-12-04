@@ -1618,6 +1618,61 @@ ggplot() + theme_bw() +
 ```
 
 
+#### Including information on blue - paper format
+
+```{r map word for blue 2 , fig.cap=capFig("Map of specific terms for blue.")}
+# plot exists_blue on map
+ggplot() + theme_bw(base_size = 18) + 
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=exists_blue, size=daltonism), alpha=0.7, color="red") +
+  theme(legend.position = c(0.755, 0.60), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 11), 
+      legend.text = element_text(size = 11)) +
+  labs(fill = 'Term for "blue"?', size="Daltonism (%)") +
+  scale_fill_viridis_d() + 
+  scale_size_continuous(range=c(1.5,6.5)) +
+  NULL
+
+```
+
+
+```{r map word for blue 2 bis , fig.cap=capFig("Map of specific terms for blue."), fig.width=11, fig.height=12}
+
+library("gridExtra")
+
+
+# plot exists_blue on map
+pblue <- ggplot() + theme_bw(base_size = 18) + 
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=exists_blue), color="black", size=2.5, alpha=0.8) +
+  theme(legend.position = c(0.75, 0.55), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 13), 
+      legend.text = element_text(size = 13)) +
+  labs(fill = 'Term for "blue"?') +
+  scale_fill_viridis_d() + 
+  NULL
+
+
+# plot exists_blue on map
+pdalt <- ggplot() + theme_bw(base_size = 18) + 
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=daltonism), color="black", size=2.5, alpha=0.8) +
+  theme(legend.position = c(0.79, 0.55), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 13), 
+      legend.text = element_text(size = 13)) +
+  labs(fill = 'Daltonism (%)') +
+  scale_fill_viridis_c() + 
+  NULL
+
+grid.arrange(pblue, pdalt, 
+             ncol = 1, nrow = 2)
+
+```
+
+
 ## Language family
 
 For each language, we obtained its family affiliation from the [Glottolog](https://glottolog.org/) [@hammarstrom_glottolog_2018]; there are `r length(unique(d_colors$glottocode_family))` unique language families, most languages belonging to the Indo-European (indo1319), Atlantic-Congo (atla1278) and Afro-Asiatic (afro1255). 
