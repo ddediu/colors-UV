@@ -57,6 +57,7 @@ library(grid); # assemble multiple plots
 # Spatial stats and maps:
 library(maptools); # as.im.RasterLayer()
 library(spatstat); # ppp()
+library(scanstatistics); # dist_to_knn()
 library(ape); # Moran.I()
 library(spdep); # tri2nb()
 library(deldir); # deldir()
@@ -1613,6 +1614,61 @@ ggplot() + theme_bw() +
   labs(fill = "% red/green abn. perc.") +
   scale_fill_gradient(low = "lightskyblue1", high = "navyblue") + 
   NULL;
+
+```
+
+
+#### Including information on blue - paper format
+
+```{r map word for blue 2 , fig.cap=capFig("Map of specific terms for blue.")}
+# plot exists_blue on map
+ggplot() + theme_bw(base_size = 18) + 
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=exists_blue, size=daltonism), alpha=0.7, color="red") +
+  theme(legend.position = c(0.755, 0.60), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 11), 
+      legend.text = element_text(size = 11)) +
+  labs(fill = 'Term for "blue"?', size="Daltonism (%)") +
+  scale_fill_viridis_d() + 
+  scale_size_continuous(range=c(1.5,6.5)) +
+  NULL
+
+```
+
+
+```{r map word for blue 2 bis , fig.cap=capFig("Map of specific terms for blue."), fig.width=11, fig.height=12}
+
+library("gridExtra")
+
+
+# plot exists_blue on map
+pblue <- ggplot() + theme_bw(base_size = 18) + 
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=exists_blue), color="black", size=2.5, alpha=0.8) +
+  theme(legend.position = c(0.75, 0.55), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 13), 
+      legend.text = element_text(size = 13)) +
+  labs(fill = 'Term for "blue"?') +
+  scale_fill_viridis_d() + 
+  NULL
+
+
+# plot exists_blue on map
+pdalt <- ggplot() + theme_bw(base_size = 18) + 
+  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
+  geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=daltonism), color="black", size=2.5, alpha=0.8) +
+  theme(legend.position = c(0.79, 0.55), 
+      legend.justification = c(1, 1), 
+      legend.title = element_text(size = 13), 
+      legend.text = element_text(size = 13)) +
+  labs(fill = 'Daltonism (%)') +
+  scale_fill_viridis_c() + 
+  NULL
+
+grid.arrange(pblue, pdalt, 
+             ncol = 1, nrow = 2)
 
 ```
 
@@ -3758,7 +3814,125 @@ Thus, this path analysis model, despite its caveats (no modeling of measurement 
 
 [^interpret_sem]: For details about interpreting the results of a path analysis or SEM model, please see [here](https://www.statisticssolutions.com/factor-analysis-sem-path-analysis/), [here](http://davidakenny.net/cm/fit.htm), [here](https://methodenlehre.github.io/SGSCLM-R-course/cfa-and-sem-with-lavaan.html) or [here](https://ninamclean.weebly.com/statistics-and-other-bits-and-pieces/interpreting-results-from-path-analysis), but the main ideas are that the *&chi;*^2^ test should **not** be significant, that the various *fit indices* (such as the Comparative Fit Index (CFI), the Tucker-Lewis Index (TLI), and the Non-normed Fit Index (NNFI)) should be as close to 1.0 as possible (ok if ≥ 0.90), and that the Root Mean Square Error of Approximation (RMSEA) should be as small as possible (≤ 0.05) with a narrow 90% confidence interval (ideally with the lower limit very close to 0.0 and the upper limit ≤ 0.08).
 
+<!-- ### Path analysis - paper format -->
 
+<!-- #### Left-right -->
+
+<!-- ```{r} -->
+
+<!-- # find p-values -->
+<!-- standardizedsolution(sem_blue$model_sure) -->
+
+<!-- DiagrammeR::grViz(paste0(' -->
+<!--   digraph full_blue_a { -->
+
+<!--   # the graph: -->
+<!--   graph [overlap = true, nodesep=0.5] -->
+<!--   rankdir="LR"; -->
+
+<!--   # the nodes: -->
+<!--   node [shape = box, style = "filled", fillcolor = "lightyellow", fontsize=20]; -->
+<!--   blue [label = "Blue", tooltip = "Blue", fillcolor="deepskyblue"];  -->
+<!--   UVB  [label = "UV-B", tooltip = "UV-B", fillcolor="seagreen1"];  -->
+<!--   lat  [label = "Latitude", tooltip = "Latitude"];  -->
+<!--   clim [label = "Climate PC1", tooltip = "Climate PC1"];  -->
+<!--   subs [label = "Subsistence", tooltip = "Subsistence"];  -->
+<!--   psiz [label = "Population size", tooltip = "Population size"];  -->
+<!--   d2l  [label = "Distance to lakes", tooltip = "Distance to lakes"];  -->
+
+<!--   # the edges: -->
+<!--   edge [style = "solid", color = "black", fontsize=15]; -->
+
+<!--   lat  -> UVB  [label="-0.96 (0.000)", color="blue", fontcolor="blue"] -->
+<!--   lat  -> d2l  [label="-0.40 (0.000)", color="blue", fontcolor="blue"] -->
+<!--   lat  -> psiz  [label="-0.45 (0.001)", color="blue", fontcolor="blue"] -->
+<!--   lat  -> subs  [label="-0.19 (0.092)", color="gray50", fontcolor="gray50", style="dashed"] -->
+<!--   lat  -> clim  [label="0.86 (0.000)", color="red", fontcolor="red"] -->
+<!--   lat  -> blue  [label="-0.19 (0.522)", color="gray50", fontcolor="gray50", style="dashed"] -->
+
+<!--   subs -> d2l [dir=both, label="-0.24 (0.036)", color="blue", fontcolor="blue"] -->
+<!--   subs -> UVB [dir=both, label="-0.28 (0.012)", color="blue", fontcolor="blue"] -->
+<!--   subs -> psiz [dir=both, label="0.55 (0.000)", color="red", fontcolor="red"] -->
+<!--   subs -> clim [dir=both, label="0.02 (0.899)", color="gray50", fontcolor="gray50", style="dashed"] -->
+<!--   subs -> blue [label="0.20 (0.083)", color="gray50", fontcolor="gray50", style="dashed"] -->
+
+<!--   clim -> psiz [label="0.6 (0.000)", color="red", fontcolor="red"] -->
+<!--   clim -> UVB [dir=both, label="-0.23 (0.009)", color="blue", fontcolor="blue"] -->
+<!--   clim -> blue [label="-0.01 (0.972)", color="gray50", fontcolor="gray50", style="dashed"] -->
+
+<!--   psiz -> d2l [dir=both, label="-0.28 (0.000)", color="blue", fontcolor="blue"] -->
+<!--   psiz -> UVB [dir=both, label="-0.17 (0.015)", color="blue", fontcolor="blue"] -->
+<!--   psiz -> blue [label="0.31 (0.001)", color="red", fontcolor="red"] -->
+
+<!--   d2l -> UVB [dir=both, label="0.15 (0.055)", color="gray50", fontcolor="gray50", style="dashed"] -->
+<!--   d2l -> blue [label="-0.2 (0.013)", color="blue", fontcolor="blue"] -->
+
+<!--   UVB -> blue [label="-0.65 (0.032)", color="blue", fontcolor="blue"] -->
+
+<!-- } -->
+<!-- ')) -->
+
+
+<!-- ``` -->
+
+
+<!-- #### Top-bottom  -->
+
+<!-- ```{r} -->
+
+<!-- summary(sem_blue$model_sure, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE); -->
+
+<!-- standardizedsolution(sem_blue$model_sure) -->
+
+<!-- DiagrammeR::grViz(paste0(' -->
+<!--   digraph full_blue_a { -->
+
+<!--   # the graph: -->
+<!--   graph [overlap = true, nodesep=0.5] -->
+<!--   rankdir="TB"; -->
+
+<!--   # the nodes: -->
+<!--   node [shape = box, style = "filled", fillcolor = "lightyellow"]; -->
+<!--   blue [label = "Blue", tooltip = "Blue", fillcolor="deepskyblue"];  -->
+<!--   UVB  [label = "UV-B", tooltip = "UV-B", fillcolor="seagreen1"];  -->
+<!--   lat  [label = "Latitude", tooltip = "Latitude"];  -->
+<!--   clim [label = "Climate PC1", tooltip = "Climate PC1"];  -->
+<!--   subs [label = "Subsistence", tooltip = "Subsistence"];  -->
+<!--   psiz [label = "Population size", tooltip = "Population size"];  -->
+<!--   d2l  [label = "Distance to lakes", tooltip = "Distance to lakes"];  -->
+
+<!--   # the edges: -->
+<!--   edge [style = "solid", color = "black"]; -->
+
+<!--   lat  -> UVB  [label="-0.96 (0.000)", color="blue", fontcolor="blue"] -->
+<!--   lat  -> d2l  [label="-0.40 (0.000)", color="blue", fontcolor="blue"] -->
+<!--   lat  -> psiz  [label="-0.45 (0.001)", color="blue", fontcolor="blue"] -->
+<!--   lat  -> subs  [label="-0.19 (0.092)", color="gray50", fontcolor="gray50", style="dashed"] -->
+<!--   lat  -> clim  [label="0.86 (0.000)", color="red", fontcolor="red"] -->
+<!--   lat  -> blue  [label="-0.19 (0.522)", color="gray50", fontcolor="gray50", style="dashed"] -->
+
+<!--   subs -> d2l [dir=both, label="-0.24 (0.036)", color="blue", fontcolor="blue"] -->
+<!--   subs -> UVB [dir=both, label="-0.28 (0.012)", color="blue", fontcolor="blue"] -->
+<!--   subs -> psiz [dir=both, label="0.55 (0.000)", color="red", fontcolor="red"] -->
+<!--   subs -> clim [dir=both, label="0.02 (0.90)", color="gray50", fontcolor="gray50", style="dashed"] -->
+<!--   subs -> blue [label="0.20 (0.083)", color="gray50", fontcolor="gray50", style="dashed"] -->
+
+<!--   clim -> psiz [label="0.60 (0.000)", color="red", fontcolor="red"] -->
+<!--   clim -> UVB [dir=both, label="-0.23 (0.009)", color="blue", fontcolor="blue"] -->
+<!--   clim -> blue [label="-0.01 (0.97)", color="gray50", fontcolor="gray50", style="dashed"] -->
+
+<!--   psiz -> d2l [dir=both, label="-0.28 (0.000)", color="blue", fontcolor="blue"] -->
+<!--   psiz -> UVB [dir=both, label="-0.17 (0.015)", color="blue", fontcolor="blue"] -->
+<!--   psiz -> blue [label="0.31 (0.001)", color="red", fontcolor="red"] -->
+
+<!--   d2l -> UVB [dir=both, label="0.15 (0.055)", color="gray50", fontcolor="gray50", style="dashed"] -->
+<!--   d2l -> blue [label="-0.2 (0.013)", color="blue", fontcolor="blue"] -->
+
+<!--   UVB -> blue [label="-0.65 (0.032)", color="blue", fontcolor="blue"] -->
+
+<!-- } -->
+<!-- ')) -->
+<!-- ``` -->
 
 ### Predicting "blue"
 
@@ -3876,7 +4050,7 @@ if( !all(file.exists(file_name)) )
       cm_brms_full   <- confusionMatrix(data_test$exists_blue, factor(ifelse(predict(brms_1,   newdata=data_test, allow_new_levels=TRUE)[,"Estimate"] < 0.5, 
                                                                             "no", "yes"), levels=c("no", "yes")), positive="yes");
       # predictors:
-      hdi_full   <- hdi(brms_blue__full, ci=0.95); rope_full   <- rope(brms_1,   ci=0.95, verbose=FALSE);
+      hdi_full   <- hdi(brms_1, ci=0.95); rope_full   <- rope(brms_1,   ci=0.95, verbose=FALSE);
 
       # return the results:
       success_full <- data.frame("replication"  =i, # replication
@@ -3910,6 +4084,9 @@ if( !all(file.exists(file_name)) )
 {
   load(file_name);
 } 
+
+#load("/media/mathilde/Elements/DDL_computer/Documents/Colors/colors-UV-master/cached_results/brms_blue.RData");
+
 ```
 
 
@@ -4508,6 +4685,9 @@ It can be seen that:
 a) *blue* is relatively well predicted;
 b) here too, *population size* is the most important predictor, but not exceedingly better than the next ones;
 c) the next best predictors are *humidity*,  *distance to oceans for the families*, *climate PC1*, *PC2* and *PC3*, *distance to lakes* and *UV-B incidence*.
+
+
+
 
 #### Interpretation
 
@@ -5253,6 +5433,70 @@ The full model outputs are in [Appendix III. Path analysis for "daltonism"]), bu
     + in the absence of *subsistence*, by *blue* (+) and by *UV-B* (-), 
     + but, when *subsistence* is added, by *subsistence* (+) and *UV-B* (-).
 
+<!-- ### Path analysis - paper format -->
+
+<!-- #### Without subsistence (strictly the hypothesis) -->
+
+<!-- ```{r} -->
+
+<!-- standardizedsolution(sem_daltonism$model_essential) -->
+
+<!-- DiagrammeR::grViz(paste0(' -->
+<!--   digraph hypothesis_2_pa { -->
+
+<!--   # the graph: -->
+<!--   graph [overlap = true] -->
+<!--   rankdir="LR"; -->
+
+<!--   # the nodes: -->
+<!--   node [shape = box, style = "filled", fillcolor = "lightyellow"]; -->
+<!--   dalt [label = "daltonism", tootlip = "daltonism"]; -->
+<!--   UVB  [label = "UV-B", tooltip = "UV-B"];  -->
+<!--   blue [label = "blue", tooltip = "blue"];  -->
+<!--   lat  [label = "latitude", tooltip = "latitude"];  -->
+
+<!--   # the edges: -->
+<!--   edge [style = "solid", color = "black"]; -->
+<!--   UVB  -> dalt [label="-0.31 (0.000)", color="blue", fontcolor="blue"]; -->
+<!--   UVB  -> blue [label="-0.55 (0.000)", color="blue", fontcolor="blue"]; -->
+<!--   lat  -> UVB  [label="-0.95 (0.000)", color="blue", fontcolor="blue"]; -->
+<!--   blue -> dalt [label="0.4 (0.000)", color="red", fontcolor="red"]; -->
+<!-- } -->
+<!-- ')) -->
+
+<!-- standardizedsolution(sem_daltonism$model_essential_subs) -->
+
+<!-- DiagrammeR::grViz(paste0(' -->
+<!--   digraph hypothesis_2_pa { -->
+
+<!--   # the graph: -->
+<!--   graph [overlap = true] -->
+<!--   rankdir="LR"; -->
+
+<!--   # the nodes: -->
+<!--   node [shape = box, style = "filled", fillcolor = "lightyellow"]; -->
+<!--   dalt [label = "daltonism", tootlip = "daltonism"]; -->
+<!--   UVB  [label = "UV-B", tooltip = "UV-B"];  -->
+<!--   blue [label = "blue", tooltip = "blue"];  -->
+<!--   lat  [label = "latitude", tooltip = "latitude"];  -->
+<!--   subs  [label = "subsistence", tooltip = "subsistence"];  -->
+
+<!--   # the edges: -->
+<!--   edge [style = "solid", color = "black"]; -->
+<!--   UVB  -> dalt [label="-0.53 (0.000)", color="blue", fontcolor="blue"]; -->
+<!--   UVB  -> blue [label="-0.56 (0.000)", color="blue", fontcolor="blue"]; -->
+<!--   lat  -> UVB  [label="-0.96 (0.000)", color="blue", fontcolor="blue"]; -->
+<!--   blue -> dalt [label="0.11 (0.324)", color="gray", fontcolor="gray50", style="dashed"]; -->
+<!--   lat  -> subs  [label="-0.18 (0.111)", color="gray", fontcolor="gray50", style="dashed"]; -->
+<!--   subs  -> blue  [label="0.41 (0.000)", color="red", fontcolor="red"]; -->
+<!--   subs  -> dalt  [label="0.38 (0.000)", color="red", fontcolor="red"]; -->
+<!--   subs  -> UVB  [dir=both, label="-0.26 (0.016)", color="blue", fontcolor="blue"]; -->
+<!-- } -->
+<!-- ')) -->
+
+<!-- ``` -->
+
+
 
 ### Predicting daltonism
 
@@ -5879,6 +6123,311 @@ ggplot(svm_daltonism$training_testing$performance$pred_importance,
 ```
 
 
+#### Overall figure for predicting blue and daltonism
+
+
+```{r computation predic blue, include=FALSE}
+
+number_of_predictors <- 7
+
+### --- BRMS
+brms_res <- brms_blue$training_testing$both$predictors
+# select best predictors according to previous finding (Bayes factor/WAIC/LOO/Kfold)
+brms_res <- brms_res[brms_res$predictor == "UVB_r" | brms_res$predictor == "log_popSize" | brms_res$predictor == "dist2lakes_r" | brms_res$predictor == "gen_D7_r",]
+# change name variables
+brms_res%>%mutate(predictor=recode(predictor, log_popSize="popSize", UVB_r="UV-B", dist2lakes_r="dist2lak", gen_D7_r="genD7")) -> brms_res
+
+### --- SVM
+svm_res <- svm_blue$training_testing$full$pred_importance
+svm_res_agg <- aggregate(x = svm_res$importance, by= list(svm_res$predictor), FUN=median)
+svm_res_agg <- svm_res_agg[order(-svm_res_agg$x),] 
+svm_res_final <- svm_res[svm_res$predictor %in% c(as.character(svm_res_agg[1:number_of_predictors,1])),]
+# change name variable
+svm_res_final%>%mutate(predictor=recode(predictor, log_popSize="popSize", UVB_r="UV-B", hum_median="humid_m", latitude_r="lat", dist2lakes_r="dist2lak", gen_D7_r="genD7", clim_PC1_r="climPC1", dist2ocean_family_r="dist2oc_f", clim_PC2_family_r="climPC2_f", clim_PC1_family_r="climPC1_f")) -> svm_res_final
+
+
+### --- RFOREST
+rfor_res <- rforest_blue$full$pred_importance
+
+## Accuracy
+# find the number_of_predictors best variables
+rfor_acc_agg <- aggregate(x = rfor_res$MeanDecreaseAccuracy, by= list(rfor_res$predictor), FUN=median)
+rfor_acc_agg <- rfor_acc_agg[order(-rfor_acc_agg$x),] 
+rfor_acc <- rfor_res[rfor_res$predictor %in% c(as.character(rfor_acc_agg[1:number_of_predictors,1])),]
+# change name variable
+rfor_acc%>%mutate(predictor=recode(predictor, log_popSize="popSize",UVB_r="UV-B", hum_median="humid_m", latitude_r="lat", dist2lakes_r="dist2lak", gen_D7_r="genD7", clim_PC1_r="climPC1")) -> rfor_acc
+
+## Gini
+rfor_gini_agg <- aggregate(x = rfor_res$MeanDecreaseGini, by= list(rfor_res$predictor), FUN=median)
+rfor_gini_agg <- rfor_gini_agg[order(-rfor_gini_agg$x),] 
+rfor_gini <- rfor_res[rfor_res$predictor %in% c(as.character(rfor_gini_agg[1:number_of_predictors,1])),]
+# change name variable
+rfor_gini%>%mutate(predictor=recode(predictor, log_popSize="popSize", UVB_r="UV-B", hum_median="humid_m", latitude_r="lat", dist2lakes_r="dist2lak", gen_D7_r="genD7", clim_PC1_r="climPC1", dist2ocean_family_r="dist2oc_f", clim_PC2_family_r="climPC2_f", clim_PC1_family_r="climPC1_f")) -> rfor_gini
+
+## Conditional forest
+rfor_cf_agg <- aggregate(x = rfor_res$cf_unconditional, by= list(rfor_res$predictor), FUN=median)
+rfor_cf_agg <- rfor_cf_agg[order(-rfor_cf_agg$x),] 
+rfor_cf <- rfor_res[rfor_res$predictor %in% c(as.character(rfor_cf_agg[1:number_of_predictors,1])),]
+# change name variable
+rfor_cf%>%mutate(predictor=recode(predictor, log_popSize="popSize", UVB_r="UV-B", hum_median="humid_m", latitude_r="lat", dist2lakes_r="dist2lak", gen_D7_r="genD7", clim_PC1_r="climPC1", dist2ocean_family_r="dist2oc_f", clim_PC2_family_r="climPC2_f", clim_PC1_family_r="climPC1_f", macroarea="macroar", hum_median_family="humid_f")) -> rfor_cf
+
+### --- Performance
+
+# dataset with random forest and conditional random forest
+mydataset_rf_cf <- rbind(cbind(rforest_blue$full$success, "full"="yes")) %>% 
+         reshape2::melt(id.vars=c("replication", "full"), variable.name="measure", value.name="value") %>% mutate("method"=factor(if_else(substring(measure,1,2) == "rf", "RF", "CF"), levels=c("RF", "CF")), 
+                "measure"=factor(substring(measure,4), levels=c("accuracy", "sensitivity", "specificity", "precision", "recall")), 
+                "value"=value*100)
+mydataset_rf_cf$full <- NULL
+
+# dataset with brms
+mydataset_bay <- brms_blue$training_testing$both$success %>% 
+           reshape2::melt(id.vars=c("replication"), variable.name="measure", value.name="value") %>% 
+           mutate("measure"=factor(measure, levels=c("accuracy", "sensitivity", "specificity", "precision", "recall")), "value"=value*100)
+mydataset_bay$method <- "BRMS"
+
+#  dataset with svm
+mydataset_svm <- svm_blue$training_testing$full$success %>% 
+         reshape2::melt(id.vars=c("replication"), variable.name="measure", value.name="value") %>% 
+         mutate("measure"=factor(measure, levels=c("accuracy", "sensitivity", "specificity", "precision", "recall")), "value"=value*100)
+mydataset_svm$method <- "SVM"
+
+# merge datasets
+all_data <- rbind(mydataset_rf_cf, mydataset_bay, mydataset_svm)
+all_data$method <- factor(all_data$method, levels = c("CF", "RF", "SVM", "BRMS"))
+
+# select only accuracy measure
+all_data <- all_data[all_data$measure=="accuracy",]
+
+```
+
+```{r graph predic blue, include = FALSE}
+predic_blue <- grid.arrange(ggplot(brms_res, 
+                    aes(x=predictor, y=estimate)) +
+               theme_bw() +
+               geom_boxplot(fill="red", color="black") +
+               labs(x="Best retained predictors", y="β") +
+               theme(axis.text.y = element_text(angle=40, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=8),
+                     axis.title=element_text(size=13),
+                     legend.position="none") +
+               ggtitle("BRMS") + 
+               geom_hline(yintercept = 0, col="red") +
+               coord_flip() + 
+               NULL,
+               
+            ggplot(svm_res_final, 
+                    aes(x=reorder(predictor, importance, median), y=importance)) +
+               theme_bw() +
+               geom_boxplot(fill="yellow", color="black") +
+               labs(x="Predictors (by decreasing importance)", y="Importance") +
+               theme(axis.text.y = element_text(angle=40, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=8),
+                     axis.title=element_text(size=13),
+                     legend.position="none") +
+               ggtitle("SVM") + 
+               coord_flip() + 
+               NULL,
+             ggplot(rfor_acc, 
+                    aes(x=reorder(predictor, MeanDecreaseAccuracy, median), y=MeanDecreaseAccuracy)) +
+               theme_bw() +
+              #geom_boxplot(fill="#3CBB75FF", color="black") +
+              geom_boxplot(fill="yellow", color="black") +
+               labs(x="", y="Importance") +
+               theme(axis.text.y = element_text(angle=40, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=8),
+                     axis.title=element_text(size=13),
+                     legend.position="none") +
+               ggtitle("RF (Accuracy)") + 
+               coord_flip() + 
+               NULL,
+             ggplot(rfor_gini, 
+                    aes(x=reorder(predictor, MeanDecreaseGini, median), y=MeanDecreaseGini)) +
+               theme_bw() +
+               geom_boxplot(fill="yellow", color="black") +
+               labs(x="", y="Importance") +
+               theme(axis.text.y = element_text(angle=40, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=8),
+                     axis.title=element_text(size=13),
+                     legend.position="none") +
+               ggtitle("RF (Gini index)") + 
+               coord_flip() + 
+               NULL,
+             ggplot(rfor_cf, 
+                    aes(x=reorder(predictor, cf_unconditional, median), y=cf_unconditional)) +
+               theme_bw() +
+               geom_boxplot(fill="yellow", color="black") +
+               labs(x="", y="Importance") +
+               theme(axis.text.y = element_text(angle=40, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=8),
+                     axis.title=element_text(size=13),
+                     legend.position="none") +
+               ggtitle("CF") + 
+               coord_flip() + 
+               NULL,
+            ggplot(all_data, aes(x=method, y=value, fill=method))+
+              theme_bw() +
+              ylim(0,100) +
+              scale_fill_manual(values = c("BRMS"="deepskyblue", "SVM"="deepskyblue",
+                                           "RF"="deepskyblue","CF" =  "deepskyblue"))+
+              geom_boxplot() +
+              guides(fill=FALSE) +
+              labs(x="Method", y="Accuracy (in %)") +
+               theme(axis.text.y = element_text(angle=40, hjust=1, size=10),
+                     axis.text.x = element_text(hjust=1, size=8),
+                     axis.title=element_text(size=13),
+                     legend.position="none") +
+               ggtitle("Performance") +
+              coord_flip() +
+              NULL,
+             ncol=6, top = textGrob("A.",gp=gpar(fontsize=18,font=1)));
+```
+
+```{r computation predic dalto, include = FALSE}
+number_of_predictors <- 7
+
+### --- BRMS
+brms_res <- brms_daltonism$training_testing$performance$predictors
+# select best predictos
+brms_res <- brms_res[brms_res$predictor == "longitude_r" | brms_res$predictor == "clim_PC1_r" | brms_res$predictor == "dist2water_r" | brms_res$predictor == "exists_blueyes" | brms_res$predictor == "gen_D8_r",]
+# change names variables
+brms_res%>%mutate(predictor=recode(predictor, longitude_r="long", UVB_r="UV-B", hum_median="humid_m", latitude_r="lat", dist2lakes_r="dist2lak", gen_D7_r="genD7", clim_PC1_r="climPC1", dist2ocean_family_r="dist2oc_f", clim_PC2_family_r="climPC2_f", clim_PC1_family_r="climPC1_f", macroarea="macroar", hum_median_family="humid_f", dist2water_r="dist2wat", exists_blueyes="blue", gen_D8_r="genD8")) -> brms_res
+
+
+### --- SVM
+svm_res <- data.frame(svm_daltonism$training_testing$performance$pred_importance)
+svm_res_agg <- aggregate(x = svm_res$importance, by= list(svm_res$predictor), FUN=median)
+svm_res_agg <- svm_res_agg[order(-svm_res_agg$x),] 
+svm_res_final <- svm_res[svm_res$predictor %in% c(as.character(svm_res_agg[1:number_of_predictors,1])),]
+# change names variables
+svm_res_final%>%mutate(predictor=recode(predictor, longitude_r="long", UVB_r="UV-B", hum_median="humid_m", latitude_r="lat", dist2lakes_r="dist2lak", gen_D7_r="genD7", clim_PC1_r="climPC1", dist2ocean_family_r="dist2oc_f", clim_PC2_family_r="climPC2_f", clim_PC1_family_r="climPC1_f", macroarea="macroar", hum_median_family="humid_f", dist2water_r="dist2wat", exists_blueyes="blue", gen_D4_r="genD4", gen_D3_r="genD3", gen_D8_r="genD8")) -> svm_res_final
+
+### --- RFOREST
+rfor_res <- rforest_daltonism$results$pred_importance
+
+## Accuracy
+rfor_acc_agg <- aggregate(x = rfor_res$X.IncMSE, by= list(rfor_res$predictor), FUN=median)
+rfor_acc_agg <- rfor_acc_agg[order(-rfor_acc_agg$x),] 
+rfor_acc <- rfor_res[rfor_res$predictor %in% c(as.character(rfor_acc_agg[1:number_of_predictors,1])),]
+# change names variables
+rfor_acc%>%mutate(predictor=recode(predictor, longitude_r="long", UVB_r="UV-B", hum_median="humid_m", latitude_r="lat", dist2lakes_r="dist2lak", gen_D7_r="genD7", clim_PC1_r="climPC1", dist2ocean_family_r="dist2oc_f", clim_PC2_family_r="climPC2_f", clim_PC1_family_r="climPC1_f", macroarea="macroar", hum_median_family="humid_f", dist2water_r="dist2wat", exists_blueyes="blue", gen_D4_r="genD4", gen_D3_r="genD3", gen_D8_r="genD8")) -> rfor_acc
+
+## Node purity
+rfor_np_agg <- aggregate(x = rfor_res$IncNodePurity, by= list(rfor_res$predictor), FUN=median)
+rfor_np_agg <- rfor_np_agg[order(-rfor_np_agg$x),] 
+rfor_np <- rfor_res[rfor_res$predictor %in% c(as.character(rfor_np_agg[1:number_of_predictors,1])),]
+# change names variables
+rfor_np%>%mutate(predictor=recode(predictor, longitude_r="long", UVB_r="UV-B", hum_median="humid_m", latitude_r="lat", dist2lakes_r="dist2lak", gen_D7_r="genD7", clim_PC1_r="climPC1", dist2ocean_family_r="dist2oc_f", clim_PC2_family_r="climPC2_f", clim_PC1_family_r="climPC1_f", macroarea="macroar", hum_median_family="humid_f", dist2water_r="dist2wat", exists_blueyes="blue", gen_D4_r="genD4", gen_D3_r="genD3", gen_D8_r="genD8")) -> rfor_np
+
+## Conditional forest
+rfor_cf_agg <- aggregate(x = rfor_res$cf_unconditional, by= list(rfor_res$predictor), FUN=median)
+rfor_cf_agg <- rfor_cf_agg[order(-rfor_cf_agg$x),] 
+rfor_cf <- rfor_res[rfor_res$predictor %in% c(as.character(rfor_cf_agg[1:number_of_predictors,1])),]
+# change names variables
+rfor_cf%>%mutate(predictor=recode(predictor, longitude_r="long", UVB_r="UV-B", hum_median="humid_m", latitude_r="lat", dist2lakes_r="dist2lak", gen_D7_r="genD7", clim_PC1_r="climPC1", dist2ocean_family_r="dist2oc_f", clim_PC2_family_r="climPC2_f", clim_PC1_family_r="climPC1_f", macroarea="macroar", hum_median_family="humid_f", dist2water_r="dist2wat", exists_blueyes="blue", gen_D4_r="genD4", gen_D3_r="genD3", gen_D8_r="genD8")) -> rfor_cf
+
+
+### --- Performance
+success_rf <- data.frame(replication = rforest_daltonism$results$success$replication, R2 = rforest_daltonism$results$success$rf_R2, RMSE = rforest_daltonism$results$success$rf_RMSE)
+success_rf$method = "RF"
+success_cf <- data.frame(replication = rforest_daltonism$results$success$replication, R2 = rforest_daltonism$results$success$rf_R2, RMSE = rforest_daltonism$results$success$rf_RMSE)
+success_cf$method = "CF"
+success_bay <-  brms_daltonism$training_testing$performance$success
+success_bay$method = "BRMS"
+success_svm <- svm_daltonism$training_testing$performance$success
+success_svm$method = "SVM"
+acc_all <- rbind(success_rf, success_cf, success_bay, success_svm)
+acc_all$method <- factor(acc_all$method, levels = c("CF", "RF", "SVM","BRMS"))
+
+```
+
+
+```{r graph predic dalto, include = FALSE}
+predic_dalto <- grid.arrange(ggplot(brms_res, 
+                    aes(x=predictor, y=estimate)) +
+               theme_bw() +
+               geom_boxplot(fill="red", color="black") +
+               labs(x="Best retained predictors", y="β") +
+               theme(axis.text.y = element_text(angle=30, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=8),
+                     axis.title=element_text(size=13),
+                     legend.position="none") +
+               ggtitle("BRMS") + 
+               geom_hline(yintercept = 0, col="red") +
+               coord_flip() + 
+               NULL,
+            ggplot(svm_res_final, 
+                    aes(x=reorder(predictor, importance, median), y=importance)) +
+               theme_bw() +
+               geom_boxplot(fill="yellow", color="black") +
+               labs(x="Predictors (by decreasing importance)", y="Importance") +
+               theme(axis.text.y = element_text(angle=40, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=8),
+                     axis.title=element_text(size=13),
+                     legend.position="none") +
+               ggtitle("SVM") + 
+               coord_flip() + 
+               NULL,
+             ggplot(rfor_acc, 
+                    aes(x=reorder(predictor, X.IncMSE, median), y=X.IncMSE)) +
+               theme_bw() +
+              #geom_boxplot(fill="#3CBB75FF", color="black") +
+              geom_boxplot(fill="yellow", color="black") +
+               labs(x="", y="Importance") +
+               theme(axis.text.y = element_text(angle=40, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=8),
+                     axis.title=element_text(size=13),
+                     legend.position="none") +
+               ggtitle("RF (Accuracy)") + 
+               coord_flip() + 
+               NULL,
+             ggplot(rfor_np, 
+                    aes(x=reorder(predictor, IncNodePurity, median), y=IncNodePurity)) +
+               theme_bw() +
+               geom_boxplot(fill="yellow", color="black") +
+               labs(x="", y="Importance") +
+               theme(axis.text.y = element_text(angle=40, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=8),
+                     axis.title=element_text(size=13),
+                     legend.position="none") +
+               ggtitle("RF (Node purity)") + 
+               coord_flip() + 
+               NULL,
+             ggplot(rfor_cf, 
+                    aes(x=reorder(predictor, cf_unconditional, median), y=cf_unconditional)) +
+               theme_bw() +
+               geom_boxplot(fill="yellow", color="black") +
+               labs(x="", y="Importance") +
+               theme(axis.text.y = element_text(angle=40, hjust=1, size=10), 
+                     axis.text.x = element_text(hjust=1, size=8),
+                     axis.title=element_text(size=13),
+                     legend.position="none") +
+               ggtitle("CF") + 
+               coord_flip() + 
+               NULL,
+            ggplot(acc_all, aes(x=method, y=R2*100, fill=method))+
+              theme_bw() +
+              ylim(0,100) +
+              scale_fill_manual(values = c("BRMS"="deepskyblue","SVM"="deepskyblue", "RF"="deepskyblue","CF" =  "deepskyblue"))+
+              geom_boxplot() +
+              guides(fill=FALSE) +
+              labs(x="Method", y=expression(R^{2})) +
+               theme(axis.text.y = element_text(angle=40, hjust=1, size=10),
+                     axis.text.x = element_text(hjust=1, size=8),
+                     axis.title=element_text(size=13),
+                     legend.position="none") +
+               ggtitle("Performance") +
+              coord_flip() +
+              NULL,
+             ncol=6, top = textGrob("B.",gp=gpar(fontsize=18,font=1)));
+```
+
+
+```{r graph predic blue dalto, fig.cap=capFig(paste0("Summary of Beta estimates from BRMS, predictors importance from SVM, Random Forest and Conditional Random forest, and performance using ",svm_daltonism$training_testing$replications," training/testing sets.")), fig.width=15, fig.height=10}
+
+grid.arrange(predic_blue, predic_dalto, nrow=2)
+```
+
 
 ### Conclusions: daltonism, UV-B and the color vocabulary
 
@@ -5968,7 +6517,7 @@ The results of the first two matching rules (1 & 2) are in the *genetic_incomple
 The full output of this model, with all the fit indices, is:
 
 ```{r}
-summary(sem_blue$model_full, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
+summary(sem_blue$model_full);
 fitMeasures(sem_blue$model_full);
 ```
 
@@ -5976,7 +6525,7 @@ The full output of this model, with all the fit indices, and including only assu
 
 
 ```{r}
-summary(sem_blue$model_sure, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
+summary(sem_blue$model_sure);
 fitMeasures(sem_blue$model_sure);
 ```
 
@@ -5986,14 +6535,14 @@ fitMeasures(sem_blue$model_sure);
 The full output of this model with only the 4 essential variables, with all the fit indices, is:
 
 ```{r}
-summary(sem_daltonism$model_essential, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
+summary(sem_daltonism$model_essential);
 fitMeasures(sem_daltonism$model_essential);
 ```
 
 The full output of this model with only the 4 essential variables and *subsistence*, with all the fit indices, is:
 
 ```{r}
-summary(sem_daltonism$model_essential_subs, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
+summary(sem_daltonism$model_essential_subs);
 fitMeasures(sem_daltonism$model_essential_subs);
 ```
 
