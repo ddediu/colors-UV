@@ -57,7 +57,6 @@ library(grid); # assemble multiple plots
 # Spatial stats and maps:
 library(maptools); # as.im.RasterLayer()
 library(spatstat); # ppp()
-library(scanstatistics); # dist_to_knn()
 library(ape); # Moran.I()
 library(spdep); # tri2nb()
 library(deldir); # deldir()
@@ -5939,7 +5938,7 @@ The results of the first two matching rules (1 & 2) are in the *genetic_incomple
 The full output of this model, with all the fit indices, is:
 
 ```{r}
-summary(sem_blue$model_full);
+summary(sem_blue$model_full, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
 fitMeasures(sem_blue$model_full);
 ```
 
@@ -5947,7 +5946,7 @@ The full output of this model, with all the fit indices, and including only assu
 
 
 ```{r}
-summary(sem_blue$model_sure);
+summary(sem_blue$model_sure, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
 fitMeasures(sem_blue$model_sure);
 ```
 
@@ -5957,14 +5956,14 @@ fitMeasures(sem_blue$model_sure);
 The full output of this model with only the 4 essential variables, with all the fit indices, is:
 
 ```{r}
-summary(sem_daltonism$model_essential);
+summary(sem_daltonism$model_essential, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
 fitMeasures(sem_daltonism$model_essential);
 ```
 
 The full output of this model with only the 4 essential variables and *subsistence*, with all the fit indices, is:
 
 ```{r}
-summary(sem_daltonism$model_essential_subs);
+summary(sem_daltonism$model_essential_subs, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE);
 fitMeasures(sem_daltonism$model_essential_subs);
 ```
 
