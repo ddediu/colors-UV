@@ -6,5 +6,6 @@ Our code and data are released under the *GNU GENERAL PUBLIC LICENSE (GPL) v3* (
 
 The full analysis report, resulting from running the scripts, was compressed as `colors-UV.html.zip` to reduce its file size.
 
-Please note that, as some techniques involve pseudo-random numbers and may depend on the particular libraries and software platform used, there may be minute differences in the results obtained when re-running these analyses.
+We also include pre-computed intermediary results (sub-folder `cached_results`) to save computing time and to ensure exact replicability (as some techniques involve pseudo-random numbers and may depend on the particular libraries and software platform used) -- however, these cached results are not necessary to rebuild, check and extend our results.
+Therefore, as some techniques involve pseudo-random numbers and may depend on the particular libraries and software platform used, there may be minute differences in the results obtained when re-running these analyses.
 

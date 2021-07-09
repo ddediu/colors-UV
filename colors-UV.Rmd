@@ -3734,10 +3734,6 @@ if( !all(file.exists(file_name)) )
 } 
 ```
 
-```{r}
-load("./cached_results/sem_blue.RData");
-```
-
 
 We performed [*path analysis*](https://en.wikipedia.org/wiki/Path_analysis_(statistics)) using [`lavaan`](https://lavaan.ugent.be/tutorial/index.html), and we obtained the following model (built principally from *a priori* reasoning, but also incorporating some theoretically sound suggestions based on [modification indices](https://curranbauer.org/what-are-modification-indices-and-should-i-use-them-when-fitting-sems-to-my-own-data/)):
 
@@ -6211,6 +6207,54 @@ The full output of this model with only the 4 essential variables and *subsisten
 summary(sem_daltonism$model_essential_subs);
 fitMeasures(sem_daltonism$model_essential_subs);
 ```
+
+
+
+# Session information
+
+```{r warning=FALSE, results='asis'}
+if( require(benchmarkme) )
+{
+  # CPU:
+  cpu_info <- benchmarkme::get_cpu();
+  if( is.null(cpu_info) || is.na(cpu_info) )
+  {
+    cat("**CPU:** unknown.\n\n");
+  } else
+  {
+    if( !is.null(cpu_info$model_name) && !is.na(cpu_info$model_name) )
+    {
+      cat(paste0("**CPU:** ",cpu_info$model_name));
+      if( !is.null(cpu_info$no_of_cores) && !is.na(cpu_info$no_of_cores) )
+      {
+        cat(paste0(" (",cpu_info$no_of_cores," threads)"));
+      }
+      cat("\n\n");
+    } else
+    {
+      cat("**CPU:** unknown.\n\n");
+    }
+  }
+  
+  # RAM:
+  ram_info <- benchmarkme::get_ram();
+  if( is.null(ram_info) || is.na(ram_info) )
+  {
+    cat("**RAM (memory):** unknown.\n\n");
+  } else
+  {
+    cat("**RAM (memory):** "); print(ram_info); cat("\n");
+  }
+} else
+{
+  cat("**RAM (memory):** cannot get info (try installing package 'benchmarkme').\n\n");
+}
+```
+
+```{r}
+pander::pander(sessionInfo());
+```
+
 
 
 # References
