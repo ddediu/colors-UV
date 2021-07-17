@@ -20,6 +20,16 @@ bibliography: bibliography.bib
 csl: apa-6th-edition.csl
 ---
 
+<style>
+caption, .caption {
+color: #555555;
+font-weight: bold;
+font-size: 105%;
+text-align: left}
+
+a[hreflang]:before{}
+</style>
+
 ```{r license, include=FALSE, eval=FALSE}
     Code and data accompanying the paper "Environment and culture shape 
     both the colour lexicon and the genetics of colour perception"
@@ -38,6 +48,18 @@ csl: apa-6th-edition.csl
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ```
+
+
+# Introduction
+
+This `HTML` document (possibly, printed to `PDF`) resulted from compiling the corresponding `Rmarkdown` script and contains all the results and plots supporting the paper *Environment and culture shape both the colour lexicon and the genetics of colour perception*.
+All the data and scripts needed to reproduce this document are available in the *GitHub* repository [https://github.com/ddediu/colors-UV](https://github.com/ddediu/colors-UV) and on *Zenodo* at [doi:10.5281/zenodo.5083676](doi://10.5281/zenodo.5083676).
+
+The full information about the version of `R` [@R2021], the packages and the hardware and software platform used to obtain this document are given in the Section [*Session information*](#session-information) at the end of this document[^technical_note].
+The figures were made using various `R` packages; in particular, the maps were drawn using the `maps` package (wrapped by the `map_data()` function in `ggplot2`), which, in turn uses public domain data from the [Natural Earth project](https://www.naturalearthdata.com/).
+
+[^technical_note]: Please note that some of the models used here are computationally expensive, and even compiling this `Rmarkdown` script might require a relatively powerful machine. To help with this, and to ensure full replicability of our results, we have cached some of these expensive sections in the `cached_results` folder as `XZ`-compressed `RData` files. However, it might happen that versions of some of the packages different from those that we used here might not be fully compatible with the saved `RData` files, resulting in errors compiling this `Rmarkdown` script or errors displaying/plotting the results. In this case, we recommend using the exact same versions of `R` and of the packages that we used (listed in the [*Session information*](#session-information)), or, if not possible, the deletion of the offending `RData` files and the full recompilation of the `Rmarkdown` script (which is smart enough to re-generate only those missing cached results).
+
 
 ```{r setup, echo=F, message=F, warning=FALSE}
 ## Knitting options:
@@ -105,32 +127,6 @@ library(partykit); # ctree() and cforest()
 library(randomForest); # randomForest()
 library(rsample); # initial_split()
 library(rminer); # SVMs
-#library(e1071); # SVMs
-#library(tree);
-#library(rpart);
-#library(rpart.plot);
-
-
-# Apparently not needed:
-#library(gdata);
-#library(maps);
-#library(sna);
-#library(fields);
-#library(tidyr);
-#library(geostatsp);
-#library(MuMIn);
-#library(maps);
-#library(data.table);
-#library(magrittr);
-#library(sfsmisc);
-#library(MASS);
-#library(rsq);
-#library(mediation);
-#library(car);
-#library(ROCR);
-#library(ISLR)
-#library(rsample);
-#library(FactoMineR);
 
 
 ## Check that the input data exists:
@@ -170,18 +166,34 @@ outputFormat = opts_knit$get("rmarkdown.pandoc.to"); # determine the output form
 if( is.null(outputFormat) ) outputFormat = ""; # probably not run within knittr
 capTabNo = 1; capFigNo = 1; # figure and table caption numbering, for HTML do it manually
 #Function to add the Table Number
-capTab = function(x){
+capTab = function(x)
+{
   if(outputFormat == 'html'){
     x = paste0("**Table ",capTabNo,".** ",x,"")
     capTabNo <<- capTabNo + 1
   }; x
 }
 #Function to add the Figure Number
-capFig = function(x){
-  if(outputFormat == 'html'){
-    x = paste0("**Figure ",capFigNo,".** ",x,"")
-    capFigNo <<- capFigNo + 1
-  }; x
+capFig = function(x, show_R_version=TRUE, show_package_versions=NULL, is_map=FALSE)
+{
+  if(outputFormat == 'html')
+  {
+    x <- paste0("**Figure ",capFigNo,".** ",x,"");
+    if( show_R_version || (!is.null(show_package_versions) && length(show_package_versions) > 0) )
+    {
+      x <- paste0(x, " Figure generated using ");
+      if( show_R_version ) x <- paste0(x, stringr::str_replace(R.version.string, stringr::fixed("R "), "[`R`](https://www.r-project.org/) "));
+      if( !is.null(show_package_versions) && length(show_package_versions) > 0 )
+      {
+        x <- paste0(x, ifelse( show_R_version, " and ", " "));
+        x <- paste0(x, ifelse( length(show_package_versions) > 1, "packages ", "package "));
+        x <- paste0(x, paste0(vapply(show_package_versions, function(x) paste0("`",x,"`", " (version ", packageVersion(x),")"), character(1)), collapse=", "), ".");
+      }
+      if( is_map ) x <- paste0(x, " Maps are using public domain data from the [Natural Earth project](https://www.naturalearthdata.com/) as provided by the `R` package `maps`.");
+    }
+    capFigNo <<- capFigNo + 1;
+  }; 
+  x;
 }
 
 # Verbal interpretation of Bayes factors (BF):
@@ -663,18 +675,6 @@ panel.hist <- function(x, ...)
 
 ```
 
-<style>
-caption, .caption {
-color: #555555;
-font-weight: bold;
-font-size: 105%;
-text-align: left}
-
-a[hreflang]:before{}
-</style>
-
-
-
 ```{r load and prepare data, error=FALSE, include=FALSE}
 # Load the world map and change it for Pacific-centered plotting:
 mapWorld <- map_data("world", wrap=c(-20,340), ylim=c(-70,100));
@@ -915,21 +915,9 @@ The geographic coordinates of the populations were retrieved from the [Glottolog
 As per @brown_color_2004, we computed the cosine of these *latitude*s and the *longitude*s to be used in the statistical models; while `cos(latitude)` captures the closeness to the equator and ranging between 0.0 (one of the poles) and 1.0 (the equator), we use here `1.0 - cos(latitude)` so that they are 0.0 at the equator and 1.0 at the poles, converting the "natural" interpretation of latitudes, and `cos(longitude)`range between -1.0 and 1.0 (corresponding to -180 and 180 degrees, respectively); 
 please note that longitude can be coded (and plotted) either as ranging between 0° and 360°, or between -180° and +180°, when we need to avoid the International Date Line (IDL) producing an artefactual boundary.
 
-```{r populations map, fig.cap=capFig("Map of the populations in our sample (with language names)."), eval=FALSE, include=FALSE}
-ggplot() + theme_bw() +
-  geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
-  geom_point(data=d_colors, aes(x=longitude, y=latitude), color="black") +
-  geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=L1), color="blue", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
-  theme(legend.position = c(0.75, 0.5), 
-      legend.justification = c(1, 1), 
-      legend.title = element_text(size = 9), 
-      legend.text = element_text(size = 10)) +
-  NULL;
-```
-
 In the following plot, we plot exactly the same information but using a different format:
 
-```{r populations map 2, fig.cap=capFig("Map of the populations in our sample (with language names and details for Europe and the Indian subcontinent)."), , fig.height=10, fig.width=11}
+```{r populations map 2, fig.cap=capFig("Map of the populations in our sample (with language names and details for Europe and the Indian subcontinent).", TRUE, c("ggplot2", "maps"), is_map=TRUE), fig.height=10, fig.width=11}
 # Inset Europe:
 submap_europe <- mapWorld[mapWorld$lat<70 & mapWorld$lat>36 & mapWorld$long>-20 & mapWorld$long<35,]
 d_colors_europe <- d_colors[d_colors$latitude>36 & d_colors$latitude<70 & d_colors$longitude<35 & d_colors$longitude>-20,]
@@ -980,7 +968,7 @@ print(europe, vp = define_region(4:5, 1));
 print(india,  vp = define_region(4:5, 2));
 ```
 
-```{r geographic location transform, fig.cap=capFig("Relationship between raw and transformed values for latitude (left, blue) and longitude (right, red); please note that, as opposed to the map above, longitude was shifted so that longitudes > 180° are negative (i.e., centered on 0°)."), fig.height=4*1, fig.width=4*2}
+```{r geographic location transform, fig.cap=capFig("Relationship between raw and transformed values for latitude (left, blue) and longitude (right, red); please note that, as opposed to the map above, longitude was shifted so that longitudes > 180° are negative (i.e., centered on 0°).", TRUE, c("ggplot2"), is_map=FALSE), fig.height=4*1, fig.width=4*2}
 grid.arrange(ggplot(data=d_colors, aes(x=latitude, y=latitude_r),) + theme_bw() +
                xlab("Latitude (raw, in °, negative = south)") + ylab("Latitude transformed = 1 - cos(latitude)") +
                geom_point(alpha=0.5, color="blue") +
@@ -1001,7 +989,7 @@ We obtained elevation (altitude, in meters) using [Mapzen](https://en.wikipedia.
 pander(summary(d_colors$elevation));
 ```
 
-```{r distribution of elevation, fig.cap=capFig("Distribution of elevation.")}
+```{r distribution of elevation, fig.cap=capFig("Distribution of elevation.", TRUE, c("ggplot2"), is_map=FALSE)}
 ggplot(d_colors, aes(x=elevation)) +
   theme_bw() +
   geom_histogram(color="tomato", fill="tomato", alpha=0.5)+
@@ -1009,7 +997,7 @@ ggplot(d_colors, aes(x=elevation)) +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map elevation, fig.cap=capFig("Map of elevation (color scale).")}
+```{r map elevation, fig.cap=capFig("Map of elevation (color scale).", TRUE, c("ggplot2"), is_map=TRUE)}
 ggplot() + theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
   geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=elevation), color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
@@ -1023,7 +1011,7 @@ ggplot() + theme_bw() +
   NULL;
 ```
 
-```{r elevation transform, fig.cap=capFig("Relationship between raw and transformed values for elevation."), fig.height=4*1, fig.width=4*1}
+```{r elevation transform, fig.cap=capFig("Relationship between raw and transformed values for elevation.", TRUE, c("ggplot2"), is_map=FALSE), fig.height=4*1, fig.width=4*1}
 ggplot(data=d_colors, aes(x=elevation, y=elevation_r),) + theme_bw() +
   xlab("Elevation (raw, in meters)") + ylab("Elevation transformed = log(elevation + 1)") +
   geom_point(alpha=0.5, color="blue") +
@@ -1045,7 +1033,7 @@ For the analyses, these variables were z-scored (thus, the relationship between 
 pander(summary(d_colors$clim_PC1))
 ```
 
-```{r distribution of PC1, fig.cap=capFig("Distribution of climate PC1.")}
+```{r distribution of PC1, fig.cap=capFig("Distribution of climate PC1.", TRUE, c("ggplot2"), is_map=FALSE)}
 ggplot(d_colors, aes(x=clim_PC1)) + 
   theme_bw() +
   geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1053,7 +1041,7 @@ ggplot(d_colors, aes(x=clim_PC1)) +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map PC1, fig.cap=capFig("Map of climate PC1 (color scale).")}
+```{r map PC1, fig.cap=capFig("Map of climate PC1 (color scale).", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
   geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=clim_PC1), color="black") +
@@ -1073,7 +1061,7 @@ ggplot() + theme_bw() +
 pander(summary(d_colors$clim_PC2))
 ```
 
-```{r distribution of PC2, fig.cap=capFig("Distribution of climate PC2.")}
+```{r distribution of PC2, fig.cap=capFig("Distribution of climate PC2.", TRUE, c("ggplot2"), is_map=FALSE)}
 ggplot(d_colors, aes(x=clim_PC2)) + 
   theme_bw() +
   geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1081,7 +1069,7 @@ ggplot(d_colors, aes(x=clim_PC2)) +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map PC2, fig.cap=capFig("Map of climate PC2 (color scale).")}
+```{r map PC2, fig.cap=capFig("Map of climate PC2 (color scale).", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
   geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=clim_PC2), color="black") +
@@ -1101,7 +1089,7 @@ ggplot() + theme_bw() +
 pander(summary(d_colors$clim_PC3))
 ```
 
-```{r distribution of PC3, fig.cap=capFig("Distribution of climate PC3.")}
+```{r distribution of PC3, fig.cap=capFig("Distribution of climate PC3.", TRUE, c("ggplot2"), is_map=FALSE)}
 ggplot(d_colors, aes(x=clim_PC3)) + 
   theme_bw() +
   geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1109,7 +1097,7 @@ ggplot(d_colors, aes(x=clim_PC3)) +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map PC3, fig.cap=capFig("Map of climate PC3 (color scale).")}
+```{r map PC3, fig.cap=capFig("Map of climate PC3 (color scale).", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
   geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=clim_PC3), color="black") +
@@ -1129,12 +1117,12 @@ We obtained specific humidity ("the mass of water vapour in a unit mass of moist
 However, all these measures are highly correlated by type (see plots below), such that we only retain here the mean of the yearly medians and IQRs.
 We did not transform these variables for the analyses.
 
-```{r echo=FALSE, message=FALSE, fig.cap=capFig("Pairwise correlations between measures of central tendency for humidity."), fig.width=8, fig.height=8}
+```{r echo=FALSE, message=FALSE, fig.cap=capFig("Pairwise correlations between measures of central tendency for humidity.", TRUE, NULL, is_map=FALSE), fig.width=8, fig.height=8}
 pairs(d_humidity[,c("humidity_overall_mean", "humidity_overall_median", "humidity_mean_annual_mean", "humidity_mean_annual_median")], 
       lower.panel=panel.cor, diag.panel=panel.hist, upper.panel=upper.panel); 
 ```
 
-```{r echo=FALSE, message=FALSE, fig.cap=capFig("Pairwise correlations between measures of dispersion for humidity."), fig.width=8, fig.height=8}
+```{r echo=FALSE, message=FALSE, fig.cap=capFig("Pairwise correlations between measures of dispersion for humidity.", TRUE, NULL, is_map=FALSE), fig.width=8, fig.height=8}
 pairs(d_humidity[,c("humidity_overall_sd", "humidity_overall_IQR", "humidity_mean_annual_sd", "humidity_mean_annual_IQR")], 
       lower.panel=panel.cor, diag.panel=panel.hist, upper.panel=upper.panel); 
 ```
@@ -1145,7 +1133,7 @@ pairs(d_humidity[,c("humidity_overall_sd", "humidity_overall_IQR", "humidity_mea
 pander(summary(d_colors$hum_median))
 ```
 
-```{r distribution of median humidity, fig.cap=capFig("Distribution of median humidity.")}
+```{r distribution of median humidity, fig.cap=capFig("Distribution of median humidity.", TRUE, c("ggplot2"), is_map=FALSE)}
 ggplot(d_colors, aes(x=hum_median)) + 
   theme_bw() +
   geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1153,7 +1141,7 @@ ggplot(d_colors, aes(x=hum_median)) +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map median humidity, fig.cap=capFig("Map of median humidity (color scale).")}
+```{r map median humidity, fig.cap=capFig("Map of median humidity (color scale).", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
   geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=hum_median), color="black") +
@@ -1172,7 +1160,7 @@ ggplot() + theme_bw() +
 pander(summary(d_colors$hum_IQR))
 ```
 
-```{r distribution of IQR humidity, fig.cap=capFig("Distribution of variation in humidity (IQR).")}
+```{r distribution of IQR humidity, fig.cap=capFig("Distribution of variation in humidity (IQR).", TRUE, c("ggplot2"), is_map=FALSE)}
 ggplot(d_colors, aes(x=hum_IQR)) + 
   theme_bw() +
   geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1180,7 +1168,7 @@ ggplot(d_colors, aes(x=hum_IQR)) +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map IQR humidity, fig.cap=capFig("Map of variation in humidity (IQR) (color scale).")}
+```{r map IQR humidity, fig.cap=capFig("Map of variation in humidity (IQR) (color scale).", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
   geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=hum_IQR), color="black") +
@@ -1199,7 +1187,7 @@ ggplot() + theme_bw() +
 We reused the code from @bentz_evolution_2018 to compute the distances from each of our populations to the nearest lake, ocean, river, and water in general, using [OpenStreetMap](http://openstreetmapdata.com/) raster files[^openstreetmaps]. 
 For the analyses, we use the `log` of these distances.
 
-```{r distance to water transform, fig.cap=capFig("Relationship between raw and transformed values for distance to large bodies of water. For left to right and top to bottom, distances to: lakes, rivers, oceans and water in general."), fig.height=4*2, fig.width=4*2}
+```{r distance to water transform, fig.cap=capFig("Relationship between raw and transformed values for distance to large bodies of water. For left to right and top to bottom, distances to: lakes, rivers, oceans and water in general.", TRUE, c("ggplot2"), is_map=FALSE), fig.height=4*2, fig.width=4*2}
 grid.arrange(ggplot(data=d_colors, aes(x=dist2lakes, y=dist2lakes_r)) + theme_bw() +
                xlab("Distance to lakes (raw, in Km)") + ylab("Distance transformed = log(distance)") +
                geom_point(alpha=0.5, color="blue") +
@@ -1229,7 +1217,7 @@ grid.arrange(ggplot(data=d_colors, aes(x=dist2lakes, y=dist2lakes_r)) + theme_bw
 pander(summary(d_colors$dist2lakes));
 ```
 
-```{r distribution dist lakes, fig.cap=capFig("Distribution of distances to lakes.")}
+```{r distribution dist lakes, fig.cap=capFig("Distribution of distances to lakes.", TRUE, c("ggplot2"), is_map=FALSE)}
 ggplot(d_colors, aes(x=dist2lakes)) +
   theme_bw() +
   geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1238,7 +1226,7 @@ ggplot(d_colors, aes(x=dist2lakes)) +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map dist lakes, fig.cap=capFig("Map of distances to lakes (color scale).")}
+```{r map dist lakes, fig.cap=capFig("Map of distances to lakes (color scale).", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + 
   theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
@@ -1260,7 +1248,7 @@ ggplot() +
 pander(summary(d_colors$dist2rivers));
 ```
 
-```{r distribution dist rivers, fig.cap=capFig("Distribution of distances to rivers.")}
+```{r distribution dist rivers, fig.cap=capFig("Distribution of distances to rivers.", TRUE, c("ggplot2"), is_map=FALSE)}
 ggplot(d_colors, aes(x=dist2rivers)) + 
   theme_bw() +
   geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1269,7 +1257,7 @@ ggplot(d_colors, aes(x=dist2rivers)) +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map dist rivers, fig.cap=capFig("Map of distances to rivers (color scale).")}
+```{r map dist rivers, fig.cap=capFig("Map of distances to rivers (color scale).", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + 
   theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
@@ -1292,7 +1280,7 @@ ggplot() +
 pander(summary(d_colors$dist2ocean));
 ```
 
-```{r distribution dist oceans, fig.cap=capFig("Distribution of distances to oceans.")}
+```{r distribution dist oceans, fig.cap=capFig("Distribution of distances to oceans.", TRUE, c("ggplot2"), is_map=FALSE)}
 ggplot(d_colors, aes(x=dist2ocean)) + 
   theme_bw() +
   geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1301,7 +1289,7 @@ ggplot(d_colors, aes(x=dist2ocean)) +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map dist oceans, fig.cap=capFig("Map of distances to oceans (color scale).")}
+```{r map dist oceans, fig.cap=capFig("Map of distances to oceans (color scale).", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + 
   theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
@@ -1323,7 +1311,7 @@ ggplot() +
 pander(summary(d_colors$dist2water));
 ```
 
-```{r distribution dist water, fig.cap=capFig("Distribution of distances to water.")}
+```{r distribution dist water, fig.cap=capFig("Distribution of distances to water.", TRUE, c("ggplot2"), is_map=FALSE)}
 ggplot(d_colors, aes(x=dist2water)) + 
   theme_bw() +
   geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1332,7 +1320,7 @@ ggplot(d_colors, aes(x=dist2water)) +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map dist water, fig.cap=capFig("Map of distances to water (color scale).")}
+```{r map dist water, fig.cap=capFig("Map of distances to water (color scale).", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + 
   theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
@@ -1364,7 +1352,7 @@ pander(summary(d_colors$UV_A_mean))
 pander(summary(d_colors$UV_A_sd))
 ```
 
-```{r distribution UV-A, fig.cap=capFig("UV-A (mean and standard deviation).")}
+```{r distribution UV-A, fig.cap=capFig("UV-A (mean and standard deviation).", TRUE, c("ggplot2"), is_map=FALSE)}
 grid.arrange(ggplot(d_colors, aes(x=UV_A_mean)) + 
                theme_bw() +
                geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1378,7 +1366,7 @@ grid.arrange(ggplot(d_colors, aes(x=UV_A_mean)) +
              ncol=2);
 ```
 
-```{r map UV-A, fig.cap=capFig("Map of UV-A (mean and standard deviation)."), fig.height=12}
+```{r map UV-A, fig.cap=capFig("Map of UV-A (mean and standard deviation).", TRUE, c("ggplot2", "maps"), is_map=TRUE), fig.height=12}
 grid.arrange(ggplot() + theme_bw() +
                geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
                geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=UV_A_mean), color="black") +
@@ -1410,7 +1398,7 @@ pander(summary(d_colors$UV_B_mean))
 pander(summary(d_colors$UV_B_sd))
 ```
 
-```{r distribution UV-B, fig.cap=capFig("UV-B (mean and standard deviation).")}
+```{r distribution UV-B, fig.cap=capFig("UV-B (mean and standard deviation).", TRUE, c("ggplot2"), is_map=FALSE)}
 grid.arrange(ggplot(d_colors, aes(x=UV_B_mean)) + 
                theme_bw() +
                geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1424,7 +1412,7 @@ grid.arrange(ggplot(d_colors, aes(x=UV_B_mean)) +
              ncol=2);
 ```
 
-```{r map UV-B, fig.cap=capFig("Map of UV-B (mean and standard deviation)."), fig.height=12}
+```{r map UV-B, fig.cap=capFig("Map of UV-B (mean and standard deviation).", TRUE, c("ggplot2", "maps"), is_map=TRUE), fig.height=12}
 grid.arrange(ggplot() + theme_bw() +
                geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
                geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=UV_B_mean), color="black") +
@@ -1456,7 +1444,7 @@ pander(summary(d_colors$UV_mean))
 pander(summary(d_colors$UV_sd))
 ```
 
-```{r distribution UV, fig.cap=capFig("UV (mean and standard deviation).")}
+```{r distribution UV, fig.cap=capFig("UV (mean and standard deviation).", TRUE, c("ggplot2"), is_map=FALSE)}
 grid.arrange(ggplot(d_colors, aes(x=UV_mean)) + 
                theme_bw() +
                geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1470,7 +1458,7 @@ grid.arrange(ggplot(d_colors, aes(x=UV_mean)) +
              ncol=2);
 ```
 
-```{r map UV, fig.cap=capFig("Map of UV (mean and standard deviation)."), fig.height=12}
+```{r map UV, fig.cap=capFig("Map of UV (mean and standard deviation).", TRUE, c("ggplot2", "maps"), is_map=TRUE), fig.height=12}
 grid.arrange(ggplot() + theme_bw() +
                geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
                geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=UV_mean), color="black") +
@@ -1505,7 +1493,7 @@ The log of population size was obtained from @bentz_evolution_2018.
 pander(summary(d_colors$log_popSize))
 ```
 
-```{r distribution popsize, fig.cap=capFig("Log population size.")}
+```{r distribution popsize, fig.cap=capFig("Log population size.", TRUE, c("ggplot2"), is_map=FALSE)}
 ggplot(d_colors, aes(x=log_popSize)) + 
   theme_bw() +
   geom_density(color="tomato", fill="tomato", alpha=0.5)+
@@ -1513,7 +1501,7 @@ ggplot(d_colors, aes(x=log_popSize)) +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map popsize, fig.cap=capFig("Map of log population size.")}
+```{r map popsize, fig.cap=capFig("Map of log population size.", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
   geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=round(log_popSize,1)), color="black", fill="lightyellow", alpha=0.75, size=2.75, label.padding=0.10, label.r=0.05) + 
@@ -1537,7 +1525,7 @@ This is represented by the binary variable *subsistence* with values 'HG' for po
 pander(summary(d_colors$subsistence))
 ```
 
-```{r distribution subsistence, fig.cap=capFig("Subsistence strategy.")}
+```{r distribution subsistence, fig.cap=capFig("Subsistence strategy.", TRUE, c("ggplot2"), is_map=FALSE)}
 ggplot(data =d_colors)+
   theme_bw() +
   geom_bar(aes(x=as.factor(subsistence), fill=as.factor(subsistence)), alpha=0.75) + 
@@ -1546,7 +1534,7 @@ ggplot(data =d_colors)+
   scale_fill_viridis_d()
 ```
 
-```{r map subsistence, fig.cap=capFig("Map of subsistence strategy.")}
+```{r map subsistence, fig.cap=capFig("Map of subsistence strategy.", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
   geom_point(data= d_colors, shape=21, aes(x = longitude, y = latitude, fill=subsistence), color="red") +
@@ -1576,7 +1564,7 @@ name, ISO code, and a variable indicating whether the language had a seperate te
 pander(summary(d_colors$exists_blue))
 ```
 
-```{r distribution word for blue, fig.cap=capFig("Is there a specific term for 'blue'?")}
+```{r distribution word for blue, fig.cap=capFig("Is there a specific term for 'blue'?", TRUE, c("ggplot2"), is_map=FALSE)}
 # DISTRIBUTION color vocab
 ggplot(data =d_colors)+
   theme_bw() +
@@ -1586,7 +1574,7 @@ ggplot(data =d_colors)+
   scale_fill_viridis_d()
 ```
 
-```{r map word for blue, fig.cap=capFig("Map of specific terms for 'blue'.")}
+```{r map word for blue, fig.cap=capFig("Map of specific terms for 'blue'.", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 # plot exists_blue on map
 ggplot() + theme_bw() + 
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
@@ -1618,7 +1606,7 @@ The complete list of references used to obtain these data can be found in Append
 pander(summary(d_colors$daltonism))
 ```
 
-```{r distribution of daltonism, fig.cap=capFig("Incidence of red/green abnormal color perception.")}
+```{r distribution of daltonism, fig.cap=capFig("Incidence of red/green abnormal color perception.", TRUE, c("ggplot2"), is_map=FALSE)}
 # Plot
 ggplot(d_colors, aes(x=daltonism)) + 
   theme_bw() +
@@ -1628,7 +1616,7 @@ ggplot(d_colors, aes(x=daltonism)) +
   theme(plot.title = element_text(size = 10, face = "bold")); 
 ```
 
-```{r map word for daltonism, fig.cap=capFig("Map of incidence of red/green abnormal color perception (color scale).")}
+```{r map word for daltonism, fig.cap=capFig("Map of incidence of red/green abnormal color perception (color scale).", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + theme_bw() + 
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
   geom_label_repel(data=d_colors, aes(x=longitude, y=latitude, label=paste0(round(daltonism,1),"%")), 
@@ -1654,7 +1642,7 @@ For each language, we obtained its family affiliation from the [Glottolog](https
 pander(table(d_colors$glottocode_family))
 ```
 
-```{r distribution families, fig.cap=capFig("The distribution of languages across families. Only the 15 most represented families are explicitely shown, the others being gathered in the umbrella category 'Other'.")}
+```{r distribution families, fig.cap=capFig("The distribution of languages across families. Only the 15 most represented families are explicitely shown, the others being gathered in the umbrella category 'Other'.", TRUE, c("ggplot2"), is_map=FALSE)}
 # Make sure "Other" is the last one:
 d_colors$glottocode_family_other <- factor(d_colors$glottocode_family_other, levels=c(sort(setdiff(unique(d_colors$glottocode_family_other), "Other")), "Other"));
 ggplot(data =d_colors)+
@@ -1666,7 +1654,7 @@ ggplot(data =d_colors)+
   guides(fill=FALSE)
 ```
 
-```{r map family, fig.cap=capFig("Map of the main language families. Only the 15 most represented language families have individual colors.")}
+```{r map family, fig.cap=capFig("Map of the main language families. Only the 15 most represented language families have individual colors.", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 # Use an other variable to plot: only 15 main language families, other families are gathered under "Other"
 ggplot() + theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
@@ -1682,7 +1670,7 @@ ggplot() + theme_bw() +
 
 The putative geographic origins of the language (macro-)families (latitude and longitude) were obtained from [@wichmann_homelands_2010], supplemented with information from the [Glottolog](https://glottolog.org/) [@hammarstrom_glottolog_2018].
 
-```{r map family origins, fig.cap=capFig("Origins of the putative origins of language (macro-)families.")}
+```{r map family origins, fig.cap=capFig("Origins of the putative origins of language (macro-)families.", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 ggplot() + theme_bw() +
   geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
   geom_label_repel(data=d_colors_families, aes(x=longitude_family, y=latitude_family, label=macro_family), 
@@ -1700,7 +1688,7 @@ We also collected data corresponding to these locations for elevation, climate a
 
 We collected the macroareas as given by the [Glottolog](https://glottolog.org/) [@hammarstrom_glottolog_2018].
 
-```{r map macroareas, fig.cap=capFig("Map of populations in our sample highlighting their macroarea.")}
+```{r map macroareas, fig.cap=capFig("Map of populations in our sample highlighting their macroarea.", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 # macroarea
 pander(table(d_colors$macroarea));
 
@@ -1736,7 +1724,7 @@ For the statistical analyses, these were z-scored (thus, the relationship betwee
 We computed the [Delaunay triangulation](https://en.wikipedia.org/wiki/Delaunay_triangulation) of our language locations taking into account the constraints to population movement imposed by large bodies of water; this is based on the method developed in @cysouw_comment_2012, adapted by M. Tang and D. Dediu.
 This results in a list of neighbors for each population in our dataset.
 
-```{r plot Delaunay, fig.cap=capFig("Restricted Delaunay triangulation for the languages in our dataset (in a Pacific-centered view). The yellow dots are the language locations, the thin black lines the connections to their immediate neighbours, and the thick red lines represent barriers to movement.")}
+```{r plot Delaunay, fig.cap=capFig("Restricted Delaunay triangulation for the languages in our dataset (in a Pacific-centered view). The yellow dots are the language locations, the thin black lines the connections to their immediate neighbours, and the thick red lines represent barriers to movement.", TRUE, c("ggplot2", "maps"), is_map=TRUE)}
 # Plot this Delaunay network:
 ggplot() + theme_bw() +
   geom_polygon(data=map_data('world', wrap=c(-20,340), ylim=c(-70,100)), aes(x=long, y=lat, group=group), fill="grey") + # landmasses as polygons (Pacific-centered)
@@ -1790,7 +1778,7 @@ Please note that, form `brms`, there might be differences between Bayes factors,
 
 For the mediation analysis, we used a Bayesian approach as implemented by `brms`: in essence, given a treatment" $T$ (for example, latitude), a mediator $M$ (for example, UV incidence), as an outcome $O$ (for example, the existence of a specific word for 'blue'), the mediation model looks like:
 
-```{r fig.cap=capFig("Visual representation of a mediation, showing the individual estimates (edges, $a$, $b$ and $c$) and the effects (total, direct and indirect). We may use line style and color to differentiate ns, negative and positive edges. Likewise, we may report the total, direct and indirect effects on the diagram itself using colors to distinguish significant and ns effects.")}
+```{r fig.cap=capFig("Visual representation of a mediation, showing the individual estimates (edges, $a$, $b$ and $c$) and the effects (total, direct and indirect). We may use line style and color to differentiate ns, negative and positive edges. Likewise, we may report the total, direct and indirect effects on the diagram itself using colors to distinguish significant and ns effects.", TRUE, c("DiagrammeR"), is_map=FALSE)}
 # Mediation:
 DiagrammeR::grViz('
   digraph mediation_simple {
@@ -1865,10 +1853,9 @@ pander(quadrat.test(ppp_languages, method="MonteCarlo", nx=5, ny=15, conditional
 
 The same is found using the Kolmogorov-Smirnov test:
 
-```{r kolmogorov-smironov, fig.cap=capFig("Kolmogorov-Smirnov versus the CSR using on two dimensions.")}
+```{r kolmogorov-smironov}
 k <- cdf.test(ppp_languages, density(ppp_languages));
 pander(k, caption=capTab("Spatial Kolmogorov-Smirnov test of CSR in two dimensions."));
-#plot(k, main="");
 ```
 
 Given that our locations are not randomly distributed, do they tend to be regularly spaced or clustered?
@@ -1876,7 +1863,7 @@ The *G* function (using nearest neighbor distances) shows that the distances bet
 The *F* function (using empty space distances) shows that the observed values are larger than the expected one, indicating that empty space distances in our empirical point pattern are shorter than for a Poisson process, suggesting again clustering. 
 Finally, the *K* function (using pairwise distance) also suggests clustering.
 
-```{r G function, fig.cap=capFig("The *G*, *F* and *K* functions (one per panel, from left to right). *r* is the distance between points. Expected distribution: blue; all others are the observed distributions with various edge correction methods (see help for `Gest` in package `spatstat`)."), fig.width=9, fig.height=4}
+```{r G function, fig.cap=capFig("The *G*, *F* and *K* functions (one per panel, from left to right). *r* is the distance between points. Expected distribution: blue; all others are the observed distributions with various edge correction methods (see help for `Gest` in package `spatstat`).", TRUE, c("spatstat"), is_map=FALSE), fig.width=9, fig.height=4}
 par(mfrow=c(1,3));
 plot(Gest(ppp_languages), main="G function");
 plot(Fest(ppp_languages), main="F function");
@@ -1984,7 +1971,7 @@ Here we look at the potential predictors of the existence of a specific word for
 
 Here we check if there is a relationship between measures of UV incidence and the existence of a word for 'blue'; as per @lindsey_color_2002 and @brown_color_2004, this relationship should be *negative* (i.e., higher UV-B incidence should reduce the probability of a word for 'blue').
 
-```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of UV incidence at the locations of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). Left: mean incidence across 1998, right: standard deviation of incidence over the days of 1998; top: UV-A, bottom: UV-B."), fig.height=2*5, fig.width=2*4}
+```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of UV incidence at the locations of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). Left: mean incidence across 1998, right: standard deviation of incidence over the days of 1998; top: UV-A, bottom: UV-B.", TRUE, c("ggplot2"), is_map=FALSE), fig.height=2*5, fig.width=2*4}
 grid.arrange(ggplot(d_colors, aes(y=UV_A_mean, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2036,7 +2023,7 @@ grid.arrange(ggplot(d_colors, aes(y=UV_A_mean, x=exists_blue, fill=exists_blue))
              ncol=2);
 ```
 
-```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of UV incidence at the *origins of language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). Left: mean incidence across 1998, right: standard deviation of incidence over the days of 1998; top: UV-A, bottom: UV-B."), fig.height=2*5, fig.width=2*4, eval=FALSE, include=FALSE}
+```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of UV incidence at the *origins of language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). Left: mean incidence across 1998, right: standard deviation of incidence over the days of 1998; top: UV-A, bottom: UV-B.", TRUE, c("ggplot2"), is_map=FALSE), fig.height=2*5, fig.width=2*4, eval=FALSE, include=FALSE}
 grid.arrange(ggplot(d_colors, aes(y=UV_A_mean_family, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2305,7 +2292,7 @@ Therefore, we will only consider *UV_B_mean* (renamed to *UV-B* for shortness) i
 The effect of UV-B on the existence of a specific word for 'blue' [@lindsey_color_2002;@brown_color_2004] should be due to the physical negative relationship between the latitude of a location on the Earth's surface and the mean annual UV-B radiation it receives; thus, it is justified to investigate the relationship between latitude and 'blue'. 
 This relationship should specifically be *positive* (i.e., higher latitudes receive less UV-B incidence, which increase the chances of having a word for 'blue').
 
-```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of latitude of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of latitude and the quadratic effect of latitude (i.e., `latitude`^2^)."), fig.height=1*5, fig.width=3*4}
+```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of latitude of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of latitude and the quadratic effect of latitude (i.e., `latitude`^2^).", TRUE, c("ggplot2"), is_map=FALSE), fig.height=1*5, fig.width=3*4}
 grid.arrange(ggplot(d_colors, aes(y=latitude, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2334,7 +2321,7 @@ grid.arrange(ggplot(d_colors, aes(y=latitude, x=exists_blue, fill=exists_blue)) 
 ```
 
 
-```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of latitude of the *origins of the language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of latitude and the quadratic effect of latitude (i.e., `latitude`^2^)."), fig.height=1*5, fig.width=3*4, eval=FALSE, include=FALSE}
+```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of latitude of the *origins of the language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of latitude and the quadratic effect of latitude (i.e., `latitude`^2^).", TRUE, c("ggplot2"), is_map=FALSE), fig.height=1*5, fig.width=3*4, eval=FALSE, include=FALSE}
 grid.arrange(ggplot(d_colors, aes(y=latitude_family, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2437,7 +2424,7 @@ It has been suggested that various aspects of culture, including the subsistence
 pander(tmp <- table(d_colors$subsistence, ifelse(d_colors$exists_blue=="no", "no 'blue'", "has 'blue'")));
 ```
 
-```{r fig.cap=capFig("The relationship between subsistence type and the existence of a specific word for 'blue'."), fig.height=5, fig.width=4}
+```{r fig.cap=capFig("The relationship between subsistence type and the existence of a specific word for 'blue'.", TRUE, c("ggplot2"), is_map=FALSE), fig.height=5, fig.width=4}
 ggplot(as.data.frame(tmp) %>% mutate(Var2 = ifelse(Var2=="has 'blue'","Yes","No")), aes(x=Var1, y=Freq, fill=Var2)) +
   theme_bw() +
   geom_bar(stat="identity", color="black", alpha=0.25) + 
@@ -2483,7 +2470,7 @@ Interestingly, the specific directional hypothesis of a positive effect of AGR i
 
 Arguably there may be a *positive* relationship between a location's altitude above sea level and the average amount of UV-B it receives in a year.
 
-```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of elevation (altitude) of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of elevation and the quadratic effect of elevation (i.e., `elevation`^2^)."), fig.height=1*5, fig.width=2*4}
+```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of elevation (altitude) of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of elevation and the quadratic effect of elevation (i.e., `elevation`^2^).", TRUE, c("ggplot2"), is_map=FALSE), fig.height=1*5, fig.width=2*4}
 grid.arrange(ggplot(d_colors, aes(y=elevation, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2511,7 +2498,7 @@ grid.arrange(ggplot(d_colors, aes(y=elevation, x=exists_blue, fill=exists_blue))
              ncol=2);
 ```
 
-```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of elevation (altitude) of the *origins of language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of elevation and the quadratic effect of elevation (i.e., `elevation`^2^)."), fig.height=1*5, fig.width=2*4, eval=FALSE, include=FALSE}
+```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of elevation (altitude) of the *origins of language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right: the linear effect of elevation and the quadratic effect of elevation (i.e., `elevation`^2^).", TRUE, c("ggplot2"), is_map=FALSE), fig.height=1*5, fig.width=2*4, eval=FALSE, include=FALSE}
 grid.arrange(ggplot(d_colors, aes(y=elevation_family, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2598,7 +2585,7 @@ However, there is no effect of *elevation* (linear effect) nor of *elevation*^2^
 
 As opposed to the above, there do not seem to be good *a priori* reasons why climate, ecology and air humidity should influence the presence of a dedicated word for 'blue'.
 
-```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of climate, ecology and humidity at the location of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom: climate PC1, PC2 and PC3, median and IQR of humidity."), fig.height=2*5, fig.width=3*4}
+```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of climate, ecology and humidity at the location of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom: climate PC1, PC2 and PC3, median and IQR of humidity.", TRUE, c("ggplot2"), is_map=FALSE), fig.height=2*5, fig.width=3*4}
 grid.arrange(ggplot(d_colors, aes(y=clim_PC1, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2663,7 +2650,7 @@ grid.arrange(ggplot(d_colors, aes(y=clim_PC1, x=exists_blue, fill=exists_blue)) 
 ```
 
 
-```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of climate, ecology and humidity at the location of the *origins of the language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom: climate PC1, PC2 and PC3, median and IQR of humidity."), fig.height=2*5, fig.width=3*4, eval=FALSE, include=FALSE}
+```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of climate, ecology and humidity at the location of the *origins of the language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom: climate PC1, PC2 and PC3, median and IQR of humidity.", TRUE, c("ggplot2"), is_map=FALSE), fig.height=2*5, fig.width=3*4, eval=FALSE, include=FALSE}
 grid.arrange(ggplot(d_colors, aes(y=clim_PC1_family, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2819,7 +2806,7 @@ There is no evidence that climate, ecology or humidity at the *origins of the la
 
 While we might imagine that closeness to large bodies of (clean and permanent) water might promote the use of a word for blue to describe their color (thus, a *negative* effect), this is, as far as we know, not been seriously suggested in the literature.
 
-```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of distance to large bodies of water from the locations of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom, distances to: lakes, rivers, seas/oceans, and any type of body of water."), fig.height=2*5, fig.width=2*4}
+```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of distance to large bodies of water from the locations of the *languages*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom, distances to: lakes, rivers, seas/oceans, and any type of body of water.", TRUE, c("ggplot2"), is_map=FALSE), fig.height=2*5, fig.width=2*4}
 grid.arrange(ggplot(d_colors, aes(y=dist2lakes, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -2872,7 +2859,7 @@ grid.arrange(ggplot(d_colors, aes(y=dist2lakes, x=exists_blue, fill=exists_blue)
 ```
 
 
-```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of distance to large bodies of water from the locations of the *origins of language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom, distances to: lakes, rivers, seas/oceans, and any type of body of water."), fig.height=2*5, fig.width=2*4, eval=FALSE, include=FALSE}
+```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of distance to large bodies of water from the locations of the *origins of language families*, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom, distances to: lakes, rivers, seas/oceans, and any type of body of water.", TRUE, c("ggplot2"), is_map=FALSE), fig.height=2*5, fig.width=2*4, eval=FALSE, include=FALSE}
 grid.arrange(ggplot(d_colors, aes(y=dist2lakes_family, x=exists_blue, fill=exists_blue)) + 
                geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
                theme_bw() +
@@ -3019,7 +3006,7 @@ There is no evidence that distance to large bodies of water from the *origins of
 
 Again, there does not seem to be *a priori* suggestions for such a causal link, but we could imagine that larger populations, for various reasons, might have a higher chance of having a dedicated word for 'blue'.
 
-```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of (log) population size, showing the jittered data points, the densities (colored violins) and boxplots (black)."), fig.height=1*5, fig.width=1*4}
+```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of (log) population size, showing the jittered data points, the densities (colored violins) and boxplots (black).", TRUE, c("ggplot2"), is_map=FALSE), fig.height=1*5, fig.width=1*4}
 ggplot(d_colors, aes(y=log_popSize, x=exists_blue, fill=exists_blue)) + 
   geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
   theme_bw() +
@@ -3069,7 +3056,7 @@ However, it turns out that (log) population size has a strong positive effect on
 
 While most cases of abnormal color perception do have a strong genetic basis, it is unclear if variation in the presence of a dedicated word for 'blue' between languages should correlate with the genetic similarity between the populations that speak those languages.
 
-```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of between-populations genetic distances, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom, the first MDS components of the genetic distances matrix."), fig.height=2*5, fig.width=5*3}
+```{r fig.cap=capFig("Probability of having a specific word for 'blue' function of between-populations genetic distances, showing the jittered data points, the densities (colored violins) and boxplots (black). From left to right and top to bottom, the first MDS components of the genetic distances matrix.", TRUE, c("ggplot2"), is_map=FALSE), fig.height=2*5, fig.width=5*3}
 grid.arrange(grobs=lapply(names(d_colors)[grep("gen_D[[:digit:]][[:digit:]]?$",names(d_colors))], function(s)
   ggplot(d_colors, aes(y=get(s), x=exists_blue, fill=exists_blue)) + 
     geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
@@ -3141,7 +3128,7 @@ Indeed, it turns out that several MDS dimensions of the genetic distances matrix
 
 Geographically, these dimensions represent the following:
 
-```{r map MDS genetics, fig.cap=capFig("Map of the MDS dimensions of the genetic distances matrix that predict the existence of a specific word for 'blue' (color scale)."), fig.width=2*8, fig.height=2*5}
+```{r map MDS genetics, fig.cap=capFig("Map of the MDS dimensions of the genetic distances matrix that predict the existence of a specific word for 'blue' (color scale).", TRUE, c("ggplot2"), is_map=FALSE), fig.width=2*8, fig.height=2*5}
 grid.arrange(ggplot() + theme_bw() +
                geom_polygon(data=mapWorld, aes(x=long, y=lat, group=group), fill="grey") + xlab("Longitude (°)") + ylab("Latitude (°)") + # landmasses
                geom_point(data=d_colors, shape=21, aes(x=longitude, y=latitude, fill=gen_D1), color="black") +
@@ -3216,7 +3203,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_lat_uvb__blue; .plot_mediation_model(m$summary, m$mediation, 
                                                outcome=m$outcome, outcome_name=m$outcome_name, 
                                                treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -3246,7 +3233,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_lat_clim__blue; .plot_mediation_model(m$summary, m$mediation, 
                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -3275,7 +3262,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_lat_sub__blue; .plot_mediation_model(m$summary, m$mediation, 
                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -3304,7 +3291,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 load("./cached_results/bmed_lat_psiz__blue.RData");
 m <- bmed_lat_psiz__blue; .plot_mediation_model(m$summary, m$mediation,
                                                 outcome=m$outcome, outcome_name=m$outcome_name,
@@ -3334,7 +3321,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_clim_sub__blue; .plot_mediation_model(m$summary, m$mediation, 
                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -3363,7 +3350,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_clim_psiz__blue; .plot_mediation_model(m$summary, m$mediation, 
                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -3393,7 +3380,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_uvb_sub__blue; .plot_mediation_model(m$summary, m$mediation, 
                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -3422,7 +3409,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_uvb_psiz__blue; .plot_mediation_model(m$summary, m$mediation, 
                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -3452,7 +3439,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_subs_psiz__blue; .plot_mediation_model(m$summary, m$mediation, 
                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -3481,7 +3468,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_clim_subs__psiz; .plot_mediation_model(m$summary, m$mediation, 
                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -3533,21 +3520,21 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_d2l_subs__blue; .plot_mediation_model(m$summary, m$mediation, 
                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
                                                 mediator=m$mediator, mediator_name=m$mediator_name);
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_d2l_psiz__blue; .plot_mediation_model(m$summary, m$mediation, 
                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
                                                 mediator=m$mediator, mediator_name=m$mediator_name);
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the outcome is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_lat_d2l__blue; .plot_mediation_model(m$summary, m$mediation, 
                                                 outcome=m$outcome, outcome_name=m$outcome_name, 
                                                 treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -3561,7 +3548,7 @@ m <- bmed_lat_d2l__blue; .plot_mediation_model(m$summary, m$mediation,
 
 Thus, the data supports the following pathways:
 
-```{r fig.cap=capFig("The links supported by the mediation and regression analyses. Edges: solid blue = negative effects, solid red = positive effects, and dashed gray = null effects; the dashed red edge is borderline significant. Nodes: 'blue' in blue is the outcome, 'UV-B' in green is of particular interest here, light yellow have an effect on 'blue', while light gray do not. This should *not* be interpreted as a path diagram!"), fig.width=7, fig.height=4}
+```{r fig.cap=capFig("The links supported by the mediation and regression analyses. Edges: solid blue = negative effects, solid red = positive effects, and dashed gray = null effects; the dashed red edge is borderline significant. Nodes: 'blue' in blue is the outcome, 'UV-B' in green is of particular interest here, light yellow have an effect on 'blue', while light gray do not. This should *not* be interpreted as a path diagram!", TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=7, fig.height=4}
 
 DiagrammeR::grViz(paste0('
   digraph full_blue_a {
@@ -3737,19 +3724,19 @@ if( !all(file.exists(file_name)) )
 
 We performed [*path analysis*](https://en.wikipedia.org/wiki/Path_analysis_(statistics)) using [`lavaan`](https://lavaan.ugent.be/tutorial/index.html), and we obtained the following model (built principally from *a priori* reasoning, but also incorporating some theoretically sound suggestions based on [modification indices](https://curranbauer.org/what-are-modification-indices-and-should-i-use-them-when-fitting-sems-to-my-own-data/)):
 
-```{r fig.cap=capFig('The path model with non-standardized coefficients, showing all estimated path estimates. Single-headed arrows represent regressions, double-headed arrows represent covariance and variance (when refering to the same node), and the arrows emerging from triangles are the intercepts; blue edges have negative estimates, red ones positive estimates.'), fig.width=15, fig.height=10}
+```{r fig.cap=capFig('The path model with non-standardized coefficients, showing all estimated path estimates. Single-headed arrows represent regressions, double-headed arrows represent covariance and variance (when refering to the same node), and the arrows emerging from triangles are the intercepts; blue edges have negative estimates, red ones positive estimates.', TRUE, c("semPlot"), is_map=FALSE), fig.width=15, fig.height=10}
 semPaths(sem_blue$model_full, what="est", edge.label.cex=0.75, fade=FALSE, nCharNodes=0, posCol="red", negCol="blue", layout="tree2");
 ```
 
-```{r fig.cap=capFig('The path model with standardized coefficients; conventions as above.'), fig.width=15, fig.height=10}
+```{r fig.cap=capFig('The path model with standardized coefficients; conventions as above.', TRUE, c("semPlot"), is_map=FALSE), fig.width=15, fig.height=10}
 semPaths(sem_blue$model_full, what="std", edge.label.cex=0.75, fade=FALSE, nCharNodes=0, posCol="red", negCol="blue", layout="tree2");
 ```
 
-```{r fig.cap=capFig('The path model with non-standardized coefficients, showing all path estimates with significance. Single-headed arrows represent regressions, while double-headed arrows represent covariance. Please note that this is not a "standard" SEM/path analysis diagram (see below for such a representation).')}
+```{r fig.cap=capFig('The path model with non-standardized coefficients, showing all path estimates with significance. Single-headed arrows represent regressions, while double-headed arrows represent covariance. Please note that this is not a "standard" SEM/path analysis diagram (see below for such a representation).', TRUE, c("lavaanPlot"), is_map=FALSE)}
 lavaanPlot(model=sem_blue$model_full, coefs=TRUE, sig=1.00, stand=FALSE, covs=TRUE, stars=c("regress", "latent", "covs"), edge_options=list(color="gray"));
 ```
 
-```{r fig.cap=capFig('The path model with standardized coefficients (see @grace_interpreting_2005 about pitfalls in interpreting such coefficients) showing only the significant (at the 0.05 level) path estimates with significance.')}
+```{r fig.cap=capFig('The path model with standardized coefficients (see @grace_interpreting_2005 about pitfalls in interpreting such coefficients) showing only the significant (at the 0.05 level) path estimates with significance.', TRUE, c("lavaanPlot"), is_map=FALSE)}
 lavaanPlot(model=sem_blue$model_full, coefs=TRUE, sig=0.05, stand=TRUE, covs=TRUE, stars=c("regress", "latent", "covs"), edge_options=list(color="gray"));
 ```
 
@@ -3757,7 +3744,7 @@ This model fits the data well[^interpret_sem]: `r sprintf("*&chi;*^2^(%d) = %.1f
 
 We also created a path analysis model keeping only causal arrows where causality is fully assumed, either by our world's knowledge (such as the impact of latitude on UV-B radiation) or by our hypothesis (see [Potential predictors - blue]); other more "uncertain" assumed causal arrows being replaced by correlation links.
 
-```{r fig.cap=capFig('The path model with standardized coefficients (see @grace_interpreting_2005 about pitfalls in interpreting such coefficients) showing only the significant (at the 0.05 level) path estimates with significance.')}
+```{r fig.cap=capFig('The path model with standardized coefficients (see @grace_interpreting_2005 about pitfalls in interpreting such coefficients) showing only the significant (at the 0.05 level) path estimates with significance.', TRUE, c("lavaanPlot"), is_map=FALSE)}
 lavaanPlot(model=sem_blue$model_sure, coefs=TRUE, sig=0.05, stand=TRUE, covs=TRUE, stars=c("regress", "latent", "covs"), edge_options=list(color="gray"));
 ```
 
@@ -3782,125 +3769,6 @@ Thus, this path analysis model, despite its caveats (no modeling of measurement 
 
 [^interpret_sem]: For details about interpreting the results of a path analysis or SEM model, please see [here](https://www.statisticssolutions.com/factor-analysis-sem-path-analysis/), [here](http://davidakenny.net/cm/fit.htm), [here](https://methodenlehre.github.io/SGSCLM-R-course/cfa-and-sem-with-lavaan.html) or [here](https://ninamclean.weebly.com/statistics-and-other-bits-and-pieces/interpreting-results-from-path-analysis), but the main ideas are that the *&chi;*^2^ test should **not** be significant, that the various *fit indices* (such as the Comparative Fit Index (CFI), the Tucker-Lewis Index (TLI), and the Non-normed Fit Index (NNFI)) should be as close to 1.0 as possible (ok if ≥ 0.90), and that the Root Mean Square Error of Approximation (RMSEA) should be as small as possible (≤ 0.05) with a narrow 90% confidence interval (ideally with the lower limit very close to 0.0 and the upper limit ≤ 0.08).
 
-<!-- ### Path analysis - paper format -->
-
-<!-- #### Left-right -->
-
-<!-- ```{r} -->
-
-<!-- # find p-values -->
-<!-- standardizedsolution(sem_blue$model_sure) -->
-
-<!-- DiagrammeR::grViz(paste0(' -->
-<!--   digraph full_blue_a { -->
-
-<!--   # the graph: -->
-<!--   graph [overlap = true, nodesep=0.5] -->
-<!--   rankdir="LR"; -->
-
-<!--   # the nodes: -->
-<!--   node [shape = box, style = "filled", fillcolor = "lightyellow", fontsize=20]; -->
-<!--   blue [label = "Blue", tooltip = "Blue", fillcolor="deepskyblue"];  -->
-<!--   UVB  [label = "UV-B", tooltip = "UV-B", fillcolor="seagreen1"];  -->
-<!--   lat  [label = "Latitude", tooltip = "Latitude"];  -->
-<!--   clim [label = "Climate PC1", tooltip = "Climate PC1"];  -->
-<!--   subs [label = "Subsistence", tooltip = "Subsistence"];  -->
-<!--   psiz [label = "Population size", tooltip = "Population size"];  -->
-<!--   d2l  [label = "Distance to lakes", tooltip = "Distance to lakes"];  -->
-
-<!--   # the edges: -->
-<!--   edge [style = "solid", color = "black", fontsize=15]; -->
-
-<!--   lat  -> UVB  [label="-0.96 (0.000)", color="blue", fontcolor="blue"] -->
-<!--   lat  -> d2l  [label="-0.40 (0.000)", color="blue", fontcolor="blue"] -->
-<!--   lat  -> psiz  [label="-0.45 (0.001)", color="blue", fontcolor="blue"] -->
-<!--   lat  -> subs  [label="-0.19 (0.092)", color="gray50", fontcolor="gray50", style="dashed"] -->
-<!--   lat  -> clim  [label="0.86 (0.000)", color="red", fontcolor="red"] -->
-<!--   lat  -> blue  [label="-0.19 (0.522)", color="gray50", fontcolor="gray50", style="dashed"] -->
-
-<!--   subs -> d2l [dir=both, label="-0.24 (0.036)", color="blue", fontcolor="blue"] -->
-<!--   subs -> UVB [dir=both, label="-0.28 (0.012)", color="blue", fontcolor="blue"] -->
-<!--   subs -> psiz [dir=both, label="0.55 (0.000)", color="red", fontcolor="red"] -->
-<!--   subs -> clim [dir=both, label="0.02 (0.899)", color="gray50", fontcolor="gray50", style="dashed"] -->
-<!--   subs -> blue [label="0.20 (0.083)", color="gray50", fontcolor="gray50", style="dashed"] -->
-
-<!--   clim -> psiz [label="0.6 (0.000)", color="red", fontcolor="red"] -->
-<!--   clim -> UVB [dir=both, label="-0.23 (0.009)", color="blue", fontcolor="blue"] -->
-<!--   clim -> blue [label="-0.01 (0.972)", color="gray50", fontcolor="gray50", style="dashed"] -->
-
-<!--   psiz -> d2l [dir=both, label="-0.28 (0.000)", color="blue", fontcolor="blue"] -->
-<!--   psiz -> UVB [dir=both, label="-0.17 (0.015)", color="blue", fontcolor="blue"] -->
-<!--   psiz -> blue [label="0.31 (0.001)", color="red", fontcolor="red"] -->
-
-<!--   d2l -> UVB [dir=both, label="0.15 (0.055)", color="gray50", fontcolor="gray50", style="dashed"] -->
-<!--   d2l -> blue [label="-0.2 (0.013)", color="blue", fontcolor="blue"] -->
-
-<!--   UVB -> blue [label="-0.65 (0.032)", color="blue", fontcolor="blue"] -->
-
-<!-- } -->
-<!-- ')) -->
-
-
-<!-- ``` -->
-
-
-<!-- #### Top-bottom  -->
-
-<!-- ```{r} -->
-
-<!-- summary(sem_blue$model_sure, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE, estimates=TRUE, ci=TRUE); -->
-
-<!-- standardizedsolution(sem_blue$model_sure) -->
-
-<!-- DiagrammeR::grViz(paste0(' -->
-<!--   digraph full_blue_a { -->
-
-<!--   # the graph: -->
-<!--   graph [overlap = true, nodesep=0.5] -->
-<!--   rankdir="TB"; -->
-
-<!--   # the nodes: -->
-<!--   node [shape = box, style = "filled", fillcolor = "lightyellow"]; -->
-<!--   blue [label = "Blue", tooltip = "Blue", fillcolor="deepskyblue"];  -->
-<!--   UVB  [label = "UV-B", tooltip = "UV-B", fillcolor="seagreen1"];  -->
-<!--   lat  [label = "Latitude", tooltip = "Latitude"];  -->
-<!--   clim [label = "Climate PC1", tooltip = "Climate PC1"];  -->
-<!--   subs [label = "Subsistence", tooltip = "Subsistence"];  -->
-<!--   psiz [label = "Population size", tooltip = "Population size"];  -->
-<!--   d2l  [label = "Distance to lakes", tooltip = "Distance to lakes"];  -->
-
-<!--   # the edges: -->
-<!--   edge [style = "solid", color = "black"]; -->
-
-<!--   lat  -> UVB  [label="-0.96 (0.000)", color="blue", fontcolor="blue"] -->
-<!--   lat  -> d2l  [label="-0.40 (0.000)", color="blue", fontcolor="blue"] -->
-<!--   lat  -> psiz  [label="-0.45 (0.001)", color="blue", fontcolor="blue"] -->
-<!--   lat  -> subs  [label="-0.19 (0.092)", color="gray50", fontcolor="gray50", style="dashed"] -->
-<!--   lat  -> clim  [label="0.86 (0.000)", color="red", fontcolor="red"] -->
-<!--   lat  -> blue  [label="-0.19 (0.522)", color="gray50", fontcolor="gray50", style="dashed"] -->
-
-<!--   subs -> d2l [dir=both, label="-0.24 (0.036)", color="blue", fontcolor="blue"] -->
-<!--   subs -> UVB [dir=both, label="-0.28 (0.012)", color="blue", fontcolor="blue"] -->
-<!--   subs -> psiz [dir=both, label="0.55 (0.000)", color="red", fontcolor="red"] -->
-<!--   subs -> clim [dir=both, label="0.02 (0.90)", color="gray50", fontcolor="gray50", style="dashed"] -->
-<!--   subs -> blue [label="0.20 (0.083)", color="gray50", fontcolor="gray50", style="dashed"] -->
-
-<!--   clim -> psiz [label="0.60 (0.000)", color="red", fontcolor="red"] -->
-<!--   clim -> UVB [dir=both, label="-0.23 (0.009)", color="blue", fontcolor="blue"] -->
-<!--   clim -> blue [label="-0.01 (0.97)", color="gray50", fontcolor="gray50", style="dashed"] -->
-
-<!--   psiz -> d2l [dir=both, label="-0.28 (0.000)", color="blue", fontcolor="blue"] -->
-<!--   psiz -> UVB [dir=both, label="-0.17 (0.015)", color="blue", fontcolor="blue"] -->
-<!--   psiz -> blue [label="0.31 (0.001)", color="red", fontcolor="red"] -->
-
-<!--   d2l -> UVB [dir=both, label="0.15 (0.055)", color="gray50", fontcolor="gray50", style="dashed"] -->
-<!--   d2l -> blue [label="-0.2 (0.013)", color="blue", fontcolor="blue"] -->
-
-<!--   UVB -> blue [label="-0.65 (0.032)", color="blue", fontcolor="blue"] -->
-
-<!-- } -->
-<!-- ')) -->
-<!-- ``` -->
 
 ### Predicting 'blue'
 
@@ -4116,7 +3984,7 @@ kable(tmp, row.names=FALSE, col.names=c("Predictors", "Accuracy", "Sensitivity",
 
 
 
-```{r fig.cap=capFig(paste0("Various measures of success using Bayesian mixed effects logistic regressions splitting the dataset randomly into 80% training/20% testing subsets, ",brms_blue$training_testing$replications," times. Boxplots show the spread of the training/testing values, while the solid horizontal red lines show the values when using the full dataset.")), fig.width=1*7, fig.height=5}
+```{r fig.cap=capFig(paste0("Various measures of success using Bayesian mixed effects logistic regressions splitting the dataset randomly into 80% training/20% testing subsets, ",brms_blue$training_testing$replications," times. Boxplots show the spread of the training/testing values, while the solid horizontal red lines show the values when using the full dataset."), TRUE, c("ggplot2"), is_map=FALSE), fig.width=1*7, fig.height=5}
 ggplot(brms_blue$training_testing$both$success %>% 
          reshape2::melt(id.vars=c("replication"), variable.name="measure", value.name="value") %>% 
          mutate("measure"=factor(measure, levels=c("accuracy", "sensitivity", "specificity", "precision", "recall")), "value"=value*100), 
@@ -4238,7 +4106,7 @@ if( !all(file.exists(file_name)) )
 
 When using the full dataset, the decision trees explain it quite well:
 
-```{r fig.cap=capFig('Conditional inference trees for predicting *blue* using all the potential predictors. Please note that some predictors are transformed (the "_r" suffix), the most important here being *macroarea*.'), fig.width=12, fig.height=7, fig.show='hold', out.height="50%"}
+```{r fig.cap=capFig('Conditional inference trees for predicting *blue* using all the potential predictors. Please note that some predictors are transformed (the "_r" suffix), the most important here being *macroarea*.', TRUE, c("partykit"), is_map=FALSE), fig.width=12, fig.height=7, fig.show='hold', out.height="50%"}
 plot(ctree_blue$all,    gp=gpar(fontsize = 11));
 ```
 
@@ -4274,7 +4142,7 @@ kable(tmp, row.names=FALSE, col.names=c("Predictors", "Accuracy", "Sensitivity",
       caption=capTab(paste0("Various measures of success at predicting *blue* using conditional inference trees splitting the dataset randomly into 80% training/20% testing subsets, ",ctree_blue$training_testing$replications," times.")));
 ```
 
-```{r fig.cap=capFig(paste0("Various measures of success using conditional inference trees splitting the dataset randomly into 80% training/20% testing subsets, ",ctree_blue$training_testing$replications," times. Boxplots show the spread of the training/testing values, while the solid horizontal red lines show the values when using the full dataset.")), fig.width=1*7, fig.height=5}
+```{r fig.cap=capFig(paste0("Various measures of success using conditional inference trees splitting the dataset randomly into 80% training/20% testing subsets, ",ctree_blue$training_testing$replications," times. Boxplots show the spread of the training/testing values, while the solid horizontal red lines show the values when using the full dataset."), TRUE, c("ggplot2"), is_map=FALSE), fig.width=1*7, fig.height=5}
 ggplot(ctree_blue$training_testing$all$success %>% 
         reshape2::melt(id.vars=c("replication"), variable.name="measure", value.name="value") %>% 
          mutate("measure"=factor(measure, levels=c("accuracy", "sensitivity", "specificity", "precision", "recall")), "value"=value*100), 
@@ -4384,7 +4252,7 @@ if( !all(file.exists(file_name)) )
 The (conditional) random forests are quite successful at predicting *blue*:
 
 ```{r}
-tmp_full   <- vapply(rforest_blue$full$success[,-1],    function(x) sprintf("%.1f%% ±%.1f%%", mean(x,na.rm=TRUE)*100, sd(x,na.rm=TRUE)*100), character(1));
+tmp_full <- vapply(rforest_blue$full$success[,-1], function(x) sprintf("%.1f%% ±%.1f%%", mean(x,na.rm=TRUE)*100, sd(x,na.rm=TRUE)*100), character(1));
 
 tmp <- data.frame("method"     =rep(c("random forest", "conditional random forest"), times=1),
                   "accuracy"   =c(tmp_full[ grep("accuracy",    names(tmp_full), fixed=TRUE) ]),
@@ -4396,7 +4264,7 @@ kable(tmp, row.names=FALSE, col.names=c("Method", "Accuracy", "Sensitivity", "Sp
       caption=capTab(paste0("Various measures of success at predicting *blue* using two random forest methods, ",rforest_blue$replications," replications.")));
 ```
 
-```{r fig.cap=capFig(paste0("Various measures of success using (conditional) random forests with ",rforest_blue$replications," replications.")), fig.width=2*4, fig.height=5}
+```{r fig.cap=capFig(paste0("Various measures of success using (conditional) random forests with ",rforest_blue$replications," replications."), TRUE, c("ggplot2"), is_map=FALSE), fig.width=2*4, fig.height=5}
 ggplot(rbind(cbind(rforest_blue$full$success, "full"="yes")) %>% 
          reshape2::melt(id.vars=c("replication", "full"), variable.name="measure", value.name="value") %>% 
          mutate("method"=factor(if_else(substring(measure,1,2) == "rf", "random forest", "conditional random forest"), levels=c("random forest", "conditional random forest")), 
@@ -4419,7 +4287,7 @@ ggplot(rbind(cbind(rforest_blue$full$success, "full"="yes")) %>%
 
 The importance of the predictors is:
 
-```{r fig.cap=capFig(paste0("Different measures of predictor importance using ",rforest_blue$replications," replications. Left column: Accuracy-based predictor importance from random forests; this is a measure of the amount by which removing a variable decreases the accuracy thus higher values point to more relevant predictors. Column in the center: Gini-index-based predictor importance from random forests; this measures by how much the Gini impurity decrease when a variable is chosen to split a node (please note that only the relative values matter, and that there is a bias towards using numeric variables to split nodes). Right column: Unconditional predictor importance from conditional random forests; this is similar to the accuracy-based importance from random forests. ")), fig.width=4*3, fig.height=7*1}
+```{r fig.cap=capFig(paste0("Different measures of predictor importance using ",rforest_blue$replications," replications. Left column: Accuracy-based predictor importance from random forests; this is a measure of the amount by which removing a variable decreases the accuracy thus higher values point to more relevant predictors. Column in the center: Gini-index-based predictor importance from random forests; this measures by how much the Gini impurity decrease when a variable is chosen to split a node (please note that only the relative values matter, and that there is a bias towards using numeric variables to split nodes). Right column: Unconditional predictor importance from conditional random forests; this is similar to the accuracy-based importance from random forests."), TRUE, c("ggplot2"), is_map=FALSE), fig.width=4*3, fig.height=7*1}
 grid.arrange(ggplot(rforest_blue$full$pred_importance, 
                     aes(x=reorder(predictor, MeanDecreaseAccuracy, median), y=MeanDecreaseAccuracy)) +
                theme_bw() +
@@ -4606,7 +4474,7 @@ kable(tmp, row.names=FALSE, col.names=c("Predictors", "Accuracy", "Sensitivity",
       caption=capTab(paste0("Various measures of success at predicting *blue* using SVMs with ",svm_blue$training_testing$replications," training/testing sets.")));
 ```
 
-```{r fig.cap=capFig(paste0("Various measures of success using SVMs with ",svm_blue$replications," training/testing sets. Boxplots show the spread of the training/testing values, while the solid horizontal red lines show the values when using the full dataset.")), fig.width=1*6, fig.height=5}
+```{r fig.cap=capFig(paste0("Various measures of success using SVMs with ",svm_blue$replications," training/testing sets. Boxplots show the spread of the training/testing values, while the solid horizontal red lines show the values when using the full dataset."), TRUE, c("ggplot2"), is_map=FALSE), fig.width=1*6, fig.height=5}
 ggplot(svm_blue$training_testing$full$success %>% 
          reshape2::melt(id.vars=c("replication"), variable.name="measure", value.name="value") %>% 
          mutate("measure"=factor(measure, levels=c("accuracy", "sensitivity", "specificity", "precision", "recall")), "value"=value*100), 
@@ -4631,7 +4499,7 @@ ggplot(svm_blue$training_testing$full$success %>%
 
 The importance of the predictors is:
 
-```{r fig.cap=capFig(paste0("Specificity-based predictor importance from SVMs using ",svm_blue$training_testing$replications," training/testing sets.")), fig.width=4*1, fig.height=7*1}
+```{r fig.cap=capFig(paste0("Specificity-based predictor importance from SVMs using ",svm_blue$training_testing$replications," training/testing sets."), TRUE, c("ggplot2"), is_map=FALSE), fig.width=4*1, fig.height=7*1}
 grid.arrange(ggplot(svm_blue$training_testing$full$pred_importance, 
                     aes(x=reorder(predictor, importance, median), y=importance)) +
                theme_bw() +
@@ -4683,7 +4551,7 @@ Finally, there is an a priori surprising negative effect of distance to large bo
 
 Here we test the second hypothesis [@brown_color_2004], linking UV incidence and the population frequency of abnormal color perception:
 
-```{r fig.cap=capFig("Graphical representation of Hypothesis 2.")}
+```{r fig.cap=capFig("Graphical representation of Hypothesis 2.", TRUE, c("DiagrammeR"), is_map=FALSE)}
 DiagrammeR::grViz(paste0('
   digraph hypothesis_2 {
 
@@ -4710,7 +4578,7 @@ DiagrammeR::grViz(paste0('
 
 With our variables (and strictly following the hypothesis), this becomes:
 
-```{r fig.cap=capFig("Graphical representation of Hypothesis 2 with our measures as a SEM diagram.")}
+```{r fig.cap=capFig("Graphical representation of Hypothesis 2 with our measures as a SEM diagram.", TRUE, c("DiagrammeR"), is_map=FALSE)}
 DiagrammeR::grViz(paste0('
   digraph hypothesis_2_sem {
 
@@ -4740,7 +4608,7 @@ DiagrammeR::grViz(paste0('
 
 However, we do not have enough data to model the two latent variables, so our graph reduces to the following path analysis:
 
-```{r fig.cap=capFig("Graphical representation of Hypothesis 2 with our measures as a path analysis diagram.")}
+```{r fig.cap=capFig("Graphical representation of Hypothesis 2 with our measures as a path analysis diagram.", TRUE, c("DiagrammeR"), is_map=FALSE)}
 DiagrammeR::grViz(paste0('
   digraph hypothesis_2_pa {
 
@@ -4852,7 +4720,7 @@ Here we look at the potential predictors individually.
 
 #### 'blue' &rarr; daltonism
 
-```{r fig.cap=capFig("Population frequency of daltonism (in %) function of having a specific word for 'blue', showing the jittered data points, the densities (colored violins) and boxplots (black)."), fig.height=1*5, fig.width=1*4}
+```{r fig.cap=capFig("Population frequency of daltonism (in %) function of having a specific word for 'blue', showing the jittered data points, the densities (colored violins) and boxplots (black).", TRUE, c("ggplot2"), is_map=FALSE), fig.height=1*5, fig.width=1*4}
 ggplot(d_colors, aes(y=daltonism, x=exists_blue, fill=exists_blue)) + 
   geom_jitter(alpha=0.50, aes(color=exists_blue)) + geom_violin(alpha=0.25, aes(color=exists_blue)) + geom_boxplot(fill=alpha("gray80",0.30)) + 
   theme_bw() +
@@ -4944,7 +4812,7 @@ Conversely, *daltonism* has a positive effect on the existence of a dedicated wo
 
 #### UV-B &rarr; daltonism
 
-```{r fig.cap=capFig('Population frequency of daltonism (in %) function of UV-B incidence, showing the data points and the linear and LOESS trends (with 95% CIs).'), fig.height=1*5, fig.width=1*5}
+```{r fig.cap=capFig('Population frequency of daltonism (in %) function of UV-B incidence, showing the data points and the linear and LOESS trends (with 95% CIs).', TRUE, c("ggplot2"), is_map=FALSE), fig.height=1*5, fig.width=1*5}
 ggplot(d_colors, aes(y=daltonism, x=UVB)) + 
   geom_point(alpha=0.35) + 
   geom_smooth(method="lm", color="blue") + geom_smooth(method="loess", color="red") + 
@@ -5003,7 +4871,7 @@ UV-B incidence has a significant negative linear effect on *daltonism* (the quad
 
 #### Latitude &rarr; daltonism
 
-```{r fig.cap=capFig('Population frequency of daltonism (in %) function of UV-B incidence, showing the data points and the linear and LOESS trends (with 95% CIs).'), fig.height=1*5, fig.width=1*5}
+```{r fig.cap=capFig('Population frequency of daltonism (in %) function of UV-B incidence, showing the data points and the linear and LOESS trends (with 95% CIs).', TRUE, c("ggplot2"), is_map=FALSE), fig.height=1*5, fig.width=1*5}
 ggplot(d_colors, aes(y=daltonism, x=latitude)) + 
   geom_point(alpha=0.35) + 
   geom_smooth(method="lm", color="blue") + geom_smooth(method="loess", color="red") + 
@@ -5063,7 +4931,7 @@ if( !all(file.exists("./cached_results/b_lat__daltonism.RData")) )
 
 #### daltonism and genetic distances
 
-```{r fig.cap=capFig('Population frequency of daltonism (in %) function of genetic distance between populations.'), fig.height=3*4, fig.width=3*5}
+```{r fig.cap=capFig('Population frequency of daltonism (in %) function of genetic distance between populations.', TRUE, c("ggplot2"), is_map=FALSE), fig.height=3*4, fig.width=3*5}
 grid.arrange(grobs=lapply(grep("gen_D", names(d_colors), fixed=TRUE), function(i)
               {
                 d_1 <- d_colors[,c("daltonism", names(d_colors)[i])]; names(d_1) <- c("daltonism", "gen_D");
@@ -5182,7 +5050,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the mediator is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the mediator is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_uvb_blue__daltonism; .plot_mediation_model(m$summary, m$mediation, 
                                                      outcome=m$outcome, outcome_name=m$outcome_name, 
                                                      treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -5213,7 +5081,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the mediator is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the mediator is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_lat_uvb__daltonism; .plot_mediation_model(m$summary, m$mediation, 
                                                      outcome=m$outcome, outcome_name=m$outcome_name, 
                                                      treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -5242,7 +5110,7 @@ if( !all(file.exists(file_name)) )
 }
 ```
 
-```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the mediator is binary, the direct and indirect effects may be on different scales.'), fig.width=10, fig.height=5}
+```{r fig.cap=capFig('Mediation analysis showing the total, direct and indirect effects, as well as the actual regression coefficients. Please note that because the mediator is binary, the direct and indirect effects may be on different scales.', TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=10, fig.height=5}
 m <- bmed_lat_blue__daltonism; .plot_mediation_model(m$summary, m$mediation, 
                                                      outcome=m$outcome, outcome_name=m$outcome_name, 
                                                      treatment=m$treatment, treatment_name=m$treatment_name, 
@@ -5251,7 +5119,7 @@ m <- bmed_lat_blue__daltonism; .plot_mediation_model(m$summary, m$mediation,
 
 #### Interpretation 
 
-```{r fig.cap=capFig("Graphical representation of the links supported by the mediation and regression analyses. Edges: solid blue = negative effects, solid red = positive effects, and dashed gray = non-significant effects; the dashed red edge is borderline significant. Nodes: 'blue' in blue is the outcome, 'UV-B' in green is of particular interest here. This should *not* be interpreted as a path diagram!"), fig.width=7, fig.height=4}
+```{r fig.cap=capFig("Graphical representation of the links supported by the mediation and regression analyses. Edges: solid blue = negative effects, solid red = positive effects, and dashed gray = non-significant effects; the dashed red edge is borderline significant. Nodes: 'blue' in blue is the outcome, 'UV-B' in green is of particular interest here. This should *not* be interpreted as a path diagram!", TRUE, c("DiagrammeR"), is_map=FALSE), fig.width=7, fig.height=4}
 
 DiagrammeR::grViz(paste0('
   digraph hypothesis_2_full_sem {
@@ -5365,19 +5233,19 @@ if( !all(file.exists(file_name)) )
 
 Here we fit a path analysis model that is strictly following hypothesis 2 (i.e., we exclude other potential factors):
 
-```{r fig.cap=capFig('The path model with non-standardized coefficients, showing all estimated path estimates. Single-headed arrows represent regressions, double-headed arrows represent covariance and variance (when refering to the same node), and the arrows emerging from triangles are the intercepts; blue edges have negative estimates, red ones positive estimates.'), fig.width=15, fig.height=10}
+```{r fig.cap=capFig('The path model with non-standardized coefficients, showing all estimated path estimates. Single-headed arrows represent regressions, double-headed arrows represent covariance and variance (when refering to the same node), and the arrows emerging from triangles are the intercepts; blue edges have negative estimates, red ones positive estimates.', TRUE, c("semPlot"), is_map=FALSE), fig.width=15, fig.height=10}
 semPaths(sem_daltonism$model_essential, what="est", edge.label.cex=0.75, fade=FALSE, nCharNodes=0, posCol="red", negCol="blue", layout="tree2");
 ```
 
-```{r fig.cap=capFig('The path model with standardized coefficients; conventions as above.'), fig.width=15, fig.height=10}
+```{r fig.cap=capFig('The path model with standardized coefficients; conventions as above.', TRUE, c("semPlot"), is_map=FALSE), fig.width=15, fig.height=10}
 semPaths(sem_daltonism$model_essential, what="std", edge.label.cex=0.75, fade=FALSE, nCharNodes=0, posCol="red", negCol="blue", layout="tree2");
 ```
 
-```{r fig.cap=capFig('The path model with non-standardized coefficients, showing all path estimates with significance. Single-headed arrows represent regressions, while double-headed arrows represent covariance. Please note that this is not a "standard" SEM/path analysis diagram (see below for such a representation).')}
+```{r fig.cap=capFig('The path model with non-standardized coefficients, showing all path estimates with significance. Single-headed arrows represent regressions, while double-headed arrows represent covariance. Please note that this is not a "standard" SEM/path analysis diagram (see below for such a representation).', TRUE, c("lavaanPlot"), is_map=FALSE)}
 lavaanPlot(model=sem_daltonism$model_essential, coefs=TRUE, sig=1.00, stand=FALSE, covs=TRUE, stars=c("regress", "latent", "covs"), edge_options=list(color="gray"));
 ```
 
-```{r fig.cap=capFig('The path model with standardized coefficients (see @grace_interpreting_2005 about pitfalls in interpreting such coefficients) showing only the significant (at the 0.05 level) path estimates with significance.')}
+```{r fig.cap=capFig('The path model with standardized coefficients (see @grace_interpreting_2005 about pitfalls in interpreting such coefficients) showing only the significant (at the 0.05 level) path estimates with significance.', TRUE, c("lavaanPlot"), is_map=FALSE)}
 lavaanPlot(model=sem_daltonism$model_essential, coefs=TRUE, sig=0.05, stand=TRUE, covs=TRUE, stars=c("regress", "latent", "covs"), edge_options=list(color="gray"));
 ```
 
@@ -5386,7 +5254,7 @@ This model fits the data well: `r sprintf("*&chi;*^2^(%d) = %.1f, *p* = %.3g; CF
 
 As *subsistence* could potentially be linked to *colour blindness* rate, as observed by (@salzano_color_1964; @salzano_rare_1961; @post_colorblindness_1963; @post_population_1962  @pickford_natural_1963 ; @kalmus_frequency_1964; @kalmus_frequency_1961; @kalmus_defective_1957; @junqueira_ptc_1957 ; @garth_incidence_1933; @adam_further_1969), we also created a path analysis model including subsistence:
 
-```{r fig.cap=capFig('The path model with standardized coefficients (see @grace_interpreting_2005 about pitfalls in interpreting such coefficients) showing only the significant (at the 0.05 level) path estimates with significance.')}
+```{r fig.cap=capFig('The path model with standardized coefficients (see @grace_interpreting_2005 about pitfalls in interpreting such coefficients) showing only the significant (at the 0.05 level) path estimates with significance.', TRUE, c("lavaanPlot"), is_map=FALSE)}
 lavaanPlot(model=sem_daltonism$model_essential_subs, coefs=TRUE, sig=0.05, stand=TRUE, covs=TRUE, stars=c("regress", "latent", "covs"), edge_options=list(color="gray"));
 ```
 
@@ -5598,7 +5466,7 @@ kable(data.frame("predictor"  =rownames(brms_daltonism$all_data$reduced$fixef),
 
 When randomly splitting the dataset into 80% training/20% testing subsets `r brms_daltonism$training_testing$replications` times, using all the potential predictors, we obtain `r sprintf("R^2^ = %.1f%% ±%.1f%%, and RMSE = %.3f ±%.3f", mean(brms_daltonism$training_testing$performance$success$R2,na.rm=TRUE)*100, sd(brms_daltonism$training_testing$performance$success$R2,na.rm=TRUE)*100, mean(brms_daltonism$training_testing$performance$success$RMSE,na.rm=TRUE), sd(brms_daltonism$training_testing$performance$success$RMSE,na.rm=TRUE))`.
 
-```{r fig.cap=capFig(paste0("Various measures of success using Bayesian mixed effects logistic regressions splitting the dataset randomly into 80% training/20% testing subsets, ",brms_daltonism$training_testing$replications," times. Boxplots show the spread of the training/testing values, while the solid horizontal lines show the values when using the full dataset.")), fig.width=2*2, fig.height=5}
+```{r fig.cap=capFig(paste0("Various measures of success using Bayesian mixed effects logistic regressions splitting the dataset randomly into 80% training/20% testing subsets, ",brms_daltonism$training_testing$replications," times. Boxplots show the spread of the training/testing values, while the solid horizontal lines show the values when using the full dataset."), TRUE, c("ggplot2"), is_map=FALSE), fig.width=2*2, fig.height=5}
 grid.arrange(ggplot(brms_daltonism$training_testing$performance$success, aes(y=R2*100, x="")) + 
                geom_jitter(alpha=0.50, color="steelblue") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("blue",0.30)) + 
                theme_bw() +
@@ -5718,14 +5586,14 @@ if( !all(file.exists(file_name)) )
 
 On the full dataset, the conditional inference tree using all potential predictors as fixed effects, fits the data very well: `r sprintf("R^2^ = %.1f%%, RMSE = %.3f", ctree_daltonism$all_data$R2*100, ctree_daltonism$all_data$RMSE)`, and the tree is:
 
-```{r fig.cap=capFig('Conditional inference trees for predicting *daltonism* using all the potential predictors.'), fig.width=10, fig.height=6, fig.show='hold', out.height="50%"}
+```{r fig.cap=capFig('Conditional inference trees for predicting *daltonism* using all the potential predictors.', TRUE, c("partykit"), is_map=FALSE), fig.width=10, fig.height=6, fig.show='hold', out.height="50%"}
 plot(ctree_daltonism$all, gp=gpar(fontsize = 11));
 ```
 
 
 When randomly splitting the dataset into 80% training/20% testing subsets `r ctree_daltonism$training_testing$replications` times, using all the potential predictors, we obtain `r sprintf("R^2^ = %.1f%% ±%.1f%%, and RMSE = %.3f ±%.3f", mean(ctree_daltonism$training_testing$performance$success$R2,na.rm=TRUE)*100, sd(ctree_daltonism$training_testing$performance$success$R2,na.rm=TRUE)*100, mean(ctree_daltonism$training_testing$performance$success$RMSE,na.rm=TRUE), sd(ctree_daltonism$training_testing$performance$success$RMSE,na.rm=TRUE))`.
 
-```{r fig.cap=capFig(paste0("Various measures of success using Bayesian mixed effects logistic regressions splitting the dataset randomly into 80% training/20% testing subsets, ",ctree_daltonism$training_testing$replications," times. Boxplots show the spread of the training/testing values, while the solid horizontal lines show the values when using the full dataset.")), fig.width=2*2, fig.height=5}
+```{r fig.cap=capFig(paste0("Various measures of success using Bayesian mixed effects logistic regressions splitting the dataset randomly into 80% training/20% testing subsets, ",ctree_daltonism$training_testing$replications," times. Boxplots show the spread of the training/testing values, while the solid horizontal lines show the values when using the full dataset."), TRUE, c("ggplot2"), is_map=FALSE), fig.width=2*2, fig.height=5}
 grid.arrange(ggplot(ctree_daltonism$training_testing$performance$success, aes(y=R2*100, x="")) + 
                geom_jitter(alpha=0.50, color="steelblue") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("blue",0.30)) + 
                theme_bw() +
@@ -5849,7 +5717,7 @@ On the full dataset, the (conditional) random forests using all potential predic
 - random forests: `r sprintf("R^2^ = %.1f%% ±%.1f%%, RMSE = %.3f ±%.3f", mean(rforest_daltonism$results$success$rf_R2*100), sd(rforest_daltonism$results$success$rf_R2*100), mean(rforest_daltonism$results$success$rf_RMSE), sd(rforest_daltonism$results$success$rf_RMSE))`
 - conditional random forests: `r sprintf("R^2^ = %.1f%% ±%.1f%%, RMSE = %.3f ±%.3f", mean(rforest_daltonism$results$success$cf_R2*100), sd(rforest_daltonism$results$success$cf_R2*100), mean(rforest_daltonism$results$success$cf_RMSE), sd(rforest_daltonism$results$success$cf_RMSE))`.
 
-```{r fig.cap=capFig(paste0("Various measures of success using random forests (RF) and conditional random forests (CRF).")), fig.width=4*2, fig.height=1*5}
+```{r fig.cap=capFig(paste0("Various measures of success using random forests (RF) and conditional random forests (CRF)."), TRUE, c("ggplot2"), is_map=FALSE), fig.width=4*2, fig.height=1*5}
 grid.arrange(ggplot(rforest_daltonism$results$success, aes(y=rf_R2*100, x="")) + 
                geom_jitter(alpha=0.50, color="steelblue") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("blue",0.30)) + 
                theme_bw() +
@@ -5901,7 +5769,7 @@ grid.arrange(ggplot(rforest_daltonism$results$success, aes(y=rf_R2*100, x="")) +
 
 The importance of the predictors is:
 
-```{r fig.cap=capFig(paste0("Predictor importance from random forests using ",rforest_blue$replications," replications using random forests (left: accuracy-based, middle: Gini-index based) and conditional random forests (right).")), fig.width=4*3, fig.height=7*1}
+```{r fig.cap=capFig(paste0("Predictor importance from random forests using ",rforest_blue$replications," replications using random forests (left: accuracy-based, middle: Gini-index based) and conditional random forests (right)."), TRUE, c("ggplot2"), is_map=FALSE), fig.width=4*3, fig.height=7*1}
 grid.arrange(ggplot(rforest_daltonism$results$pred_importance, 
                     aes(x=reorder(predictor, X.IncMSE, median), y=X.IncMSE)) +
                theme_bw() +
@@ -6042,7 +5910,7 @@ cat(paste0("*",tmp$predictor,"*", " (", round(tmp$importance,3), ")", collapse="
 
 When randomly splitting the dataset into 80% training/20% testing subsets `r svm_daltonism$training_testing$replications` times, using all the potential predictors, we obtain `r sprintf("R^2^ = %.1f%% ±%.1f%%, and RMSE = %.3f ±%.3f", mean(svm_daltonism$training_testing$performance$success$R2,na.rm=TRUE)*100, sd(svm_daltonism$training_testing$performance$success$R2,na.rm=TRUE)*100, mean(svm_daltonism$training_testing$performance$success$RMSE,na.rm=TRUE), sd(svm_daltonism$training_testing$performance$success$RMSE,na.rm=TRUE))`.
 
-```{r fig.cap=capFig(paste0("Various measures of success using SVMs splitting the dataset randomly into 80% training/20% testing subsets, ",svm_daltonism$training_testing$replications," times. Boxplots show the spread of the training/testing values, while the solid horizontal lines show the values when using the full dataset.")), fig.width=2*2, fig.height=5}
+```{r fig.cap=capFig(paste0("Various measures of success using SVMs splitting the dataset randomly into 80% training/20% testing subsets, ",svm_daltonism$training_testing$replications," times. Boxplots show the spread of the training/testing values, while the solid horizontal lines show the values when using the full dataset."), TRUE, c("ggplot2"), is_map=FALSE), fig.width=2*2, fig.height=5}
 grid.arrange(ggplot(svm_daltonism$training_testing$performance$success, aes(y=R2*100, x="")) + 
                geom_jitter(alpha=0.50, color="steelblue") + geom_violin(alpha=0.25) + geom_boxplot(fill=alpha("blue",0.30)) + 
                theme_bw() +
@@ -6075,7 +5943,7 @@ grid.arrange(ggplot(svm_daltonism$training_testing$performance$success, aes(y=R2
 
 The importance of the predictors is:
 
-```{r fig.cap=capFig(paste0("Specificity-based predictor importance from SVMs using ",svm_daltonism$training_testing$replications," training/testing sets.")), fig.width=4*1, fig.height=7*1}
+```{r fig.cap=capFig(paste0("Specificity-based predictor importance from SVMs using ",svm_daltonism$training_testing$replications," training/testing sets."), TRUE, c("ggplot2"), is_map=FALSE), fig.width=4*1, fig.height=7*1}
 ggplot(svm_daltonism$training_testing$performance$pred_importance, 
        aes(x=reorder(predictor, importance, mean), y=importance)) +
   theme_bw() +
@@ -6100,7 +5968,7 @@ Interestingly, the overall genetic distance between populations is not a good pr
 
 
 
-# Overal conclusions and discussion
+# Overall conclusions and discussion
 
 Overall, our extended dataset and more advanced methods do provide support for both hypotheses: on the one hand, the presence of a dedicated word for 'blue' is influenced negatively by the amount of UV-B incident radiation (hypothesis 1), and, on the other, that there is a negative effect of UV-B on the population frequency of red/green abnormal color perception ("daltonism") that is largely mediated by the existence of a dedicated word for 'blue' (hypothesis 2).
 Moreover, our analyses suggest new findings: various proxies of "cultural complexity" (population size, subsistence strategy) seem to also have an effect on the presence of a word for blue, supporting the idea that more "complex" cultures favor more "complex" color vocabularies. 
