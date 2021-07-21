@@ -4,12 +4,13 @@ subtitle: "Supporting information: full analyses and plots"
 author: "Mathilde Josserand [mathilde.josserand@gmail.fr], Emma Meeussen, Asifa Majid, and Dan Dediu [ddediu@gmail.com]"
 date: "`r date()`"
 output:
-  html_document:
+  html_document: 
     highlight: textmate
-    theme: journal
     toc: yes
     toc_depth: 6
     toc_float: yes
+    theme: cerulean
+    number_sections: yes
   word_document: default
   pdf_document:
     toc: yes
@@ -54,6 +55,26 @@ a[hreflang]:before{}
 
 This `HTML` document (possibly, printed to `PDF`) resulted from compiling the corresponding `Rmarkdown` script and contains all the results and plots supporting the paper *Environment and culture shape both the colour lexicon and the genetics of colour perception*.
 All the data and scripts needed to reproduce this document are available in the *GitHub* repository [https://github.com/ddediu/colors-UV](https://github.com/ddediu/colors-UV) and on *Zenodo* at [doi:10.5281/zenodo.5083676](doi://10.5281/zenodo.5083676).
+
+## Typographic conventions
+
+This `HTML` document uses the following font and color conventions:
+
+- *regular text* is rendered as "regular text";
+- *emphasis* is represented using *italic text*, **bold text** or, in rare circumstances, ***bold+italic text***;
+- *software* or programming concepts (e.g., applications, packages or function names) are represented using `fixed font text`;
+- *section heads* use specific font sizes and are numbered;
+- *hyperlinks* to sections of this document and to external resources on the web are represented as [link to the Introduction](#introduction) or [link to R project's website](https://www.r-project.org/), and can be clicked to navigate there;
+- *notes* are represented as numbered superscripts[^example_note] which can be clicked to go to the note's text;
+- *captions* use **bold font**, are numbered, and are placed below the corresponding figure and above the corresponding table;
+- *raw output*, as produced by various `R` functions and expressions (for example, as in the [Appendices](#appendix-ii.-path-analysis-for-blue)), is shown using `fixed font text` in clearly marked boxes;
+- the *floating document outline* on the left shows the main sections and the path to the current location and is clickable for quick navigation.
+
+Please note that these font and color conventions can be changed in the `Rmarkdown` script (for example, selecting a different theme in `RStudio`); here, we used *cerulean* and *textmate*.
+
+[^example_note]: This is an example note. Click the symbol at the end of the note to go back to where the note is called in the text.
+
+## Software and hardware info
 
 The full information about the version of `R` [@R2021], the packages and the hardware and software platform used to obtain this document are given in the Section [*Session information*](#session-information) at the end of this document[^technical_note].
 The figures were made using various `R` packages; in particular, the maps were drawn using the `maps` package (wrapped by the `map_data()` function in `ggplot2`), which, in turn uses public domain data from the [Natural Earth project](https://www.naturalearthdata.com/).
